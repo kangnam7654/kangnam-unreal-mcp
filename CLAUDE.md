@@ -302,29 +302,16 @@ Source: `FlopperamUnrealMCP` (`C:\projects\mir-unreal-mcp\mcp-plugin`)
 | 3 | `spawn_actor` | `HandleSpawnActor` | `WN_MCP_CommandGroup_Editor` | Done |
 | 4 | `delete_actor` | `HandleDeleteActor` | `WN_MCP_CommandGroup_Editor` | Done |
 | 5 | `set_actor_transform` | `HandleSetActorTransform` | `WN_MCP_CommandGroup_Editor` | Done |
-| 6 | `focus_viewport` | `HandleFocusViewport` | `WN_MCP_CommandGroup_Editor` | - |
-| 7 | `take_screenshot` | `HandleTakeScreenshot` | `WN_MCP_CommandGroup_Editor` | - |
+| 6 | `focus_viewport` | `HandleFocusViewport` | `WN_MCP_CommandGroup_Editor` | Skip |
+| 7 | `take_screenshot` | `HandleTakeScreenshot` | `WN_MCP_CommandGroup_Editor` | Skip |
 
-### Blueprint Commands (FWN_MCP_CommandGroup_Blueprint - TBD)
-
-| # | Command | Source Function | Status |
-|---|---------|----------------|--------|
-| 8 | `create_blueprint` | `HandleCreateBlueprint` | - |
-| 9 | `add_component_to_blueprint` | `HandleAddComponentToBlueprint` | - |
-| 10 | `compile_blueprint` | `HandleCompileBlueprint` | - |
-| 11 | `spawn_blueprint_actor` | `HandleSpawnBlueprintActor` | - |
-| 12 | `set_static_mesh_properties` | `HandleSetStaticMeshProperties` | - |
-| 13 | `set_physics_properties` | `HandleSetPhysicsProperties` | - |
-| 14 | `set_mesh_material_color` | `HandleSetMeshMaterialColor` | - |
-
-### Blueprint Graph Commands (FWN_MCP_CommandGroup_BlueprintGraph - TBD)
+### Blueprint Commands (FWN_MCP_CommandGroup_Blueprint - TBD, .build.cs에 UnrealEd 의존성 필요)
 
 | # | Command | Source Function | Status |
 |---|---------|----------------|--------|
-| 15 | `add_blueprint_node` | `HandleAddBlueprintNode` | - |
-| 16 | `connect_nodes` | `HandleConnectNodes` | - |
-| 17 | `create_variable` | `HandleCreateVariable` | - |
-| 18 | `add_event_node` | `HandleAddEventNode` | - |
-| 19 | `delete_node` | `HandleDeleteNode` | - |
-| 20 | `set_node_property` | `HandleSetNodeProperty` | - |
-| 21 | `create_function` | `HandleCreateFunction` | - |
+| 8 | `create_blueprint` | `HandleCreateBlueprint` | Pending |
+| 9 | `read_blueprint_content` | `HandleReadBlueprintContent` | Pending |
+| 10 | `compile_blueprint` | `HandleCompileBlueprint` | Pending |
+| 11 | `add_component_to_blueprint` | `HandleAddComponentToBlueprint` | Pending |
+
+### Blueprint Graph Commands — Skip (CRUD 범위 밖)
