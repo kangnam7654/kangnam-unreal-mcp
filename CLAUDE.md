@@ -67,8 +67,8 @@ WN_MCP/Source/WN_MCP/
 
 | Category | Convention | Example |
 |----------|-----------|---------|
-| File names | `WN_MCP_` prefix + PascalCase | `WN_MCP_CommandGroup_Editor.h` |
-| Classes (non-UObject) | `F` prefix + `WN_MCP_` | `FWN_MCP_CommandGroup_Editor` |
+| File names | `WN_MCP_` prefix + PascalCase | `WN_MCP_CommandGroup_Actor.h` |
+| Classes (non-UObject) | `F` prefix + `WN_MCP_` | `FWN_MCP_CommandGroup_Actor` |
 | Classes (UObject) | `U` prefix + `WN_MCP_` | `UWN_MCP_Subsystem` |
 | Input params | `In` prefix | `InCommandName`, `InParamsPtr` |
 | Output params | `InOut` prefix | `InOutCommandNames` |
@@ -293,17 +293,17 @@ New command plugins MUST follow this pattern:
 
 Source: `FlopperamUnrealMCP` (`C:\projects\mir-unreal-mcp\mcp-plugin`)
 
-### Editor Commands (FWN_MCP_CommandGroup_Editor)
+### Actor Commands (FWN_MCP_CommandGroup_Actor)
 
 | # | Command | Source Function | CommandGroup File | Status |
 |---|---------|----------------|-------------------|--------|
-| 1 | `get_actors_in_level` | `HandleGetActorsInLevel` | `WN_MCP_CommandGroup_Editor` | Done |
-| 2 | `find_actors_by_name` | `HandleFindActorsByName` | `WN_MCP_CommandGroup_Editor` | Done |
-| 3 | `spawn_actor` | `HandleSpawnActor` | `WN_MCP_CommandGroup_Editor` | Done |
-| 4 | `delete_actor` | `HandleDeleteActor` | `WN_MCP_CommandGroup_Editor` | Done |
-| 5 | `set_actor_transform` | `HandleSetActorTransform` | `WN_MCP_CommandGroup_Editor` | Done |
-| 6 | `focus_viewport` | `HandleFocusViewport` | `WN_MCP_CommandGroup_Editor` | Skip |
-| 7 | `take_screenshot` | `HandleTakeScreenshot` | `WN_MCP_CommandGroup_Editor` | Skip |
+| 1 | `get_actors_in_level` | `HandleGetActorsInLevel` | `WN_MCP_CommandGroup_Actor` | Done |
+| 2 | `find_actors_by_name` | `HandleFindActorsByName` | `WN_MCP_CommandGroup_Actor` | Done |
+| 3 | `spawn_actor` | `HandleSpawnActor` | `WN_MCP_CommandGroup_Actor` | Done |
+| 4 | `delete_actor` | `HandleDeleteActor` | `WN_MCP_CommandGroup_Actor` | Done |
+| 5 | `set_actor_transform` | `HandleSetActorTransform` | `WN_MCP_CommandGroup_Actor` | Done |
+| 6 | `focus_viewport` | `HandleFocusViewport` | `WN_MCP_CommandGroup_Actor` | Skip |
+| 7 | `take_screenshot` | `HandleTakeScreenshot` | `WN_MCP_CommandGroup_Actor` | Skip |
 
 ### Blueprint Commands (FWN_MCP_CommandGroup_Blueprint - TBD, .build.cs에 UnrealEd 의존성 필요)
 
