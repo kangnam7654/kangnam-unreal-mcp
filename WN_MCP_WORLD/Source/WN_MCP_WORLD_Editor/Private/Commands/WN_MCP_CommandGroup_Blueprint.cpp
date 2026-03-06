@@ -40,6 +40,7 @@ void FWN_MCP_CommandGroup_Blueprint::OnRegisterCommands(TArray<FString>& InOutCo
 	InOutCommandNames.Add(FString(TEXT("create_blueprint")));
 	InOutCommandNames.Add(FString(TEXT("read_blueprint_content")));
 	InOutCommandNames.Add(FString(TEXT("compile_blueprint")));
+	InOutCommandNames.Add(FString(TEXT("delete_blueprint")));
 }
 
 TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Blueprint::OnExecute(const FString& InCommandName, const TSharedPtr<FJsonObject>& InParamsPtr, TSharedPtr<FSocket> InClientSocketPtr) const
@@ -294,6 +295,62 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Blueprint::OnExecute(const FString&
 		TSharedPtr<FJsonObject> InResultPtr = MakeShareable(new FJsonObject());
 		InResultPtr->SetStringField(TEXT("name"), blueprintName);
 		InResultPtr->SetBoolField(TEXT("compiled"), true);
+		WN_RETURN_COMMAND_RESPONSE(InResultPtr);
+	}
+
+	if (InCommandName == FString(TEXT("delete_blueprint")))
+	{
+		// Get required parameters
+		FString blueprintPath;
+		if (!InParamsPtr.IsValid() || !InParamsPtr->TryGetStringField(TEXT("blueprint_path"), blueprintPath))
+		{
+			WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: blueprint_path"));
+		}
+
+		// Check if asset exists
+		if (!UEditorAssetLibrary::DoesAssetExist(blueprintPath))
+		{
+			WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_COMMAND_FAILED,
+				*FString::Printf(TEXT("Blueprint not found: %s"), *blueprintPath));
+		}
+
+		// Check for referencers unless force is true
+		bool bForce = false;
+		InParamsPtr->TryGetBoolField(TEXT("force"), bForce);
+
+		if (!bForce)
+		{
+			TArray<FName> referencers;
+			FString assetName = FPaths::GetBaseFilename(blueprintPath);
+			FString objectPath = FString::Printf(TEXT("%s.%s"), *blueprintPath, *assetName);
+			FAssetRegistryModule& assetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>(TEXT("AssetRegistry"));
+			assetRegistryModule.Get().GetReferencers(FName(*objectPath), referencers);
+
+			if (referencers.Num() > 0)
+			{
+				TArray<TSharedPtr<FJsonValue>> refArray;
+				for (const FName& ref : referencers)
+				{
+					refArray.Add(MakeShareable(new FJsonValueString(ref.ToString())));
+				}
+
+				TSharedPtr<FJsonObject> errorData = MakeShareable(new FJsonObject());
+				errorData->SetStringField(TEXT("message"), FString::Printf(TEXT("Blueprint '%s' is referenced by %d asset(s). Use force=true to delete anyway."), *blueprintPath, referencers.Num()));
+				errorData->SetArrayField(TEXT("referencers"), refArray);
+				WN_RETURN_COMMAND_ERROR_RESPONSE(WN_JSON_RPC_ERROR_COMMAND_FAILED, errorData);
+			}
+		}
+
+		// Delete the asset
+		if (!UEditorAssetLibrary::DeleteAsset(blueprintPath))
+		{
+			WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_COMMAND_FAILED,
+				*FString::Printf(TEXT("Failed to delete blueprint: %s"), *blueprintPath));
+		}
+
+		TSharedPtr<FJsonObject> InResultPtr = MakeShareable(new FJsonObject());
+		InResultPtr->SetStringField(TEXT("status"), TEXT("success"));
+		InResultPtr->SetStringField(TEXT("deleted_path"), blueprintPath);
 		WN_RETURN_COMMAND_RESPONSE(InResultPtr);
 	}
 
