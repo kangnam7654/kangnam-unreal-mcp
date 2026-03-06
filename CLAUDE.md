@@ -8,26 +8,43 @@ Unreal Engine 5 MCP (Model Context Protocol) plugin. UE C++ TCP Server + Python 
 - **WN_MCPTest**: Example/test plugin (demonstrates how to extend WN_MCP)
 - Protocol: **JSON-RPC 2.0** for all UE <-> Python communication
 
+## Terminology
+
+| Term | Meaning |
+|------|---------|
+| **Command (커맨드)** | C++ side function. `FWN_MCP_CommandGroup` subclass에서 UE API를 호출하는 함수. |
+| **Tool (툴)** | Python side function. `@mcp.tool` 데코레이터로 등록되어 Agent가 호출하는 함수. |
+
+- Command는 UE 엔진 내부에서 실행되며, TCP 소켓을 통해 JSON-RPC 2.0으로 응답한다.
+- Tool은 Python MCP Server에서 실행되며, 필요 시 Command를 호출하여 UE와 통신한다.
+
 ## Architecture
 
 ```
-Agent (Claude/Cursor) <--stdio--> Python FastMCP Server <--TCP (127.0.0.1:27777~27787)--> UE C++ Plugin
+Agent (Claude/Cursor) <--stdio--> Python MCP Server (Tool) <--TCP JSON-RPC 2.0--> UE C++ Plugin (Command)
 ```
 
-### Two ways to add tools:
+### How to add functionality:
 
-1. **C++ CommandGroup + Python `register_simple_commands()`**
-   - C++ side: `FWN_MCP_CommandGroup` subclass handles the UE API call
-   - Python side: `register_simple_commands()` returns command list, auto-wrapped with `ue_execute_simple_command()`
-   - Use when: UE API access is needed (actors, assets, editor, etc.)
+1. **C++ Command** - UE API 접근이 필요한 기능
+   - `FWN_MCP_CommandGroup` 서브클래스에 커맨드 구현
+   - `WN_MCP_REGISTER_COMMAND_GROUP` 매크로로 자동 등록
+   - Python Tool에서 `ue_execute_simple_command()` 또는 `ue_send_command()` + `ue_receive_response()`로 호출
 
-2. **Python `@mcp.tool` only**
-   - Python function decorated with `@mcp.tool`, calls `ue_send_command()` + `ue_receive_response()` if UE interaction needed
-   - Use when: Complex orchestration, multi-step logic, or pure Python tools
+2. **Python Tool only** - UE 접근 불필요하거나 복잡한 오케스트레이션
+   - `@mcp.tool` 데코레이터로 등록
+
+## Work Rules
+
+1. **기존 코드 수정 금지**: 이미 구현된 파일은 절대 수정하지 않는다.
+2. **C++ 커맨드만 이식**: Python Tool은 별도 담당자가 작업 중이므로 건드리지 않는다.
+3. **커맨드 단위 작업**: 커맨드 하나를 이식할 때마다 사용자에게 설명하고 허락을 받는다.
+4. **커맨드 단위 커밋**: 커맨드 하나를 이식할 때마다 git commit한다.
+5. **새 파일만 추가**: 새 CommandGroup은 `Private/Commands/`에 새 .h/.cpp 파일로 추가한다.
 
 ---
 
-## C++ Code Conventions
+## C++ Command Conventions
 
 ### File Structure
 
@@ -202,151 +219,11 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_XXX::OnExecute(const FString& InCom
 
 ### Extension Plugin Pattern (like WN_MCPTest)
 
-New tool plugins MUST follow this pattern:
+New command plugins MUST follow this pattern:
 1. Depend on `WN_MCP` module in `.build.cs`
 2. In `StartupModule()`: get `FWN_MCP_Module::Get()`, call `AddUserToolDirectories()`
 3. Create `Python/` directory with tool `.py` files
 4. C++ CommandGroups auto-register via `WN_MCP_REGISTER_COMMAND_GROUP` macro
-
----
-
-## Python Code Conventions
-
-### File Structure
-
-```
-PyMCP/
-  wn_mcp_server.py            # MCP server entry point
-  settings.ini                 # Configuration
-  pyproject.toml
-  Tools/
-    __init__.py                # Package init
-    params.py                  # get_mcp_params() / _set_mcp_params()
-    log_tool.py                # Logging utilities
-    ue_interaction_tool.py     # UE connection + built-in MCP tools
-    agent_interaction_tool.py  # Agent/chat interaction tools
-```
-
-### Naming Rules
-
-| Category | Convention | Example |
-|----------|-----------|---------|
-| Files | snake_case | `ue_interaction_tool.py` |
-| Functions | snake_case | `register_tools`, `ue_send_command` |
-| Classes | PascalCase | `ChatInteractionManager`, `DialogueState` |
-| Constants | UPPER_SNAKE | `UE_HOST`, `AUTO_RECONNECT_ENABLED` |
-| Private vars | `_` prefix | `_manager`, `_agent_tools_registered` |
-| MCP tool names | snake_case | `check_ue_connection`, `show_notification` |
-
-### Tool Registration Pattern
-
-```python
-# Track registration to prevent duplicates
-_tools_registered = False
-
-def register_tools(mcp) -> None:
-    """Register tools with MCP server."""
-    global _tools_registered
-    if _tools_registered:
-        log_debug('Tools already registered, skipping')
-        return
-
-    @mcp.tool
-    def my_tool_name() -> Dict[str, Any]:
-        """Tool description for LLM context.
-
-        Expects params (via get_mcp_params()):
-            param_name: Description
-        """
-        try:
-            params = get_mcp_params()
-            # ... implementation
-            return {
-                "jsonrpc": "2.0",
-                "result": { ... }
-            }
-        except Exception as e:
-            mcp_log(f'Tool: Error in my_tool_name: {e}')
-            return {
-                "jsonrpc": "2.0",
-                "error": {
-                    "code": -32603,
-                    "message": str(e)
-                }
-            }
-
-    _tools_registered = True
-    mcp_log('Tools registered')
-```
-
-### User Tool File Pattern (for `register_simple_commands`)
-
-```python
-"""
-Module description.
-"""
-
-from Tools import get_mcp_params
-from Tools.ue_interaction_tool import ue_send_command, ue_receive_response
-
-def register_simple_commands() -> list[dict]:
-    """Register simple commands that execute on UE."""
-    return [
-        {
-            'name': 'command_name',
-            'description': 'Description for LLM context'
-        }
-    ]
-
-# For complex tools that need custom Python logic:
-@mcp.tool
-def complex_tool() -> dict:
-    """Tool description."""
-    try:
-        params = get_mcp_params() or {}
-        ue_send_command("ue_command_name", params)
-        return ue_receive_response()
-    except Exception as e:
-        raise Exception(f"complex_tool failed: {str(e)}")
-```
-
-### Return Format (ALWAYS JSON-RPC 2.0)
-
-```python
-# Success
-{"jsonrpc": "2.0", "result": {"key": "value", "message": "..."}}
-
-# Error
-{"jsonrpc": "2.0", "error": {"code": -32603, "message": "Error description"}}
-```
-
-### Logging
-
-```python
-from Tools.log_tool import log_info as mcp_log, log_debug, log_misc
-
-mcp_log('Important info')                    # INFO level, file + stderr
-log_debug('Debug detail')                    # DEBUG level, stderr only by default
-log_misc(f'JSON dump: {json.dumps(data)}')   # MISC level (5), for verbose data
-
-# In tool functions, prefix with 'Tool: '
-mcp_log(f'Tool: my_tool() called')
-mcp_log(f'Tool: Error in my_tool: {e}')
-```
-
-### Imports
-
-```python
-# Standard library first
-import json
-import time
-from typing import Dict, Any, Optional
-
-# Then project imports
-from Tools.log_tool import log_info as mcp_log, log_debug
-from Tools.params import get_mcp_params
-from Tools.ue_interaction_tool import ue_send_command, ue_receive_response, ue_execute_simple_command
-```
 
 ---
 
@@ -400,13 +277,12 @@ from Tools.ue_interaction_tool import ue_send_command, ue_receive_response, ue_e
 
 ## CRITICAL RULES
 
-1. **NEVER** modify files in `WN_MCP/` core plugin without explicit approval
-2. New command groups go in `Private/Commands/` directory
+1. **NEVER** modify existing files - only add new files
+2. New command groups go in `Private/Commands/` directory as new .h/.cpp pairs
 3. Every `OnExecute` MUST end with `WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_METHOD_NOT_FOUND, TEXT(""));`
 4. All UE API calls in `OnExecute` run on GameThread (already dispatched by ServerThread)
 5. Command names are globally unique across all plugins - check for conflicts
-6. Python tool return values MUST be JSON-RPC 2.0 format
-7. Use `get_mcp_params()` for parameterless `@mcp.tool` functions
-8. Use `ue_execute_simple_command()` for simple send+receive patterns
-9. Log with `mcp_log()` at appropriate levels, prefix tool logs with `'Tool: '`
-10. Copyright header: `// Copyright WemadeNext, Inc. All Rights Reserved.` (only in .build.cs files)
+6. Python Tool 작업은 하지 않는다 (별도 담당자 영역)
+7. 커맨드 이식 전 반드시 사용자에게 설명 및 승인을 받는다
+8. 커맨드 이식 후 반드시 git commit한다
+9. Copyright header: `// Copyright WemadeNext, Inc. All Rights Reserved.` (only in .build.cs files)
