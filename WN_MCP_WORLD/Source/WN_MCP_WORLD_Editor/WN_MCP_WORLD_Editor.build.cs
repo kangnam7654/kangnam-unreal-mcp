@@ -35,6 +35,7 @@ public class WN_MCP_WORLD_Editor : ModuleRules
 			new string[]
 			{
 				"UnrealEd",
+				"EditorScriptingUtilities",
 				"Kismet",
 				"KismetCompiler",
 				"BlueprintGraph",
