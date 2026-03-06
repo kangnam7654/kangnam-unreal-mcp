@@ -13,6 +13,7 @@
 #include "Engine/SCS_Node.h"
 #include "EdGraph/EdGraph.h"
 #include "EdGraph/EdGraphNode.h"
+#include "Kismet2/KismetEditorUtilities.h"
 
 //-----------------------------------------------------------------------------
 // FWN_MCP_CommandGroup_Blueprint
@@ -38,6 +39,7 @@ void FWN_MCP_CommandGroup_Blueprint::OnRegisterCommands(TArray<FString>& InOutCo
 {
 	InOutCommandNames.Add(FString(TEXT("create_blueprint")));
 	InOutCommandNames.Add(FString(TEXT("read_blueprint_content")));
+	InOutCommandNames.Add(FString(TEXT("compile_blueprint")));
 }
 
 TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Blueprint::OnExecute(const FString& InCommandName, const TSharedPtr<FJsonObject>& InParamsPtr, TSharedPtr<FSocket> InClientSocketPtr) const
@@ -266,6 +268,32 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Blueprint::OnExecute(const FString&
 			InResultPtr->SetArrayField(TEXT("interfaces"), interfaceArray);
 		}
 
+		WN_RETURN_COMMAND_RESPONSE(InResultPtr);
+	}
+
+	if (InCommandName == FString(TEXT("compile_blueprint")))
+	{
+		// Get required parameters
+		FString blueprintName;
+		if (!InParamsPtr.IsValid() || !InParamsPtr->TryGetStringField(TEXT("blueprint_name"), blueprintName))
+		{
+			WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: blueprint_name"));
+		}
+
+		// Find the blueprint
+		UBlueprint* blueprint = FindBlueprintByName(blueprintName);
+		if (!blueprint)
+		{
+			WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_COMMAND_FAILED,
+				*FString::Printf(TEXT("Blueprint not found: %s"), *blueprintName));
+		}
+
+		// Compile the blueprint
+		FKismetEditorUtilities::CompileBlueprint(blueprint);
+
+		TSharedPtr<FJsonObject> InResultPtr = MakeShareable(new FJsonObject());
+		InResultPtr->SetStringField(TEXT("name"), blueprintName);
+		InResultPtr->SetBoolField(TEXT("compiled"), true);
 		WN_RETURN_COMMAND_RESPONSE(InResultPtr);
 	}
 
