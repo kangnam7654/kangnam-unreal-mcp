@@ -29,6 +29,7 @@ FString FWN_MCP_CommandGroup_Editor::GetName() const
 void FWN_MCP_CommandGroup_Editor::OnRegisterCommands(TArray<FString>& InOutCommandNames) const
 {
 	InOutCommandNames.Add(FString(TEXT("get_actors_in_level")));
+	InOutCommandNames.Add(FString(TEXT("find_actors_by_name")));
 }
 
 TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Editor::OnExecute(const FString& InCommandName, const TSharedPtr<FJsonObject>& InParamsPtr, TSharedPtr<FSocket> InClientSocketPtr) const
@@ -42,6 +43,32 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Editor::OnExecute(const FString& In
 		for (AActor* actor : allActors)
 		{
 			if (actor)
+			{
+				jsonActorValues.Add(ActorToJsonValue(actor));
+			}
+		}
+
+		TSharedPtr<FJsonObject> InResultPtr = MakeShareable(new FJsonObject());
+		InResultPtr->SetNumberField(TEXT("count"), jsonActorValues.Num());
+		InResultPtr->SetArrayField(TEXT("actors"), jsonActorValues);
+		WN_RETURN_COMMAND_RESPONSE(InResultPtr);
+	}
+
+	if (InCommandName == FString(TEXT("find_actors_by_name")))
+	{
+		FString searchText;
+		if (!InParamsPtr.IsValid() || !InParamsPtr->TryGetStringField(TEXT("search_text"), searchText))
+		{
+			WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: search_text"));
+		}
+
+		TArray<AActor*> allActors;
+		UGameplayStatics::GetAllActorsOfClass(GWorld, AActor::StaticClass(), allActors);
+
+		TArray<TSharedPtr<FJsonValue>> jsonActorValues;
+		for (AActor* actor : allActors)
+		{
+			if (actor && actor->GetName().Contains(searchText))
 			{
 				jsonActorValues.Add(ActorToJsonValue(actor));
 			}
