@@ -9,6 +9,10 @@
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "GameFramework/Actor.h"
 #include "GameFramework/Pawn.h"
+#include "Engine/SimpleConstructionScript.h"
+#include "Engine/SCS_Node.h"
+#include "EdGraph/EdGraph.h"
+#include "EdGraph/EdGraphNode.h"
 
 //-----------------------------------------------------------------------------
 // FWN_MCP_CommandGroup_Blueprint
@@ -33,6 +37,7 @@ FString FWN_MCP_CommandGroup_Blueprint::GetName() const
 void FWN_MCP_CommandGroup_Blueprint::OnRegisterCommands(TArray<FString>& InOutCommandNames) const
 {
 	InOutCommandNames.Add(FString(TEXT("create_blueprint")));
+	InOutCommandNames.Add(FString(TEXT("read_blueprint_content")));
 }
 
 TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Blueprint::OnExecute(const FString& InCommandName, const TSharedPtr<FJsonObject>& InParamsPtr, TSharedPtr<FSocket> InClientSocketPtr) const
@@ -123,6 +128,144 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Blueprint::OnExecute(const FString&
 		TSharedPtr<FJsonObject> InResultPtr = MakeShareable(new FJsonObject());
 		InResultPtr->SetStringField(TEXT("name"), assetName);
 		InResultPtr->SetStringField(TEXT("path"), packagePath + assetName);
+		WN_RETURN_COMMAND_RESPONSE(InResultPtr);
+	}
+
+	if (InCommandName == FString(TEXT("read_blueprint_content")))
+	{
+		// Get required parameters
+		FString blueprintPath;
+		if (!InParamsPtr.IsValid() || !InParamsPtr->TryGetStringField(TEXT("blueprint_path"), blueprintPath))
+		{
+			WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: blueprint_path"));
+		}
+
+		// Get optional filter flags
+		bool bIncludeEventGraph = true;
+		bool bIncludeFunctions = true;
+		bool bIncludeVariables = true;
+		bool bIncludeComponents = true;
+		bool bIncludeInterfaces = true;
+
+		InParamsPtr->TryGetBoolField(TEXT("include_event_graph"), bIncludeEventGraph);
+		InParamsPtr->TryGetBoolField(TEXT("include_functions"), bIncludeFunctions);
+		InParamsPtr->TryGetBoolField(TEXT("include_variables"), bIncludeVariables);
+		InParamsPtr->TryGetBoolField(TEXT("include_components"), bIncludeComponents);
+		InParamsPtr->TryGetBoolField(TEXT("include_interfaces"), bIncludeInterfaces);
+
+		// Load the blueprint
+		UBlueprint* blueprint = Cast<UBlueprint>(UEditorAssetLibrary::LoadAsset(blueprintPath));
+		if (!blueprint)
+		{
+			WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_COMMAND_FAILED,
+				*FString::Printf(TEXT("Failed to load blueprint: %s"), *blueprintPath));
+		}
+
+		TSharedPtr<FJsonObject> InResultPtr = MakeShareable(new FJsonObject());
+		InResultPtr->SetStringField(TEXT("blueprint_path"), blueprintPath);
+		InResultPtr->SetStringField(TEXT("blueprint_name"), blueprint->GetName());
+		InResultPtr->SetStringField(TEXT("parent_class"), blueprint->ParentClass ? blueprint->ParentClass->GetName() : TEXT("None"));
+
+		// Variables
+		if (bIncludeVariables)
+		{
+			TArray<TSharedPtr<FJsonValue>> variableArray;
+			for (const FBPVariableDescription& variable : blueprint->NewVariables)
+			{
+				TSharedPtr<FJsonObject> varObj = MakeShareable(new FJsonObject());
+				varObj->SetStringField(TEXT("name"), variable.VarName.ToString());
+				varObj->SetStringField(TEXT("type"), variable.VarType.PinCategory.ToString());
+				varObj->SetStringField(TEXT("default_value"), variable.DefaultValue);
+				varObj->SetBoolField(TEXT("is_editable"), (variable.PropertyFlags & CPF_Edit) != 0);
+				variableArray.Add(MakeShareable(new FJsonValueObject(varObj)));
+			}
+			InResultPtr->SetArrayField(TEXT("variables"), variableArray);
+		}
+
+		// Functions
+		if (bIncludeFunctions)
+		{
+			TArray<TSharedPtr<FJsonValue>> functionArray;
+			for (UEdGraph* graph : blueprint->FunctionGraphs)
+			{
+				if (graph)
+				{
+					TSharedPtr<FJsonObject> funcObj = MakeShareable(new FJsonObject());
+					funcObj->SetStringField(TEXT("name"), graph->GetName());
+					funcObj->SetStringField(TEXT("graph_type"), TEXT("Function"));
+					funcObj->SetNumberField(TEXT("node_count"), graph->Nodes.Num());
+					functionArray.Add(MakeShareable(new FJsonValueObject(funcObj)));
+				}
+			}
+			InResultPtr->SetArrayField(TEXT("functions"), functionArray);
+		}
+
+		// Event graph
+		if (bIncludeEventGraph)
+		{
+			TSharedPtr<FJsonObject> eventGraphObj = MakeShareable(new FJsonObject());
+
+			for (UEdGraph* graph : blueprint->UbergraphPages)
+			{
+				if (graph && graph->GetName() == TEXT("EventGraph"))
+				{
+					eventGraphObj->SetStringField(TEXT("name"), graph->GetName());
+					eventGraphObj->SetNumberField(TEXT("node_count"), graph->Nodes.Num());
+
+					TArray<TSharedPtr<FJsonValue>> nodeArray;
+					for (UEdGraphNode* node : graph->Nodes)
+					{
+						if (node)
+						{
+							TSharedPtr<FJsonObject> nodeObj = MakeShareable(new FJsonObject());
+							nodeObj->SetStringField(TEXT("name"), node->GetName());
+							nodeObj->SetStringField(TEXT("class"), node->GetClass()->GetName());
+							nodeObj->SetStringField(TEXT("title"), node->GetNodeTitle(ENodeTitleType::FullTitle).ToString());
+							nodeArray.Add(MakeShareable(new FJsonValueObject(nodeObj)));
+						}
+					}
+					eventGraphObj->SetArrayField(TEXT("nodes"), nodeArray);
+					break;
+				}
+			}
+
+			InResultPtr->SetObjectField(TEXT("event_graph"), eventGraphObj);
+		}
+
+		// Components
+		if (bIncludeComponents)
+		{
+			TArray<TSharedPtr<FJsonValue>> componentArray;
+			if (blueprint->SimpleConstructionScript)
+			{
+				for (USCS_Node* node : blueprint->SimpleConstructionScript->GetAllNodes())
+				{
+					if (node && node->ComponentTemplate)
+					{
+						TSharedPtr<FJsonObject> compObj = MakeShareable(new FJsonObject());
+						compObj->SetStringField(TEXT("name"), node->GetVariableName().ToString());
+						compObj->SetStringField(TEXT("class"), node->ComponentTemplate->GetClass()->GetName());
+						compObj->SetBoolField(TEXT("is_root"), node == blueprint->SimpleConstructionScript->GetDefaultSceneRootNode());
+						componentArray.Add(MakeShareable(new FJsonValueObject(compObj)));
+					}
+				}
+			}
+			InResultPtr->SetArrayField(TEXT("components"), componentArray);
+		}
+
+		// Interfaces
+		if (bIncludeInterfaces)
+		{
+			TArray<TSharedPtr<FJsonValue>> interfaceArray;
+			for (const FBPInterfaceDescription& bpInterface : blueprint->ImplementedInterfaces)
+			{
+				TSharedPtr<FJsonObject> interfaceObj = MakeShareable(new FJsonObject());
+				interfaceObj->SetStringField(TEXT("name"), bpInterface.Interface ? bpInterface.Interface->GetName() : TEXT("Unknown"));
+				interfaceArray.Add(MakeShareable(new FJsonValueObject(interfaceObj)));
+			}
+			InResultPtr->SetArrayField(TEXT("interfaces"), interfaceArray);
+		}
+
 		WN_RETURN_COMMAND_RESPONSE(InResultPtr);
 	}
 
