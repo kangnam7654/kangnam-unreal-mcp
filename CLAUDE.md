@@ -298,7 +298,7 @@ Source: `FlopperamUnrealMCP` (`C:\projects\mir-unreal-mcp\mcp-plugin`)
 | # | Command | Source Function | CommandGroup File | Status |
 |---|---------|----------------|-------------------|--------|
 | 1 | `get_actors_in_level` | `HandleGetActorsInLevel` | `WN_MCP_CommandGroup_Editor` | Done |
-| 2 | `find_actors_by_name` | `HandleFindActorsByName` | `WN_MCP_CommandGroup_Editor` | - |
+| 2 | `find_actors_by_name` | `HandleFindActorsByName` | `WN_MCP_CommandGroup_Editor` | Done |
 | 3 | `spawn_actor` | `HandleSpawnActor` | `WN_MCP_CommandGroup_Editor` | - |
 | 4 | `delete_actor` | `HandleDeleteActor` | `WN_MCP_CommandGroup_Editor` | - |
 | 5 | `set_actor_transform` | `HandleSetActorTransform` | `WN_MCP_CommandGroup_Editor` | - |
