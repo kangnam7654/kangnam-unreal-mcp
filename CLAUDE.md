@@ -301,7 +301,7 @@ Source: `FlopperamUnrealMCP` (`C:\projects\mir-unreal-mcp\mcp-plugin`)
 | 2 | `find_actors_by_name` | `HandleFindActorsByName` | `WN_MCP_CommandGroup_Editor` | Done |
 | 3 | `spawn_actor` | `HandleSpawnActor` | `WN_MCP_CommandGroup_Editor` | Done |
 | 4 | `delete_actor` | `HandleDeleteActor` | `WN_MCP_CommandGroup_Editor` | Done |
-| 5 | `set_actor_transform` | `HandleSetActorTransform` | `WN_MCP_CommandGroup_Editor` | - |
+| 5 | `set_actor_transform` | `HandleSetActorTransform` | `WN_MCP_CommandGroup_Editor` | Done |
 | 6 | `focus_viewport` | `HandleFocusViewport` | `WN_MCP_CommandGroup_Editor` | - |
 | 7 | `take_screenshot` | `HandleTakeScreenshot` | `WN_MCP_CommandGroup_Editor` | - |
 
