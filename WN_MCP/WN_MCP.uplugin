@@ -1,0 +1,20 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "0.1.0",
+	"FriendlyName": "WN_MCP",
+	"Description": "A plugin to implement MPC(Model Context Protocol) for Unreal.",
+	"Category": "Integration",
+	"CreatedBy": "Kangnam Kim",
+	"CanContainContent": true,
+	"Modules": [
+		{
+            "Name": "WN_MCP",
+            "Type": "Runtime",
+            "LoadingPhase": "Default",
+			"WhitelistPlatforms": [
+				"Win64"
+			]
+        }
+	]
+}

@@ -1,0 +1,13 @@
+Intermediate/
+Binaries/
+DerivedDataCache/
+Saved/
+*.pdb
+*.dll
+*.lib
+*.exp
+*.obj
+__pycache__/
+*.pyc
+.claude/
+uv.lock
