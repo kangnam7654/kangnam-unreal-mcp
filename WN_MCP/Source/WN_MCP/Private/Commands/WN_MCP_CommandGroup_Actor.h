@@ -9,11 +9,11 @@
 class AActor;
 
 //-----------------------------------------------------------------------------
-// FWN_MCP_CommandGroup_Editor
+// FWN_MCP_CommandGroup_Actor
 //-----------------------------------------------------------------------------
 
-/// Command group for UE editor operations (actors, viewport, etc.).
-class FWN_MCP_CommandGroup_Editor : public FWN_MCP_CommandGroup
+/// Command group for actor CRUD operations.
+class FWN_MCP_CommandGroup_Actor : public FWN_MCP_CommandGroup
 {
 	//-------------------------------------------------------------------------
 	// Overrides FWN_MCP_CommandGroup
@@ -37,10 +37,10 @@ public:
 public:
 
 	/// constructor.
-	FWN_MCP_CommandGroup_Editor();
+	FWN_MCP_CommandGroup_Actor();
 
 	/// destructor.
-	~FWN_MCP_CommandGroup_Editor();
+	~FWN_MCP_CommandGroup_Actor();
 
 private:
 

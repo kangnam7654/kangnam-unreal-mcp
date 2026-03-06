@@ -1,4 +1,4 @@
-#include "WN_MCP_CommandGroup_Editor.h"
+#include "WN_MCP_CommandGroup_Actor.h"
 #include "WN_MCP_Module.h"
 
 #include "Dom/JsonObject.h"
@@ -7,26 +7,26 @@
 #include "Kismet/GameplayStatics.h"
 
 //-----------------------------------------------------------------------------
-// FWN_MCP_CommandGroup_Editor
+// FWN_MCP_CommandGroup_Actor
 //-----------------------------------------------------------------------------
 
-WN_MCP_REGISTER_COMMAND_GROUP(FWN_MCP_CommandGroup_Editor);
+WN_MCP_REGISTER_COMMAND_GROUP(FWN_MCP_CommandGroup_Actor);
 
-FWN_MCP_CommandGroup_Editor::FWN_MCP_CommandGroup_Editor()
+FWN_MCP_CommandGroup_Actor::FWN_MCP_CommandGroup_Actor()
 {
 
 }
 
-FWN_MCP_CommandGroup_Editor::~FWN_MCP_CommandGroup_Editor()
+FWN_MCP_CommandGroup_Actor::~FWN_MCP_CommandGroup_Actor()
 {
 }
 
-FString FWN_MCP_CommandGroup_Editor::GetName() const
+FString FWN_MCP_CommandGroup_Actor::GetName() const
 {
-	return FString("Editor");
+	return FString("Actor");
 }
 
-void FWN_MCP_CommandGroup_Editor::OnRegisterCommands(TArray<FString>& InOutCommandNames) const
+void FWN_MCP_CommandGroup_Actor::OnRegisterCommands(TArray<FString>& InOutCommandNames) const
 {
 	InOutCommandNames.Add(FString(TEXT("get_actors_in_level")));
 	InOutCommandNames.Add(FString(TEXT("find_actors_by_name")));
@@ -35,7 +35,7 @@ void FWN_MCP_CommandGroup_Editor::OnRegisterCommands(TArray<FString>& InOutComma
 	InOutCommandNames.Add(FString(TEXT("set_actor_transform")));
 }
 
-TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Editor::OnExecute(const FString& InCommandName, const TSharedPtr<FJsonObject>& InParamsPtr, TSharedPtr<FSocket> InClientSocketPtr) const
+TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Actor::OnExecute(const FString& InCommandName, const TSharedPtr<FJsonObject>& InParamsPtr, TSharedPtr<FSocket> InClientSocketPtr) const
 {
 	if (InCommandName == FString(TEXT("get_actors_in_level")))
 	{
@@ -285,7 +285,7 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Editor::OnExecute(const FString& In
 	WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_METHOD_NOT_FOUND, TEXT(""));
 }
 
-TSharedPtr<FJsonValue> FWN_MCP_CommandGroup_Editor::ActorToJsonValue(AActor* InActor)
+TSharedPtr<FJsonValue> FWN_MCP_CommandGroup_Actor::ActorToJsonValue(AActor* InActor)
 {
 	if (!InActor)
 	{
