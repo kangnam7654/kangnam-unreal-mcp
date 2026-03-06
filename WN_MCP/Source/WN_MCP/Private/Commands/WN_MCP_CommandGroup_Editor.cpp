@@ -32,6 +32,7 @@ void FWN_MCP_CommandGroup_Editor::OnRegisterCommands(TArray<FString>& InOutComma
 	InOutCommandNames.Add(FString(TEXT("find_actors_by_name")));
 	InOutCommandNames.Add(FString(TEXT("spawn_actor")));
 	InOutCommandNames.Add(FString(TEXT("delete_actor")));
+	InOutCommandNames.Add(FString(TEXT("set_actor_transform")));
 }
 
 TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Editor::OnExecute(const FString& InCommandName, const TSharedPtr<FJsonObject>& InParamsPtr, TSharedPtr<FSocket> InClientSocketPtr) const
@@ -204,6 +205,80 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Editor::OnExecute(const FString& In
 		TSharedPtr<FJsonObject> InResultPtr = MakeShareable(new FJsonObject());
 		InResultPtr->SetStringField(TEXT("status"), TEXT("success"));
 		InResultPtr->SetStringField(TEXT("deleted_actor"), actorName);
+		WN_RETURN_COMMAND_RESPONSE(InResultPtr);
+	}
+
+	if (InCommandName == FString(TEXT("set_actor_transform")))
+	{
+		FString actorName;
+		if (!InParamsPtr.IsValid() || !InParamsPtr->TryGetStringField(TEXT("name"), actorName))
+		{
+			WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: name"));
+		}
+
+		// find actor by name
+		TArray<AActor*> allActors;
+		UGameplayStatics::GetAllActorsOfClass(GWorld, AActor::StaticClass(), allActors);
+
+		AActor* foundActor = nullptr;
+		for (AActor* actor : allActors)
+		{
+			if (actor && actor->GetName() == actorName)
+			{
+				foundActor = actor;
+				break;
+			}
+		}
+
+		if (!foundActor)
+		{
+			WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_INVALID_PARAMS,
+				*FString::Printf(TEXT("Actor '%s' not found"), *actorName));
+		}
+
+		// apply only provided transform components
+		if (InParamsPtr->HasField(TEXT("location")))
+		{
+			const TArray<TSharedPtr<FJsonValue>>* locationArray;
+			if (InParamsPtr->TryGetArrayField(TEXT("location"), locationArray) && locationArray->Num() >= 3)
+			{
+				FVector location;
+				location.X = (*locationArray)[0]->AsNumber();
+				location.Y = (*locationArray)[1]->AsNumber();
+				location.Z = (*locationArray)[2]->AsNumber();
+				foundActor->SetActorLocation(location);
+			}
+		}
+
+		if (InParamsPtr->HasField(TEXT("rotation")))
+		{
+			const TArray<TSharedPtr<FJsonValue>>* rotationArray;
+			if (InParamsPtr->TryGetArrayField(TEXT("rotation"), rotationArray) && rotationArray->Num() >= 3)
+			{
+				FRotator rotation;
+				rotation.Pitch = (*rotationArray)[0]->AsNumber();
+				rotation.Yaw = (*rotationArray)[1]->AsNumber();
+				rotation.Roll = (*rotationArray)[2]->AsNumber();
+				foundActor->SetActorRotation(rotation);
+			}
+		}
+
+		if (InParamsPtr->HasField(TEXT("scale")))
+		{
+			const TArray<TSharedPtr<FJsonValue>>* scaleArray;
+			if (InParamsPtr->TryGetArrayField(TEXT("scale"), scaleArray) && scaleArray->Num() >= 3)
+			{
+				FVector scale;
+				scale.X = (*scaleArray)[0]->AsNumber();
+				scale.Y = (*scaleArray)[1]->AsNumber();
+				scale.Z = (*scaleArray)[2]->AsNumber();
+				foundActor->SetActorScale3D(scale);
+			}
+		}
+
+		TSharedPtr<FJsonObject> InResultPtr = MakeShareable(new FJsonObject());
+		InResultPtr->SetStringField(TEXT("status"), TEXT("success"));
+		InResultPtr->SetField(TEXT("actor"), ActorToJsonValue(foundActor));
 		WN_RETURN_COMMAND_RESPONSE(InResultPtr);
 	}
 
