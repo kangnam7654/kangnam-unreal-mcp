@@ -30,6 +30,7 @@ void FWN_MCP_CommandGroup_Editor::OnRegisterCommands(TArray<FString>& InOutComma
 {
 	InOutCommandNames.Add(FString(TEXT("get_actors_in_level")));
 	InOutCommandNames.Add(FString(TEXT("find_actors_by_name")));
+	InOutCommandNames.Add(FString(TEXT("spawn_actor")));
 }
 
 TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Editor::OnExecute(const FString& InCommandName, const TSharedPtr<FJsonObject>& InParamsPtr, TSharedPtr<FSocket> InClientSocketPtr) const
@@ -77,6 +78,96 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Editor::OnExecute(const FString& In
 		TSharedPtr<FJsonObject> InResultPtr = MakeShareable(new FJsonObject());
 		InResultPtr->SetNumberField(TEXT("count"), jsonActorValues.Num());
 		InResultPtr->SetArrayField(TEXT("actors"), jsonActorValues);
+		WN_RETURN_COMMAND_RESPONSE(InResultPtr);
+	}
+
+	if (InCommandName == FString(TEXT("spawn_actor")))
+	{
+		FString actorType;
+		if (!InParamsPtr.IsValid() || !InParamsPtr->TryGetStringField(TEXT("type"), actorType))
+		{
+			WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: type"));
+		}
+
+		FString actorName;
+		if (!InParamsPtr->TryGetStringField(TEXT("name"), actorName))
+		{
+			WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: name"));
+		}
+
+		// optional transform parameters
+		FVector location(0.0f, 0.0f, 0.0f);
+		FRotator rotation(0.0f, 0.0f, 0.0f);
+		FVector scale(1.0f, 1.0f, 1.0f);
+
+		if (InParamsPtr->HasField(TEXT("location")))
+		{
+			const TArray<TSharedPtr<FJsonValue>>* locationArray;
+			if (InParamsPtr->TryGetArrayField(TEXT("location"), locationArray) && locationArray->Num() >= 3)
+			{
+				location.X = (*locationArray)[0]->AsNumber();
+				location.Y = (*locationArray)[1]->AsNumber();
+				location.Z = (*locationArray)[2]->AsNumber();
+			}
+		}
+
+		if (InParamsPtr->HasField(TEXT("rotation")))
+		{
+			const TArray<TSharedPtr<FJsonValue>>* rotationArray;
+			if (InParamsPtr->TryGetArrayField(TEXT("rotation"), rotationArray) && rotationArray->Num() >= 3)
+			{
+				rotation.Pitch = (*rotationArray)[0]->AsNumber();
+				rotation.Yaw = (*rotationArray)[1]->AsNumber();
+				rotation.Roll = (*rotationArray)[2]->AsNumber();
+			}
+		}
+
+		if (InParamsPtr->HasField(TEXT("scale")))
+		{
+			const TArray<TSharedPtr<FJsonValue>>* scaleArray;
+			if (InParamsPtr->TryGetArrayField(TEXT("scale"), scaleArray) && scaleArray->Num() >= 3)
+			{
+				scale.X = (*scaleArray)[0]->AsNumber();
+				scale.Y = (*scaleArray)[1]->AsNumber();
+				scale.Z = (*scaleArray)[2]->AsNumber();
+			}
+		}
+
+		// check for duplicate name
+		TArray<AActor*> allActors;
+		UGameplayStatics::GetAllActorsOfClass(GWorld, AActor::StaticClass(), allActors);
+		for (AActor* actor : allActors)
+		{
+			if (actor && actor->GetName() == actorName)
+			{
+				WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_INVALID_PARAMS,
+					*FString::Printf(TEXT("Actor with name '%s' already exists"), *actorName));
+			}
+		}
+
+		// find UClass by type name
+		UClass* actorClass = FindObject<UClass>(ANY_PACKAGE, *actorType);
+		if (!actorClass || !actorClass->IsChildOf(AActor::StaticClass()))
+		{
+			WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_INVALID_PARAMS,
+				*FString::Printf(TEXT("Unknown actor type: %s"), *actorType));
+		}
+
+		FActorSpawnParameters spawnParams;
+		spawnParams.Name = *actorName;
+
+		AActor* newActor = GWorld->SpawnActor<AActor>(actorClass, &location, &rotation, spawnParams);
+		if (!newActor)
+		{
+			WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_COMMAND_FAILED, TEXT("Failed to spawn actor"));
+		}
+
+		// apply scale
+		newActor->SetActorScale3D(scale);
+
+		TSharedPtr<FJsonObject> InResultPtr = MakeShareable(new FJsonObject());
+		InResultPtr->SetStringField(TEXT("status"), TEXT("success"));
+		InResultPtr->SetField(TEXT("actor"), ActorToJsonValue(newActor));
 		WN_RETURN_COMMAND_RESPONSE(InResultPtr);
 	}
 
