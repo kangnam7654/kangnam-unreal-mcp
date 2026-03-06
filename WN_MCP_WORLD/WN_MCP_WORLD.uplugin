@@ -1,0 +1,34 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "0.1.0",
+	"FriendlyName": "WN_MCP_WORLD",
+	"Description": "MCP World commands plugin - Actor CRUD and world operations.",
+	"Category": "Integration",
+	"CreatedBy": "WemadeNext",
+	"CanContainContent": true,
+	"Modules": [
+		{
+			"Name": "WN_MCP_WORLD",
+			"Type": "Runtime",
+			"LoadingPhase": "Default",
+			"WhitelistPlatforms": [
+				"Win64"
+			]
+		},
+		{
+			"Name": "WN_MCP_WORLD_Editor",
+			"Type": "Editor",
+			"LoadingPhase": "Default",
+			"WhitelistPlatforms": [
+				"Win64"
+			]
+		}
+	],
+	"Plugins": [
+		{
+			"Name": "WN_MCP",
+			"Enabled": true
+		}
+	]
+}
