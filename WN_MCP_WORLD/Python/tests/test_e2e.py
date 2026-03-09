@@ -56,8 +56,8 @@ async def safe_delete_blueprint(client, bp_path: str):
 
 
 @pytest.mark.asyncio
-async def test_all_27_tools_registered(mcp_client):
-    """Verify all 27 tools are registered in the MCP server."""
+async def test_all_29_tools_registered(mcp_client):
+    """Verify all 29 tools are registered in the MCP server."""
     async with mcp_client:
         tools = await mcp_client.list_tools()
         tool_names = {t.name for t in tools}
@@ -69,20 +69,21 @@ async def test_all_27_tools_registered(mcp_client):
             # ActorComponent (3)
             "add_component_to_actor", "remove_component_from_actor",
             "read_components_from_actor",
-            # Blueprint (6)
+            # Blueprint (7)
             "get_blueprints", "find_blueprints_by_name", "create_blueprint",
             "read_blueprint_content", "compile_blueprint", "delete_blueprint",
+            "spawn_blueprint_actor",
             # BlueprintComponent (3)
             "add_component_to_blueprint", "remove_component_from_blueprint",
             "read_components_from_blueprint",
             # Property (2)
             "set_static_mesh_properties", "set_physics_properties",
-            # BlueprintSpawn (1)
-            "spawn_blueprint_actor",
             # Material (6)
             "get_available_materials", "apply_material_to_actor",
             "apply_material_to_blueprint", "get_actor_material_info",
             "get_blueprint_material_info", "set_mesh_material_color",
+            # StaticMesh (2)
+            "get_static_meshes", "find_static_meshes_by_name",
         }
 
         missing = expected - tool_names
@@ -402,3 +403,25 @@ async def test_material_e2e(mcp_client):
         finally:
             await safe_delete_actor(mcp_client, actor_name)
             await safe_delete_blueprint(mcp_client, bp_path)
+
+
+# =============================================================================
+# StaticMesh E2E
+# =============================================================================
+
+
+@pytest.mark.asyncio
+async def test_static_mesh_e2e(mcp_client):
+    """StaticMesh lifecycle: list meshes -> search by name -> verify results."""
+    async with mcp_client:
+        # List all static meshes (including engine)
+        result = await call_tool(mcp_client, "get_static_meshes", {})
+        assert result["count"] > 0
+
+        # Search for engine basic shapes
+        result = await call_tool(mcp_client, "find_static_meshes_by_name", {
+            "search_text": "Cube",
+        })
+        assert result["count"] >= 1
+        names = [m["name"] for m in result["static_meshes"]]
+        assert any("Cube" in n for n in names)

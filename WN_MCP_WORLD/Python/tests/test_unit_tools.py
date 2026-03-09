@@ -257,6 +257,44 @@ class TestDeleteBlueprint:
         assert params["force"] is True
 
 
+class TestSpawnBlueprintActor:
+    def test_required_params_only(self, mock_ue_execute):
+        mock_ue_execute.return_value = {"status": "success"}
+        call_tool("spawn_blueprint_actor",
+            blueprint_name="MyBP", name="MyInstance",
+        )
+        params = mock_ue_execute.call_args[0][1]
+        assert params["blueprint_name"] == "MyBP"
+        assert params["name"] == "MyInstance"
+        assert "location" not in params
+        assert "rotation" not in params
+        assert "scale" not in params
+
+    def test_with_all_optional_params(self, mock_ue_execute):
+        mock_ue_execute.return_value = {"status": "success"}
+        call_tool("spawn_blueprint_actor",
+            blueprint_name="MyBP", name="MyInstance",
+            location=[1.0, 2.0, 3.0],
+            rotation=[0.0, 90.0, 0.0],
+            scale=[2.0, 2.0, 2.0],
+        )
+        params = mock_ue_execute.call_args[0][1]
+        assert params["location"] == [1.0, 2.0, 3.0]
+        assert params["rotation"] == [0.0, 90.0, 0.0]
+        assert params["scale"] == [2.0, 2.0, 2.0]
+
+    def test_omitted_optionals_not_sent(self, mock_ue_execute):
+        mock_ue_execute.return_value = {"status": "success"}
+        call_tool("spawn_blueprint_actor",
+            blueprint_name="MyBP", name="MyInstance",
+            location=[0, 0, 0],
+        )
+        params = mock_ue_execute.call_args[0][1]
+        assert "location" in params
+        assert "rotation" not in params
+        assert "scale" not in params
+
+
 # =============================================================================
 # Blueprint Component Tools
 # =============================================================================
@@ -410,49 +448,6 @@ class TestSetPhysicsProperties:
 
 
 # =============================================================================
-# Blueprint Spawn Tools
-# =============================================================================
-
-
-class TestSpawnBlueprintActor:
-    def test_required_params_only(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"status": "success"}
-        call_tool("spawn_blueprint_actor",
-            blueprint_name="MyBP", name="MyInstance",
-        )
-        params = mock_ue_execute.call_args[0][1]
-        assert params["blueprint_name"] == "MyBP"
-        assert params["name"] == "MyInstance"
-        assert "location" not in params
-        assert "rotation" not in params
-        assert "scale" not in params
-
-    def test_with_all_optional_params(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"status": "success"}
-        call_tool("spawn_blueprint_actor",
-            blueprint_name="MyBP", name="MyInstance",
-            location=[1.0, 2.0, 3.0],
-            rotation=[0.0, 90.0, 0.0],
-            scale=[2.0, 2.0, 2.0],
-        )
-        params = mock_ue_execute.call_args[0][1]
-        assert params["location"] == [1.0, 2.0, 3.0]
-        assert params["rotation"] == [0.0, 90.0, 0.0]
-        assert params["scale"] == [2.0, 2.0, 2.0]
-
-    def test_omitted_optionals_not_sent(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"status": "success"}
-        call_tool("spawn_blueprint_actor",
-            blueprint_name="MyBP", name="MyInstance",
-            location=[0, 0, 0],
-        )
-        params = mock_ue_execute.call_args[0][1]
-        assert "location" in params
-        assert "rotation" not in params
-        assert "scale" not in params
-
-
-# =============================================================================
 # Material Tools
 # =============================================================================
 
@@ -597,6 +592,60 @@ class TestSetMeshMaterialColor:
 
 
 # =============================================================================
+# StaticMesh Tools
+# =============================================================================
+
+
+class TestGetStaticMeshes:
+    def test_default_no_params(self, mock_ue_execute):
+        mock_ue_execute.return_value = {"count": 0, "static_meshes": []}
+        call_tool("get_static_meshes")
+        mock_ue_execute.assert_called_once_with("get_static_meshes", {})
+
+    def test_with_search_path(self, mock_ue_execute):
+        mock_ue_execute.return_value = {"count": 0, "static_meshes": []}
+        call_tool("get_static_meshes", search_path="/Game/Meshes/")
+        params = mock_ue_execute.call_args[0][1]
+        assert params["search_path"] == "/Game/Meshes/"
+
+    def test_with_include_engine(self, mock_ue_execute):
+        mock_ue_execute.return_value = {"count": 0, "static_meshes": []}
+        call_tool("get_static_meshes", include_engine_meshes=False)
+        params = mock_ue_execute.call_args[0][1]
+        assert params["include_engine_meshes"] is False
+
+    def test_omitted_optionals_not_sent(self, mock_ue_execute):
+        mock_ue_execute.return_value = {"count": 0, "static_meshes": []}
+        call_tool("get_static_meshes")
+        mock_ue_execute.assert_called_once_with("get_static_meshes", {})
+
+
+class TestFindStaticMeshesByName:
+    def test_passes_search_text(self, mock_ue_execute):
+        mock_ue_execute.return_value = {"count": 0, "static_meshes": []}
+        call_tool("find_static_meshes_by_name", search_text="Cube")
+        mock_ue_execute.assert_called_once_with(
+            "find_static_meshes_by_name", {"search_text": "Cube"}
+        )
+
+    def test_with_include_engine(self, mock_ue_execute):
+        mock_ue_execute.return_value = {"count": 0, "static_meshes": []}
+        call_tool("find_static_meshes_by_name",
+            search_text="Sphere", include_engine_meshes=True,
+        )
+        params = mock_ue_execute.call_args[0][1]
+        assert params["search_text"] == "Sphere"
+        assert params["include_engine_meshes"] is True
+
+    def test_omitted_optionals_not_sent(self, mock_ue_execute):
+        mock_ue_execute.return_value = {"count": 0, "static_meshes": []}
+        call_tool("find_static_meshes_by_name", search_text="Cube")
+        params = mock_ue_execute.call_args[0][1]
+        assert "search_text" in params
+        assert "include_engine_meshes" not in params
+
+
+# =============================================================================
 # Error Handling
 # =============================================================================
 
@@ -617,8 +666,8 @@ class TestErrorHandling:
 
 
 class TestToolRegistration:
-    def test_all_27_tools_registered(self):
-        """Verify all 27 tools are registered in the MCP server."""
+    def test_all_29_tools_registered(self):
+        """Verify all 29 tools are registered in the MCP server."""
         expected_tools = {
             # Actor (6)
             "get_actors_in_level", "find_actors_by_name", "spawn_actor",
@@ -626,20 +675,21 @@ class TestToolRegistration:
             # ActorComponent (3)
             "add_component_to_actor", "remove_component_from_actor",
             "read_components_from_actor",
-            # Blueprint (6)
+            # Blueprint (7)
             "get_blueprints", "find_blueprints_by_name", "create_blueprint",
             "read_blueprint_content", "compile_blueprint", "delete_blueprint",
+            "spawn_blueprint_actor",
             # BlueprintComponent (3)
             "add_component_to_blueprint", "remove_component_from_blueprint",
             "read_components_from_blueprint",
             # Property (2)
             "set_static_mesh_properties", "set_physics_properties",
-            # BlueprintSpawn (1)
-            "spawn_blueprint_actor",
             # Material (6)
             "get_available_materials", "apply_material_to_actor",
             "apply_material_to_blueprint", "get_actor_material_info",
             "get_blueprint_material_info", "set_mesh_material_color",
+            # StaticMesh (2)
+            "get_static_meshes", "find_static_meshes_by_name",
         }
 
         tools = asyncio.run(mcp.list_tools())
