@@ -72,6 +72,7 @@ WN_MCP_WORLD/Source/
         WN_MCP_CommandGroup_BlueprintComponent.h/.cpp # Blueprint component CRD
         WN_MCP_CommandGroup_Property.h/.cpp    # Property 설정
         WN_MCP_CommandGroup_Material.h/.cpp    # Material 조회/적용
+        WN_MCP_CommandGroup_StaticMesh.h/.cpp  # StaticMesh 조회
   WN_MCP_WORLD/Python/                         # Python MCP Server
     mcp_server.py                              # FastMCP server (stdio transport)
     pyproject.toml
@@ -84,6 +85,7 @@ WN_MCP_WORLD/Source/
       blueprint_component_tools.py             # BlueprintComponent CRD 3개
       property_tools.py                        # Property 설정 2개
       material_tools.py                        # Material 조회/적용 6개
+      static_mesh_tools.py                     # StaticMesh 조회 2개
     tests/                                     # 테스트 (unit/integration/e2e)
       conftest.py                              # 공통 fixture
       test_unit_tools.py                       # Unit 테스트 (UE Mock)
@@ -374,6 +376,13 @@ New command plugins MUST follow this pattern:
 |---------|-------------|--------|
 | `set_static_mesh_properties` | Property | Done |
 | `set_physics_properties` | Property | Done |
+
+### StaticMesh Commands — `WN_MCP_WORLD_Editor` (Editor)
+
+| Command | CommandGroup | Status |
+|---------|-------------|--------|
+| `get_static_meshes` | StaticMesh | Done |
+| `find_static_meshes_by_name` | StaticMesh | Done |
 
 ### Material Commands — `WN_MCP_WORLD_Editor` (Editor)
 

@@ -1,4 +1,4 @@
-# 커맨드 레퍼런스 (27개)
+# 커맨드 레퍼런스 (29개)
 
 ## 요약
 
@@ -10,6 +10,7 @@
 | [BlueprintComponent](#blueprint-component-3개) | 3 | CRD | 블루프린트 SCS 컴포넌트 추가/조회/제거 |
 | [Property](#property-2개) | 2 | U | 블루프린트 컴포넌트 속성 설정 |
 | [Material](#material-6개) | 6 | RU | 머티리얼 조회/적용/색상 변경 |
+| [StaticMesh](#static-mesh-2개) | 2 | R | 스태틱 메시 에셋 조회 |
 
 ---
 
@@ -350,3 +351,32 @@
   - `parameter_name` (str, 선택) — 셰이더 파라미터 이름 (기본: `"BaseColor"`)
   - `material_path` (str, 선택) — 기본 머티리얼 경로
 - 응답: `{ status: "success" }`
+
+---
+
+## Static Mesh (2개)
+
+**R** — 스태틱 메시 에셋 조회 (AssetRegistry)
+
+| 커맨드 | CRUD | 설명 |
+|--------|------|------|
+| `get_static_meshes` | R | 프로젝트의 스태틱 메시 목록 조회 |
+| `find_static_meshes_by_name` | R | 이름으로 스태틱 메시 검색 |
+
+### `get_static_meshes`
+
+프로젝트에서 사용 가능한 스태틱 메시 에셋 목록을 반환한다.
+
+- 파라미터:
+  - `search_path` (str, 선택) — 검색 경로 (기본: `"/Game/"`)
+  - `include_engine_meshes` (bool, 선택) — 엔진 내장 메시 포함 (기본: true). `/Engine/BasicShapes/` 등
+- 응답: `{ count, static_meshes: [{ name, path, package }], search_path }`
+
+### `find_static_meshes_by_name`
+
+이름의 일부로 스태틱 메시를 검색한다.
+
+- 파라미터:
+  - `search_text` (str, 필수) — 검색할 텍스트 (대소문자 구분, 부분 일치)
+  - `include_engine_meshes` (bool, 선택) — 엔진 내장 메시 포함 (기본: true)
+- 응답: `{ count, static_meshes: [{ name, path, package }] }`

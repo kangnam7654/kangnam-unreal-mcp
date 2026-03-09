@@ -70,7 +70,7 @@ uv run python mcp_server.py   # MCP 서버 실행 (stdio transport)
 }
 ```
 
-## 커맨드 (27개)
+## 커맨드 (29개)
 
 > 상세 파라미터/응답은 [docs/commands.md](docs/commands.md) 참조
 
@@ -82,6 +82,7 @@ uv run python mcp_server.py   # MCP 서버 실행 (stdio transport)
 | BlueprintComponent | 3 | CRD | `add_component_to_blueprint`, `read_components_from_blueprint`, `remove_component_from_blueprint` |
 | Property | 2 | U | `set_static_mesh_properties`, `set_physics_properties` |
 | Material | 6 | RU | `get_available_materials`, `get_actor_material_info`, `get_blueprint_material_info`, `apply_material_to_actor`, `apply_material_to_blueprint`, `set_mesh_material_color` |
+| StaticMesh | 2 | R | `get_static_meshes`, `find_static_meshes_by_name` |
 
 ## 파일 구조
 
@@ -99,7 +100,8 @@ WN_MCP_WORLD/
 │               ├── WN_MCP_CommandGroup_Blueprint.h/.cpp          # Blueprint CRUD 7개
 │               ├── WN_MCP_CommandGroup_BlueprintComponent.h/.cpp # BlueprintComponent CRD 3개
 │               ├── WN_MCP_CommandGroup_Property.h/.cpp           # Property U 2개
-│               └── WN_MCP_CommandGroup_Material.h/.cpp           # Material RU 6개
+│               ├── WN_MCP_CommandGroup_Material.h/.cpp           # Material RU 6개
+│               └── WN_MCP_CommandGroup_StaticMesh.h/.cpp         # StaticMesh R 2개
 ├── Python/
 │   ├── mcp_server.py                          # FastMCP 서버 진입점
 │   ├── pyproject.toml                         # Python 프로젝트 설정
@@ -111,12 +113,13 @@ WN_MCP_WORLD/
 │   │   ├── blueprint_tools.py                 # Blueprint Tool 7개
 │   │   ├── blueprint_component_tools.py       # BlueprintComponent Tool 3개
 │   │   ├── property_tools.py                  # Property Tool 2개
-│   │   └── material_tools.py                  # Material Tool 6개
+│   │   ├── material_tools.py                  # Material Tool 6개
+│   │   └── static_mesh_tools.py               # StaticMesh Tool 2개
 │   └── tests/
 │       ├── conftest.py                        # 공통 fixture + call_tool 헬퍼
-│       ├── test_unit_tools.py                 # Unit 테스트 (UE Mock, 59개)
+│       ├── test_unit_tools.py                 # Unit 테스트 (UE Mock, 66개)
 │       ├── test_integration.py                # 통합 테스트 (UE 필요, 42개)
-│       └── test_e2e.py                        # E2E 테스트 (UE 필요, 7개)
+│       └── test_e2e.py                        # E2E 테스트 (UE 필요, 8개)
 └── docs/
     ├── commands.md                            # 커맨드 레퍼런스 (상세)
     └── python-tools-and-tests/
@@ -150,16 +153,16 @@ uv run python -m pytest tests/test_unit_tools.py --cov=tools --cov-report=term-m
 
 | 구분 | 테스트 수 | UE 필요 | 설명 |
 |------|----------|---------|------|
-| Unit | 59개 | 아니오 | Tool 파라미터 전달 + 응답 포맷 검증 (UE Mock) |
+| Unit | 66개 | 아니오 | Tool 파라미터 전달 + 응답 포맷 검증 (UE Mock) |
 | Integration | 42개 | 예 | 실제 UE 에디터에서 CRUD 시나리오 검증 |
-| E2E | 7개 | 예 | MCP Client를 통한 전체 프로토콜 흐름 검증 |
-| **합계** | **108개** | | |
+| E2E | 8개 | 예 | MCP Client를 통한 전체 프로토콜 흐름 검증 |
+| **합계** | **116개** | | |
 
 ### 커버리지
 
 - Tool 모듈 전체: **100%** (ue_connection.py 제외)
 - ue_connection.py: 20% (TCP 소켓 코드는 Integration/E2E에서 검증)
-- 전체: **86%**
+- 전체: **87%**
 
 ## 사용 예시
 
