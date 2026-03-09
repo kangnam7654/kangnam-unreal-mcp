@@ -223,7 +223,6 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Blueprint::OnExecute(const FString&
 							TSharedPtr<FJsonObject> nodeObj = MakeShareable(new FJsonObject());
 							nodeObj->SetStringField(TEXT("name"), node->GetName());
 							nodeObj->SetStringField(TEXT("class"), node->GetClass()->GetName());
-							nodeObj->SetStringField(TEXT("title"), node->GetNodeTitle(ENodeTitleType::FullTitle).ToString());
 							nodeArray.Add(MakeShareable(new FJsonValueObject(nodeObj)));
 						}
 					}

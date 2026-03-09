@@ -1,0 +1,8 @@
+[project]
+name = "wn-mcp-world"
+version = "0.1.0"
+description = "MCP tools for WN_MCP_WORLD commands (Actor, Blueprint)"
+requires-python = ">=3.13"
+dependencies = [
+    "fastmcp>=3.0.2",
+]
