@@ -73,6 +73,8 @@ WN_MCP_WORLD/Source/
         WN_MCP_CommandGroup_Property.h/.cpp    # Property 설정
         WN_MCP_CommandGroup_Material.h/.cpp    # Material 조회/적용
         WN_MCP_CommandGroup_StaticMesh.h/.cpp  # StaticMesh 조회
+        WN_MCP_CommandGroup_BlueprintVariable.h/.cpp # Blueprint 변수 추가/제거
+        WN_MCP_CommandGroup_BlueprintGraph.h/.cpp    # Blueprint 그래프 노드/연결
   WN_MCP_WORLD/Python/                         # Python MCP Server
     mcp_server.py                              # FastMCP server (stdio transport)
     pyproject.toml
@@ -86,6 +88,8 @@ WN_MCP_WORLD/Source/
       property_tools.py                        # Property 설정 2개
       material_tools.py                        # Material 조회/적용 6개
       static_mesh_tools.py                     # StaticMesh 조회 2개
+      blueprint_variable_tools.py              # BlueprintVariable 추가/제거 2개
+      blueprint_graph_tools.py                 # BlueprintGraph 노드/연결 7개
     tests/                                     # 테스트 (unit/integration/e2e)
       conftest.py                              # 공통 fixture
       test_unit_tools.py                       # Unit 테스트 (UE Mock)
@@ -399,7 +403,26 @@ New command plugins MUST follow this pattern:
 
 | Utility | File | Used By |
 |---------|------|---------|
-| `FWN_MCP_BlueprintUtils::FindBlueprintByName` | `WN_MCP_BlueprintUtils.h/.cpp` | Blueprint, BlueprintComponent, Property, Material |
+| `FWN_MCP_BlueprintUtils::FindBlueprintByName` | `WN_MCP_BlueprintUtils.h/.cpp` | Blueprint, BlueprintComponent, Property, Material, BlueprintVariable, BlueprintGraph |
+
+### Blueprint Variable Commands — `WN_MCP_WORLD_Editor` (Editor)
+
+| Command | CommandGroup | Status |
+|---------|-------------|--------|
+| `add_variable_to_blueprint` | BlueprintVariable | Done |
+| `remove_variable_from_blueprint` | BlueprintVariable | Done |
+
+### Blueprint Graph Commands — `WN_MCP_WORLD_Editor` (Editor)
+
+| Command | CommandGroup | Status |
+|---------|-------------|--------|
+| `read_blueprint_graph` | BlueprintGraph | Done |
+| `add_event_node` | BlueprintGraph | Done |
+| `add_function_call_node` | BlueprintGraph | Done |
+| `add_variable_get_node` | BlueprintGraph | Done |
+| `add_variable_set_node` | BlueprintGraph | Done |
+| `connect_nodes` | BlueprintGraph | Done |
+| `disconnect_nodes` | BlueprintGraph | Done |
 
 ### Skipped
 
@@ -407,4 +430,3 @@ New command plugins MUST follow this pattern:
 |---------|--------|
 | `focus_viewport` | CRUD 범위 밖 |
 | `take_screenshot` | CRUD 범위 밖 |
-| Blueprint Graph commands | CRUD 범위 밖 |

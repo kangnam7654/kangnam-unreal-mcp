@@ -2,12 +2,12 @@
 
 ## 1. 목적
 
-WN_MCP_WORLD의 29개 C++ 커맨드에 대응하는 Python MCP Tool을 구현하고,
+WN_MCP_WORLD의 38개 C++ 커맨드에 대응하는 Python MCP Tool을 구현하고,
 전체 기능을 검증할 수 있는 3단계 테스트 체계를 구축한다.
 
 ## 2. 완료 상태
 
-### Python Tools (29개, 7개 모듈)
+### Python Tools (38개, 9개 모듈)
 
 | 모듈 | Tool 수 | 파일 | 상태 |
 |------|---------|------|------|
@@ -18,12 +18,14 @@ WN_MCP_WORLD의 29개 C++ 커맨드에 대응하는 Python MCP Tool을 구현하
 | Property | 2 | `property_tools.py` | Done |
 | Material | 6 | `material_tools.py` | Done |
 | StaticMesh | 2 | `static_mesh_tools.py` | Done |
+| BlueprintVariable | 2 | `blueprint_variable_tools.py` | Done |
+| BlueprintGraph | 7 | `blueprint_graph_tools.py` | Done |
 
-### 테스트 (116개)
+### 테스트 (135개)
 
 | 구분 | 수 | UE 필요 | 상태 |
 |------|---|---------|------|
-| Unit | 66 | 아니오 | Done |
+| Unit | 85 | 아니오 | Done |
 | Integration | 42 | 예 | Done |
 | E2E | 8 | 예 | Done |
 
@@ -50,7 +52,9 @@ tools/
 ├── blueprint_component_tools.py # BlueprintComponent CRD 3개
 ├── property_tools.py        # Property 설정 2개
 ├── material_tools.py        # Material CRUD 6개
-└── static_mesh_tools.py     # StaticMesh R 2개
+├── static_mesh_tools.py     # StaticMesh R 2개
+├── blueprint_variable_tools.py # BlueprintVariable CD 2개
+└── blueprint_graph_tools.py # BlueprintGraph CRUD 7개
 ```
 
 ### Tool 등록 패턴
@@ -86,7 +90,7 @@ def register_tools(mcp: FastMCP):
 ```
 tests/
 ├── conftest.py          # sys.path 설정 + call_tool 헬퍼 + UE Mock fixture 3개
-├── test_unit_tools.py   # Unit 테스트 66개 (UE Mock)
+├── test_unit_tools.py   # Unit 테스트 85개 (UE Mock)
 ├── test_integration.py  # 통합 테스트 42개 (실제 UE)
 └── test_e2e.py          # E2E 테스트 8개 (MCP Client)
 ```
@@ -118,7 +122,7 @@ UE 연결 없이 Python Tool 로직만 검증한다.
 - 선택 파라미터 생략 시 params dict에 미포함 확인
 - JSON 응답 문자열 파싱 확인
 - 에러 전파 확인 (ConnectionError, RuntimeError)
-- 29개 Tool 등록 확인
+- 38개 Tool 등록 확인
 
 ### 4.4 Integration Tests (test_integration.py)
 
@@ -140,7 +144,7 @@ FastMCP Client를 통해 MCP 프로토콜 전체 흐름을 검증한다.
 `pytest.mark.e2e` 마커 사용.
 
 테스트 함수 (8개):
-- `test_all_29_tools_registered` — 29개 Tool 등록 확인
+- `test_all_38_tools_registered` — 38개 Tool 등록 확인
 - `test_actor_crud_e2e` — Actor 전체 라이프사이클
 - `test_actor_component_crud_e2e` — Component 전체 라이프사이클
 - `test_blueprint_crud_e2e` — Blueprint + Component 전체 라이프사이클
@@ -174,7 +178,7 @@ uv run python -m pytest tests/test_unit_tools.py --cov=tools --cov-report=term-m
 
 | 결정 | 근거 |
 |------|------|
-| Tool 모듈 분리 (7개 파일) | 용도별 분리로 파일당 2~7개 함수, 사람이 읽기 쉬움 |
+| Tool 모듈 분리 (9개 파일) | 용도별 분리로 파일당 2~7개 함수, 사람이 읽기 쉬움 |
 | `register_tools(mcp)` 패턴 | 각 모듈이 자체 등록 — `__init__.py`에서 호출만 하면 됨 |
 | `ue_connection.execute()` 공개 API | `_ue_execute` 접두어 제거 — 모든 모듈이 사용하는 공개 함수이므로 |
 | `if X is not None` 패턴 유지 | 헬퍼 추출 대신 반복 — 읽기 쉽고, 각 함수가 자기 완결적 |
