@@ -4,7 +4,8 @@
 
 Unreal Engine 5 MCP (Model Context Protocol) plugin. UE C++ TCP Server + Python FastMCP Server (stdio) 2-layer architecture.
 
-- **WN_MCP**: Core plugin (TCP server, command group system, Python MCP server)
+- **WN_MCP**: Core plugin (TCP server, command group system, Python MCP server) — **수정 금지**
+- **WN_MCP_WORLD**: 실제 커맨드 구현 플러그인 (Actor, Blueprint, Component CRUD)
 - **WN_MCPTest**: Example/test plugin (demonstrates how to extend WN_MCP)
 - Protocol: **JSON-RPC 2.0** for all UE <-> Python communication
 
@@ -36,7 +37,7 @@ Agent (Claude/Cursor) <--stdio--> Python MCP Server (Tool) <--TCP JSON-RPC 2.0--
 
 ## Work Rules
 
-1. **기존 코드 수정 금지**: 이미 구현된 파일은 절대 수정하지 않는다.
+1. **WN_MCP 수정 금지**: `WN_MCP/` 플러그인 코드는 절대 수정하지 않는다. `WN_MCP_WORLD/`는 수정 가능.
 2. **C++ 커맨드만 이식**: Python Tool은 별도 담당자가 작업 중이므로 건드리지 않는다.
 3. **커맨드 단위 작업**: 커맨드 하나를 이식할 때마다 사용자에게 설명하고 허락을 받는다.
 4. **커맨드 단위 커밋**: 커맨드 하나를 이식할 때마다 git commit한다.
@@ -49,18 +50,29 @@ Agent (Claude/Cursor) <--stdio--> Python MCP Server (Tool) <--TCP JSON-RPC 2.0--
 ### File Structure
 
 ```
-WN_MCP/Source/WN_MCP/
+WN_MCP/Source/WN_MCP/                          # Core plugin (수정 금지)
   Public/
-    WN_MCP_Module.h          # Module header (public API, WN_MCP_API exports)
-    WN_MCP_CommandGroup.h     # Base class + macros + defines
+    WN_MCP_Module.h                            # Module header (public API, WN_MCP_API exports)
+    WN_MCP_CommandGroup.h                      # Base class + macros + defines
   Private/
-    WN_MCP_Module.cpp         # Module implementation
-    WN_MCP_CommandGroup.cpp   # Base class implementation
-    WN_MCP_ServerThread.h     # Private-only headers go here
-    WN_MCP_ServerThread.cpp
-    Commands/                 # Command group implementations
-      WN_MCP_CommandGroup_XXX.h
-      WN_MCP_CommandGroup_XXX.cpp
+    WN_MCP_Module.cpp                          # Module implementation
+    WN_MCP_CommandGroup.cpp                    # Base class implementation
+    WN_MCP_ServerThread.h/.cpp                 # TCP server thread
+
+WN_MCP_WORLD/Source/
+  WN_MCP_WORLD/                                # Runtime module (Engine API만 사용)
+    Private/Commands/
+      WN_MCP_CommandGroup_Actor.h/.cpp         # Actor CRUD
+      WN_MCP_CommandGroup_ActorComponent.h/.cpp # Actor component CRD
+  WN_MCP_WORLD_Editor/                         # Editor module (UnrealEd 의존)
+    Private/
+      WN_MCP_BlueprintUtils.h/.cpp             # 공유 유틸리티 (FindBlueprintByName)
+      Commands/
+        WN_MCP_CommandGroup_Blueprint.h/.cpp    # Blueprint CRUD
+        WN_MCP_CommandGroup_BlueprintComponent.h/.cpp # Blueprint component CRD
+  WN_MCP_WORLD/Python/                         # Python MCP Server
+    mcp_server.py                              # FastMCP server (stdio transport)
+    pyproject.toml
 ```
 
 ### Naming Rules
@@ -72,6 +84,7 @@ WN_MCP/Source/WN_MCP/
 | Classes (UObject) | `U` prefix + `WN_MCP_` | `UWN_MCP_Subsystem` |
 | Input params | `In` prefix | `InCommandName`, `InParamsPtr` |
 | Output params | `InOut` prefix | `InOutCommandNames` |
+| Local result objects | No prefix + `Ptr` suffix | `ResultPtr` (NOT `InResultPtr`) |
 | Smart pointers | `Ptr` suffix | `ListenerSocketPtr`, `InClientSocketPtr` |
 | Booleans | `b` prefix | `bIsRunning` |
 | Methods | PascalCase | `OnExecute`, `GetName`, `OnRegisterCommands` |
@@ -187,9 +200,9 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_XXX::OnExecute(const FString& InCom
 	if (InCommandName == FString(TEXT("command_name_here")))
 	{
 		// Implementation here
-		TSharedPtr<FJsonObject> InResultPtr = MakeShareable(new FJsonObject());
-		InResultPtr->SetStringField(TEXT("key"), TEXT("value"));
-		WN_RETURN_COMMAND_RESPONSE(InResultPtr);
+		TSharedPtr<FJsonObject> ResultPtr = MakeShareable(new FJsonObject());
+		ResultPtr->SetStringField(TEXT("key"), TEXT("value"));
+		WN_RETURN_COMMAND_RESPONSE(ResultPtr);
 	}
 
 	WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_METHOD_NOT_FOUND, TEXT(""));
@@ -200,7 +213,7 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_XXX::OnExecute(const FString& InCom
 
 | Macro | Usage |
 |-------|-------|
-| `WN_RETURN_COMMAND_RESPONSE(InResultPtr)` | Object result |
+| `WN_RETURN_COMMAND_RESPONSE(ResultPtr)` | Object result |
 | `WN_RETURN_COMMAND_TEXT_RESPONSE(TEXT("msg"))` | Text result |
 | `WN_RETURN_COMMAND_ARRAY_RESPONSE(jsonArray)` | Array result |
 | `WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(code, TEXT("msg"))` | Error with text |
@@ -216,6 +229,7 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_XXX::OnExecute(const FString& InCom
 - `FString(TEXT("..."))` for command name comparisons
 - `MakeShareable(new FJsonObject())` for creating JSON objects
 - Always end `OnExecute` with `WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_METHOD_NOT_FOUND, TEXT(""));`
+- Inline comments start with capital letter: `// Find actor by name` (NOT `// find actor by name`)
 
 ### Extension Plugin Pattern (like WN_MCPTest)
 
@@ -277,7 +291,7 @@ New command plugins MUST follow this pattern:
 
 ## CRITICAL RULES
 
-1. **NEVER** modify existing files - only add new files
+1. **NEVER** modify `WN_MCP/` plugin files. `WN_MCP_WORLD/` files are modifiable.
 2. New command groups go in `Private/Commands/` directory as new .h/.cpp pairs
 3. Every `OnExecute` MUST end with `WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_METHOD_NOT_FOUND, TEXT(""));`
 4. All UE API calls in `OnExecute` run on GameThread (already dispatched by ServerThread)
@@ -290,29 +304,56 @@ New command plugins MUST follow this pattern:
 
 ---
 
-## Porting Status
+## Command Status
 
-Source: `FlopperamUnrealMCP` (`C:\projects\mir-unreal-mcp\mcp-plugin`)
+### Actor Commands — `WN_MCP_WORLD` (Runtime)
 
-### Actor Commands (FWN_MCP_CommandGroup_Actor)
+| Command | CommandGroup | Status |
+|---------|-------------|--------|
+| `get_actors_in_level` | Actor | Done |
+| `find_actors_by_name` | Actor | Done |
+| `spawn_actor` | Actor | Done |
+| `delete_actor` | Actor | Done |
+| `set_actor_transform` | Actor | Done |
+| `read_actor_content` | Actor | Done |
 
-| # | Command | Source Function | CommandGroup File | Status |
-|---|---------|----------------|-------------------|--------|
-| 1 | `get_actors_in_level` | `HandleGetActorsInLevel` | `WN_MCP_CommandGroup_Actor` | Done |
-| 2 | `find_actors_by_name` | `HandleFindActorsByName` | `WN_MCP_CommandGroup_Actor` | Done |
-| 3 | `spawn_actor` | `HandleSpawnActor` | `WN_MCP_CommandGroup_Actor` | Done |
-| 4 | `delete_actor` | `HandleDeleteActor` | `WN_MCP_CommandGroup_Actor` | Done |
-| 5 | `set_actor_transform` | `HandleSetActorTransform` | `WN_MCP_CommandGroup_Actor` | Done |
-| 6 | `focus_viewport` | `HandleFocusViewport` | `WN_MCP_CommandGroup_Actor` | Skip |
-| 7 | `take_screenshot` | `HandleTakeScreenshot` | `WN_MCP_CommandGroup_Actor` | Skip |
+### Actor Component Commands — `WN_MCP_WORLD` (Runtime)
 
-### Blueprint Commands (FWN_MCP_CommandGroup_Blueprint - TBD, .build.cs에 UnrealEd 의존성 필요)
+| Command | CommandGroup | Status |
+|---------|-------------|--------|
+| `add_component_to_actor` | ActorComponent | Done |
+| `remove_component_from_actor` | ActorComponent | Done |
+| `read_components_from_actor` | ActorComponent | Done |
 
-| # | Command | Source Function | Status |
-|---|---------|----------------|--------|
-| 8 | `create_blueprint` | `HandleCreateBlueprint` | Pending |
-| 9 | `read_blueprint_content` | `HandleReadBlueprintContent` | Pending |
-| 10 | `compile_blueprint` | `HandleCompileBlueprint` | Pending |
-| 11 | `add_component_to_blueprint` | `HandleAddComponentToBlueprint` | Pending |
+### Blueprint Commands — `WN_MCP_WORLD_Editor` (Editor)
 
-### Blueprint Graph Commands — Skip (CRUD 범위 밖)
+| Command | CommandGroup | Status |
+|---------|-------------|--------|
+| `create_blueprint` | Blueprint | Done |
+| `read_blueprint_content` | Blueprint | Done |
+| `compile_blueprint` | Blueprint | Done |
+| `delete_blueprint` | Blueprint | Done |
+| `get_blueprints` | Blueprint | Done |
+| `find_blueprints_by_name` | Blueprint | Done |
+
+### Blueprint Component Commands — `WN_MCP_WORLD_Editor` (Editor)
+
+| Command | CommandGroup | Status |
+|---------|-------------|--------|
+| `add_component_to_blueprint` | BlueprintComponent | Done |
+| `remove_component_from_blueprint` | BlueprintComponent | Done |
+| `read_components_from_blueprint` | BlueprintComponent | Done |
+
+### Shared Utilities — `WN_MCP_WORLD_Editor`
+
+| Utility | File | Used By |
+|---------|------|---------|
+| `FWN_MCP_BlueprintUtils::FindBlueprintByName` | `WN_MCP_BlueprintUtils.h/.cpp` | Blueprint, BlueprintComponent |
+
+### Skipped
+
+| Command | Reason |
+|---------|--------|
+| `focus_viewport` | CRUD 범위 밖 |
+| `take_screenshot` | CRUD 범위 밖 |
+| Blueprint Graph commands | CRUD 범위 밖 |
