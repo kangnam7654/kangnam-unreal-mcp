@@ -460,6 +460,150 @@ class TestSpawnBlueprintActor:
 
 
 # =============================================================================
+# Material Tools
+# =============================================================================
+
+
+class TestGetAvailableMaterials:
+    def test_default_no_params(self, mock_ue_execute):
+        mock_ue_execute.return_value = {"count": 0, "materials": []}
+        call_tool("get_available_materials")
+        mock_ue_execute.assert_called_once_with("get_available_materials", {})
+
+    def test_with_search_path(self, mock_ue_execute):
+        mock_ue_execute.return_value = {"count": 0, "materials": []}
+        call_tool("get_available_materials", search_path="/Game/Materials/")
+        params = mock_ue_execute.call_args[0][1]
+        assert params["search_path"] == "/Game/Materials/"
+
+    def test_with_include_engine(self, mock_ue_execute):
+        mock_ue_execute.return_value = {"count": 0, "materials": []}
+        call_tool("get_available_materials", include_engine_materials=False)
+        params = mock_ue_execute.call_args[0][1]
+        assert params["include_engine_materials"] is False
+
+    def test_omitted_optionals_not_sent(self, mock_ue_execute):
+        mock_ue_execute.return_value = {"count": 0, "materials": []}
+        call_tool("get_available_materials")
+        mock_ue_execute.assert_called_once_with("get_available_materials", {})
+
+
+class TestApplyMaterialToActor:
+    def test_required_params_only(self, mock_ue_execute):
+        mock_ue_execute.return_value = {"status": "success"}
+        call_tool("apply_material_to_actor",
+            actor_name="MyCube", material_path="/Game/Materials/M_Red",
+        )
+        params = mock_ue_execute.call_args[0][1]
+        assert params["actor_name"] == "MyCube"
+        assert params["material_path"] == "/Game/Materials/M_Red"
+        assert "material_slot" not in params
+
+    def test_with_material_slot(self, mock_ue_execute):
+        mock_ue_execute.return_value = {"status": "success"}
+        call_tool("apply_material_to_actor",
+            actor_name="MyCube", material_path="/Game/Materials/M_Red",
+            material_slot=1,
+        )
+        params = mock_ue_execute.call_args[0][1]
+        assert params["material_slot"] == 1
+
+
+class TestApplyMaterialToBlueprint:
+    def test_required_params_only(self, mock_ue_execute):
+        mock_ue_execute.return_value = {"status": "success"}
+        call_tool("apply_material_to_blueprint",
+            blueprint_name="MyBP", component_name="Mesh1",
+            material_path="/Game/Materials/M_Red",
+        )
+        params = mock_ue_execute.call_args[0][1]
+        assert params["blueprint_name"] == "MyBP"
+        assert params["component_name"] == "Mesh1"
+        assert params["material_path"] == "/Game/Materials/M_Red"
+        assert "material_slot" not in params
+
+    def test_with_material_slot(self, mock_ue_execute):
+        mock_ue_execute.return_value = {"status": "success"}
+        call_tool("apply_material_to_blueprint",
+            blueprint_name="MyBP", component_name="Mesh1",
+            material_path="/Game/Materials/M_Red", material_slot=2,
+        )
+        params = mock_ue_execute.call_args[0][1]
+        assert params["material_slot"] == 2
+
+
+class TestGetActorMaterialInfo:
+    def test_passes_actor_name(self, mock_ue_execute):
+        mock_ue_execute.return_value = {"actor_name": "MyCube", "components": []}
+        call_tool("get_actor_material_info", actor_name="MyCube")
+        mock_ue_execute.assert_called_once_with(
+            "get_actor_material_info", {"actor_name": "MyCube"}
+        )
+
+    def test_returns_json_string(self, mock_ue_execute):
+        mock_ue_execute.return_value = {
+            "actor_name": "MyCube",
+            "components": [{"name": "StaticMeshComponent0", "slots": []}],
+        }
+        result = call_tool("get_actor_material_info", actor_name="MyCube")
+        parsed = json.loads(result)
+        assert parsed["actor_name"] == "MyCube"
+        assert len(parsed["components"]) == 1
+
+
+class TestGetBlueprintMaterialInfo:
+    def test_passes_params(self, mock_ue_execute):
+        mock_ue_execute.return_value = {"blueprint_name": "MyBP", "slots": []}
+        call_tool("get_blueprint_material_info",
+            blueprint_name="MyBP", component_name="Mesh1",
+        )
+        mock_ue_execute.assert_called_once_with(
+            "get_blueprint_material_info",
+            {"blueprint_name": "MyBP", "component_name": "Mesh1"},
+        )
+
+
+class TestSetMeshMaterialColor:
+    def test_required_params_only(self, mock_ue_execute):
+        mock_ue_execute.return_value = {"status": "success"}
+        call_tool("set_mesh_material_color",
+            blueprint_name="MyBP", component_name="Mesh1",
+            color=[1.0, 0.0, 0.0],
+        )
+        params = mock_ue_execute.call_args[0][1]
+        assert params["blueprint_name"] == "MyBP"
+        assert params["component_name"] == "Mesh1"
+        assert params["color"] == [1.0, 0.0, 0.0]
+        assert "material_slot" not in params
+        assert "parameter_name" not in params
+        assert "material_path" not in params
+
+    def test_with_all_optional_params(self, mock_ue_execute):
+        mock_ue_execute.return_value = {"status": "success"}
+        call_tool("set_mesh_material_color",
+            blueprint_name="MyBP", component_name="Mesh1",
+            color=[0.0, 1.0, 0.0, 1.0], material_slot=1,
+            parameter_name="Emissive", material_path="/Game/Materials/M_Base",
+        )
+        params = mock_ue_execute.call_args[0][1]
+        assert params["color"] == [0.0, 1.0, 0.0, 1.0]
+        assert params["material_slot"] == 1
+        assert params["parameter_name"] == "Emissive"
+        assert params["material_path"] == "/Game/Materials/M_Base"
+
+    def test_omitted_optionals_not_sent(self, mock_ue_execute):
+        mock_ue_execute.return_value = {"status": "success"}
+        call_tool("set_mesh_material_color",
+            blueprint_name="MyBP", component_name="Mesh1",
+            color=[1.0, 0.0, 0.0], material_slot=0,
+        )
+        params = mock_ue_execute.call_args[0][1]
+        assert "material_slot" in params
+        assert "parameter_name" not in params
+        assert "material_path" not in params
+
+
+# =============================================================================
 # Error Handling
 # =============================================================================
 
@@ -480,8 +624,8 @@ class TestErrorHandling:
 
 
 class TestToolRegistration:
-    def test_all_21_tools_registered(self):
-        """Verify all 21 tools are registered in the MCP server."""
+    def test_all_27_tools_registered(self):
+        """Verify all 27 tools are registered in the MCP server."""
         expected_tools = {
             # Actor (6)
             "get_actors_in_level", "find_actors_by_name", "spawn_actor",
@@ -499,6 +643,10 @@ class TestToolRegistration:
             "set_static_mesh_properties", "set_physics_properties",
             # BlueprintSpawn (1)
             "spawn_blueprint_actor",
+            # Material (6)
+            "get_available_materials", "apply_material_to_actor",
+            "apply_material_to_blueprint", "get_actor_material_info",
+            "get_blueprint_material_info", "set_mesh_material_color",
         }
 
         tools = asyncio.run(mcp.list_tools())

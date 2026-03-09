@@ -376,11 +376,22 @@ New command plugins MUST follow this pattern:
 |---------|-------------|--------|
 | `spawn_blueprint_actor` | BlueprintSpawn | Done |
 
+### Material Commands — `WN_MCP_WORLD_Editor` (Editor)
+
+| Command | CommandGroup | Status |
+|---------|-------------|--------|
+| `get_available_materials` | Material | Done |
+| `apply_material_to_actor` | Material | Done |
+| `apply_material_to_blueprint` | Material | Done |
+| `get_actor_material_info` | Material | Done |
+| `get_blueprint_material_info` | Material | Done |
+| `set_mesh_material_color` | Material | Done |
+
 ### Shared Utilities — `WN_MCP_WORLD_Editor`
 
 | Utility | File | Used By |
 |---------|------|---------|
-| `FWN_MCP_BlueprintUtils::FindBlueprintByName` | `WN_MCP_BlueprintUtils.h/.cpp` | Blueprint, BlueprintComponent, Property |
+| `FWN_MCP_BlueprintUtils::FindBlueprintByName` | `WN_MCP_BlueprintUtils.h/.cpp` | Blueprint, BlueprintComponent, Property, Material |
 
 ### Skipped
 
