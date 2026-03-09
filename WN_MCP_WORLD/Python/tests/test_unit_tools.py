@@ -646,6 +646,74 @@ class TestFindStaticMeshesByName:
 
 
 # =============================================================================
+# Blueprint Variable Tools
+# =============================================================================
+
+
+class TestAddVariableToBlueprint:
+    def test_required_params_only(self, mock_ue_execute):
+        mock_ue_execute.return_value = {"status": "success"}
+        call_tool("add_variable_to_blueprint",
+            blueprint_name="MyBP", variable_name="HP", variable_type="Float",
+        )
+        params = mock_ue_execute.call_args[0][1]
+        assert params["blueprint_name"] == "MyBP"
+        assert params["variable_name"] == "HP"
+        assert params["variable_type"] == "Float"
+        assert "default_value" not in params
+        assert "is_instance_editable" not in params
+
+    def test_with_default_value(self, mock_ue_execute):
+        mock_ue_execute.return_value = {"status": "success"}
+        call_tool("add_variable_to_blueprint",
+            blueprint_name="MyBP", variable_name="HP", variable_type="Float",
+            default_value="100.0",
+        )
+        params = mock_ue_execute.call_args[0][1]
+        assert params["default_value"] == "100.0"
+
+    def test_with_instance_editable(self, mock_ue_execute):
+        mock_ue_execute.return_value = {"status": "success"}
+        call_tool("add_variable_to_blueprint",
+            blueprint_name="MyBP", variable_name="IsAlive", variable_type="Bool",
+            is_instance_editable=True,
+        )
+        params = mock_ue_execute.call_args[0][1]
+        assert params["is_instance_editable"] is True
+
+    def test_with_all_params(self, mock_ue_execute):
+        mock_ue_execute.return_value = {"status": "success"}
+        call_tool("add_variable_to_blueprint",
+            blueprint_name="MyBP", variable_name="Speed", variable_type="Float",
+            default_value="300.0", is_instance_editable=True,
+        )
+        params = mock_ue_execute.call_args[0][1]
+        assert params["default_value"] == "300.0"
+        assert params["is_instance_editable"] is True
+
+    def test_omitted_optionals_not_sent(self, mock_ue_execute):
+        mock_ue_execute.return_value = {"status": "success"}
+        call_tool("add_variable_to_blueprint",
+            blueprint_name="MyBP", variable_name="HP", variable_type="Float",
+        )
+        params = mock_ue_execute.call_args[0][1]
+        assert "default_value" not in params
+        assert "is_instance_editable" not in params
+
+
+class TestRemoveVariableFromBlueprint:
+    def test_passes_params(self, mock_ue_execute):
+        mock_ue_execute.return_value = {"status": "success"}
+        call_tool("remove_variable_from_blueprint",
+            blueprint_name="MyBP", variable_name="HP",
+        )
+        mock_ue_execute.assert_called_once_with(
+            "remove_variable_from_blueprint",
+            {"blueprint_name": "MyBP", "variable_name": "HP"},
+        )
+
+
+# =============================================================================
 # Error Handling
 # =============================================================================
 
@@ -666,8 +734,8 @@ class TestErrorHandling:
 
 
 class TestToolRegistration:
-    def test_all_29_tools_registered(self):
-        """Verify all 29 tools are registered in the MCP server."""
+    def test_all_31_tools_registered(self):
+        """Verify all 31 tools are registered in the MCP server."""
         expected_tools = {
             # Actor (6)
             "get_actors_in_level", "find_actors_by_name", "spawn_actor",
@@ -690,6 +758,8 @@ class TestToolRegistration:
             "get_blueprint_material_info", "set_mesh_material_color",
             # StaticMesh (2)
             "get_static_meshes", "find_static_meshes_by_name",
+            # BlueprintVariable (2)
+            "add_variable_to_blueprint", "remove_variable_from_blueprint",
         }
 
         tools = asyncio.run(mcp.list_tools())
