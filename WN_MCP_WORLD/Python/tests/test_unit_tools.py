@@ -714,6 +714,156 @@ class TestRemoveVariableFromBlueprint:
 
 
 # =============================================================================
+# Blueprint Graph Tools
+# =============================================================================
+
+
+class TestReadBlueprintGraph:
+    def test_passes_name(self, mock_ue_execute):
+        mock_ue_execute.return_value = {"blueprint_name": "MyBP", "nodes": []}
+        call_tool("read_blueprint_graph", blueprint_name="MyBP")
+        mock_ue_execute.assert_called_once_with(
+            "read_blueprint_graph", {"blueprint_name": "MyBP"}
+        )
+
+
+class TestAddEventNode:
+    def test_required_params_only(self, mock_ue_execute):
+        mock_ue_execute.return_value = {"status": "success", "node_id": "AAA"}
+        call_tool("add_event_node",
+            blueprint_name="MyBP", event_type="BeginPlay",
+        )
+        params = mock_ue_execute.call_args[0][1]
+        assert params["blueprint_name"] == "MyBP"
+        assert params["event_type"] == "BeginPlay"
+        assert "node_position" not in params
+
+    def test_with_position(self, mock_ue_execute):
+        mock_ue_execute.return_value = {"status": "success", "node_id": "AAA"}
+        call_tool("add_event_node",
+            blueprint_name="MyBP", event_type="Tick",
+            node_position=[100, 200],
+        )
+        params = mock_ue_execute.call_args[0][1]
+        assert params["node_position"] == [100, 200]
+
+
+class TestAddFunctionCallNode:
+    def test_required_params_only(self, mock_ue_execute):
+        mock_ue_execute.return_value = {"status": "success", "node_id": "BBB"}
+        call_tool("add_function_call_node",
+            blueprint_name="MyBP", function_name="PrintString",
+        )
+        params = mock_ue_execute.call_args[0][1]
+        assert params["blueprint_name"] == "MyBP"
+        assert params["function_name"] == "PrintString"
+        assert "target_class" not in params
+        assert "node_position" not in params
+
+    def test_with_target_class(self, mock_ue_execute):
+        mock_ue_execute.return_value = {"status": "success", "node_id": "BBB"}
+        call_tool("add_function_call_node",
+            blueprint_name="MyBP", function_name="PrintString",
+            target_class="KismetSystemLibrary",
+        )
+        params = mock_ue_execute.call_args[0][1]
+        assert params["target_class"] == "KismetSystemLibrary"
+
+    def test_with_all_params(self, mock_ue_execute):
+        mock_ue_execute.return_value = {"status": "success", "node_id": "BBB"}
+        call_tool("add_function_call_node",
+            blueprint_name="MyBP", function_name="Delay",
+            target_class="KismetSystemLibrary", node_position=[300, 100],
+        )
+        params = mock_ue_execute.call_args[0][1]
+        assert params["target_class"] == "KismetSystemLibrary"
+        assert params["node_position"] == [300, 100]
+
+    def test_omitted_optionals_not_sent(self, mock_ue_execute):
+        mock_ue_execute.return_value = {"status": "success", "node_id": "BBB"}
+        call_tool("add_function_call_node",
+            blueprint_name="MyBP", function_name="PrintString",
+        )
+        params = mock_ue_execute.call_args[0][1]
+        assert "target_class" not in params
+        assert "node_position" not in params
+
+
+class TestAddVariableGetNode:
+    def test_required_params_only(self, mock_ue_execute):
+        mock_ue_execute.return_value = {"status": "success", "node_id": "CCC"}
+        call_tool("add_variable_get_node",
+            blueprint_name="MyBP", variable_name="HP",
+        )
+        params = mock_ue_execute.call_args[0][1]
+        assert params["blueprint_name"] == "MyBP"
+        assert params["variable_name"] == "HP"
+        assert "node_position" not in params
+
+    def test_with_position(self, mock_ue_execute):
+        mock_ue_execute.return_value = {"status": "success", "node_id": "CCC"}
+        call_tool("add_variable_get_node",
+            blueprint_name="MyBP", variable_name="HP",
+            node_position=[200, 300],
+        )
+        params = mock_ue_execute.call_args[0][1]
+        assert params["node_position"] == [200, 300]
+
+
+class TestAddVariableSetNode:
+    def test_required_params_only(self, mock_ue_execute):
+        mock_ue_execute.return_value = {"status": "success", "node_id": "DDD"}
+        call_tool("add_variable_set_node",
+            blueprint_name="MyBP", variable_name="HP",
+        )
+        params = mock_ue_execute.call_args[0][1]
+        assert params["blueprint_name"] == "MyBP"
+        assert params["variable_name"] == "HP"
+        assert "node_position" not in params
+
+    def test_with_position(self, mock_ue_execute):
+        mock_ue_execute.return_value = {"status": "success", "node_id": "DDD"}
+        call_tool("add_variable_set_node",
+            blueprint_name="MyBP", variable_name="HP",
+            node_position=[400, 100],
+        )
+        params = mock_ue_execute.call_args[0][1]
+        assert params["node_position"] == [400, 100]
+
+
+class TestConnectNodes:
+    def test_passes_all_params(self, mock_ue_execute):
+        mock_ue_execute.return_value = {"status": "success"}
+        call_tool("connect_nodes",
+            blueprint_name="MyBP",
+            source_node_id="AAA", source_pin_name="then",
+            target_node_id="BBB", target_pin_name="execute",
+        )
+        mock_ue_execute.assert_called_once_with(
+            "connect_nodes",
+            {
+                "blueprint_name": "MyBP",
+                "source_node_id": "AAA",
+                "source_pin_name": "then",
+                "target_node_id": "BBB",
+                "target_pin_name": "execute",
+            },
+        )
+
+
+class TestDisconnectNodes:
+    def test_passes_all_params(self, mock_ue_execute):
+        mock_ue_execute.return_value = {"status": "success", "disconnected_count": 1}
+        call_tool("disconnect_nodes",
+            blueprint_name="MyBP", node_id="AAA", pin_name="then",
+        )
+        mock_ue_execute.assert_called_once_with(
+            "disconnect_nodes",
+            {"blueprint_name": "MyBP", "node_id": "AAA", "pin_name": "then"},
+        )
+
+
+# =============================================================================
 # Error Handling
 # =============================================================================
 
@@ -734,8 +884,8 @@ class TestErrorHandling:
 
 
 class TestToolRegistration:
-    def test_all_31_tools_registered(self):
-        """Verify all 31 tools are registered in the MCP server."""
+    def test_all_38_tools_registered(self):
+        """Verify all 38 tools are registered in the MCP server."""
         expected_tools = {
             # Actor (6)
             "get_actors_in_level", "find_actors_by_name", "spawn_actor",
@@ -760,6 +910,10 @@ class TestToolRegistration:
             "get_static_meshes", "find_static_meshes_by_name",
             # BlueprintVariable (2)
             "add_variable_to_blueprint", "remove_variable_from_blueprint",
+            # BlueprintGraph (7)
+            "read_blueprint_graph", "add_event_node", "add_function_call_node",
+            "add_variable_get_node", "add_variable_set_node",
+            "connect_nodes", "disconnect_nodes",
         }
 
         tools = asyncio.run(mcp.list_tools())

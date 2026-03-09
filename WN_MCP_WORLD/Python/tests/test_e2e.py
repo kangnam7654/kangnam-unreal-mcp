@@ -56,8 +56,8 @@ async def safe_delete_blueprint(client, bp_path: str):
 
 
 @pytest.mark.asyncio
-async def test_all_31_tools_registered(mcp_client):
-    """Verify all 31 tools are registered in the MCP server."""
+async def test_all_38_tools_registered(mcp_client):
+    """Verify all 38 tools are registered in the MCP server."""
     async with mcp_client:
         tools = await mcp_client.list_tools()
         tool_names = {t.name for t in tools}
@@ -86,6 +86,10 @@ async def test_all_31_tools_registered(mcp_client):
             "get_static_meshes", "find_static_meshes_by_name",
             # BlueprintVariable (2)
             "add_variable_to_blueprint", "remove_variable_from_blueprint",
+            # BlueprintGraph (7)
+            "read_blueprint_graph", "add_event_node", "add_function_call_node",
+            "add_variable_get_node", "add_variable_set_node",
+            "connect_nodes", "disconnect_nodes",
         }
 
         missing = expected - tool_names
