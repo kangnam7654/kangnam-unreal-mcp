@@ -153,16 +153,16 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_BlueprintComponent::OnExecute(const
 		FKismetEditorUtilities::CompileBlueprint(blueprint);
 
 		// Return result
-		TSharedPtr<FJsonObject> ResultPtr = MakeShareable(new FJsonObject());
-		ResultPtr->SetStringField(TEXT("status"), TEXT("success"));
-		ResultPtr->SetStringField(TEXT("blueprint_name"), blueprint->GetName());
-		ResultPtr->SetStringField(TEXT("component_name"), newNode->GetVariableName().ToString());
-		ResultPtr->SetStringField(TEXT("component_class"), compClass->GetName());
+		TSharedPtr<FJsonObject> InResultPtr = MakeShareable(new FJsonObject());
+		InResultPtr->SetStringField(TEXT("status"), TEXT("success"));
+		InResultPtr->SetStringField(TEXT("blueprint_name"), blueprint->GetName());
+		InResultPtr->SetStringField(TEXT("component_name"), newNode->GetVariableName().ToString());
+		InResultPtr->SetStringField(TEXT("component_class"), compClass->GetName());
 		if (!parentComponentName.IsEmpty())
 		{
-			ResultPtr->SetStringField(TEXT("parent_component"), parentComponentName);
+			InResultPtr->SetStringField(TEXT("parent_component"), parentComponentName);
 		}
-		WN_RETURN_COMMAND_RESPONSE(ResultPtr);
+		WN_RETURN_COMMAND_RESPONSE(InResultPtr);
 	}
 
 	if (InCommandName == FString(TEXT("remove_component_from_blueprint")))
@@ -262,16 +262,16 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_BlueprintComponent::OnExecute(const
 		FKismetEditorUtilities::CompileBlueprint(blueprint);
 
 		// Return result
-		TSharedPtr<FJsonObject> ResultPtr = MakeShareable(new FJsonObject());
-		ResultPtr->SetStringField(TEXT("status"), TEXT("success"));
-		ResultPtr->SetStringField(TEXT("blueprint_name"), blueprint->GetName());
-		ResultPtr->SetStringField(TEXT("removed_component"), componentName);
-		ResultPtr->SetStringField(TEXT("removed_class"), removedClassName);
+		TSharedPtr<FJsonObject> InResultPtr = MakeShareable(new FJsonObject());
+		InResultPtr->SetStringField(TEXT("status"), TEXT("success"));
+		InResultPtr->SetStringField(TEXT("blueprint_name"), blueprint->GetName());
+		InResultPtr->SetStringField(TEXT("removed_component"), componentName);
+		InResultPtr->SetStringField(TEXT("removed_class"), removedClassName);
 		if (children.Num() > 0)
 		{
-			ResultPtr->SetNumberField(TEXT("reparented_children"), children.Num());
+			InResultPtr->SetNumberField(TEXT("reparented_children"), children.Num());
 		}
-		WN_RETURN_COMMAND_RESPONSE(ResultPtr);
+		WN_RETURN_COMMAND_RESPONSE(InResultPtr);
 	}
 
 	if (InCommandName == FString(TEXT("read_components_from_blueprint")))
@@ -330,11 +330,11 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_BlueprintComponent::OnExecute(const
 			}
 		}
 
-		TSharedPtr<FJsonObject> ResultPtr = MakeShareable(new FJsonObject());
-		ResultPtr->SetStringField(TEXT("blueprint_name"), blueprint->GetName());
-		ResultPtr->SetNumberField(TEXT("count"), componentArray.Num());
-		ResultPtr->SetArrayField(TEXT("components"), componentArray);
-		WN_RETURN_COMMAND_RESPONSE(ResultPtr);
+		TSharedPtr<FJsonObject> InResultPtr = MakeShareable(new FJsonObject());
+		InResultPtr->SetStringField(TEXT("blueprint_name"), blueprint->GetName());
+		InResultPtr->SetNumberField(TEXT("count"), componentArray.Num());
+		InResultPtr->SetArrayField(TEXT("components"), componentArray);
+		WN_RETURN_COMMAND_RESPONSE(InResultPtr);
 	}
 
 	WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_METHOD_NOT_FOUND, TEXT(""));

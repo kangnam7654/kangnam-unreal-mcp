@@ -53,10 +53,10 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Actor::OnExecute(const FString& InC
 			}
 		}
 
-		TSharedPtr<FJsonObject> ResultPtr = MakeShareable(new FJsonObject());
-		ResultPtr->SetNumberField(TEXT("count"), jsonActorValues.Num());
-		ResultPtr->SetArrayField(TEXT("actors"), jsonActorValues);
-		WN_RETURN_COMMAND_RESPONSE(ResultPtr);
+		TSharedPtr<FJsonObject> InResultPtr = MakeShareable(new FJsonObject());
+		InResultPtr->SetNumberField(TEXT("count"), jsonActorValues.Num());
+		InResultPtr->SetArrayField(TEXT("actors"), jsonActorValues);
+		WN_RETURN_COMMAND_RESPONSE(InResultPtr);
 	}
 
 	if (InCommandName == FString(TEXT("find_actors_by_name")))
@@ -79,10 +79,10 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Actor::OnExecute(const FString& InC
 			}
 		}
 
-		TSharedPtr<FJsonObject> ResultPtr = MakeShareable(new FJsonObject());
-		ResultPtr->SetNumberField(TEXT("count"), jsonActorValues.Num());
-		ResultPtr->SetArrayField(TEXT("actors"), jsonActorValues);
-		WN_RETURN_COMMAND_RESPONSE(ResultPtr);
+		TSharedPtr<FJsonObject> InResultPtr = MakeShareable(new FJsonObject());
+		InResultPtr->SetNumberField(TEXT("count"), jsonActorValues.Num());
+		InResultPtr->SetArrayField(TEXT("actors"), jsonActorValues);
+		WN_RETURN_COMMAND_RESPONSE(InResultPtr);
 	}
 
 	if (InCommandName == FString(TEXT("spawn_actor")))
@@ -173,10 +173,10 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Actor::OnExecute(const FString& InC
 		// Apply scale
 		newActor->SetActorScale3D(scale);
 
-		TSharedPtr<FJsonObject> ResultPtr = MakeShareable(new FJsonObject());
-		ResultPtr->SetStringField(TEXT("status"), TEXT("success"));
-		ResultPtr->SetField(TEXT("actor"), ActorToJsonValue(newActor));
-		WN_RETURN_COMMAND_RESPONSE(ResultPtr);
+		TSharedPtr<FJsonObject> InResultPtr = MakeShareable(new FJsonObject());
+		InResultPtr->SetStringField(TEXT("status"), TEXT("success"));
+		InResultPtr->SetField(TEXT("actor"), ActorToJsonValue(newActor));
+		WN_RETURN_COMMAND_RESPONSE(InResultPtr);
 	}
 
 	if (InCommandName == FString(TEXT("delete_actor")))
@@ -208,10 +208,10 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Actor::OnExecute(const FString& InC
 
 		GWorld->DestroyActor(foundActor);
 
-		TSharedPtr<FJsonObject> ResultPtr = MakeShareable(new FJsonObject());
-		ResultPtr->SetStringField(TEXT("status"), TEXT("success"));
-		ResultPtr->SetStringField(TEXT("deleted_actor"), actorName);
-		WN_RETURN_COMMAND_RESPONSE(ResultPtr);
+		TSharedPtr<FJsonObject> InResultPtr = MakeShareable(new FJsonObject());
+		InResultPtr->SetStringField(TEXT("status"), TEXT("success"));
+		InResultPtr->SetStringField(TEXT("deleted_actor"), actorName);
+		WN_RETURN_COMMAND_RESPONSE(InResultPtr);
 	}
 
 	if (InCommandName == FString(TEXT("set_actor_transform")))
@@ -282,10 +282,10 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Actor::OnExecute(const FString& InC
 			}
 		}
 
-		TSharedPtr<FJsonObject> ResultPtr = MakeShareable(new FJsonObject());
-		ResultPtr->SetStringField(TEXT("status"), TEXT("success"));
-		ResultPtr->SetField(TEXT("actor"), ActorToJsonValue(foundActor));
-		WN_RETURN_COMMAND_RESPONSE(ResultPtr);
+		TSharedPtr<FJsonObject> InResultPtr = MakeShareable(new FJsonObject());
+		InResultPtr->SetStringField(TEXT("status"), TEXT("success"));
+		InResultPtr->SetField(TEXT("actor"), ActorToJsonValue(foundActor));
+		WN_RETURN_COMMAND_RESPONSE(InResultPtr);
 	}
 
 	if (InCommandName == FString(TEXT("read_actor_content")))
@@ -318,9 +318,9 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Actor::OnExecute(const FString& InC
 
 		// Reuse ActorToJsonValue for base info (name, class, location, rotation, scale)
 		TSharedPtr<FJsonValue> actorJsonValue = ActorToJsonValue(foundActor);
-		TSharedPtr<FJsonObject> ResultPtr = actorJsonValue->AsObject();
+		TSharedPtr<FJsonObject> InResultPtr = actorJsonValue->AsObject();
 
-		WN_RETURN_COMMAND_RESPONSE(ResultPtr);
+		WN_RETURN_COMMAND_RESPONSE(InResultPtr);
 	}
 
 	WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_METHOD_NOT_FOUND, TEXT(""));
