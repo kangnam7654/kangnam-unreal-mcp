@@ -39,7 +39,7 @@ def register_tools(mcp: FastMCP):
         if material is not None:
             params["material"] = material
 
-        result = ue_connection._ue_execute("set_static_mesh_properties", params)
+        result = ue_connection.execute("set_static_mesh_properties", params)
         return json.dumps(result, indent=2, ensure_ascii=False)
 
     @mcp.tool
@@ -77,5 +77,5 @@ def register_tools(mcp: FastMCP):
         if angular_damping is not None:
             params["angular_damping"] = angular_damping
 
-        result = ue_connection._ue_execute("set_physics_properties", params)
+        result = ue_connection.execute("set_physics_properties", params)
         return json.dumps(result, indent=2, ensure_ascii=False)

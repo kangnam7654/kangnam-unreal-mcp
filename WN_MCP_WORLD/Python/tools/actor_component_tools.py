@@ -31,7 +31,7 @@ def register_tools(mcp: FastMCP):
         if component_name is not None:
             params["component_name"] = component_name
 
-        result = ue_connection._ue_execute("add_component_to_actor", params)
+        result = ue_connection.execute("add_component_to_actor", params)
         return json.dumps(result, indent=2, ensure_ascii=False)
 
     @mcp.tool
@@ -44,7 +44,7 @@ def register_tools(mcp: FastMCP):
 
         The root component cannot be removed. Use delete_actor() to remove the entire actor.
         """
-        result = ue_connection._ue_execute("remove_component_from_actor", {
+        result = ue_connection.execute("remove_component_from_actor", {
             "name": name,
             "component_name": component_name,
         })
@@ -60,5 +60,5 @@ def register_tools(mcp: FastMCP):
         Returns a list of components with name, class, is_root flag,
         and transform info (relative_location/rotation/scale) for SceneComponents.
         """
-        result = ue_connection._ue_execute("read_components_from_actor", {"name": name})
+        result = ue_connection.execute("read_components_from_actor", {"name": name})
         return json.dumps(result, indent=2, ensure_ascii=False)
