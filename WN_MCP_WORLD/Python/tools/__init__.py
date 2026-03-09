@@ -10,6 +10,7 @@ from . import actor_component_tools
 from . import blueprint_tools
 from . import blueprint_component_tools
 from . import property_tools
+from . import blueprint_spawn_tools
 
 
 def register_all_tools(mcp: FastMCP):
@@ -19,3 +20,4 @@ def register_all_tools(mcp: FastMCP):
     blueprint_tools.register_tools(mcp)
     blueprint_component_tools.register_tools(mcp)
     property_tools.register_tools(mcp)
+    blueprint_spawn_tools.register_tools(mcp)

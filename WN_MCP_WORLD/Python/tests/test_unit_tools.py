@@ -417,6 +417,49 @@ class TestSetPhysicsProperties:
 
 
 # =============================================================================
+# Blueprint Spawn Tools
+# =============================================================================
+
+
+class TestSpawnBlueprintActor:
+    def test_required_params_only(self, mock_ue_execute):
+        mock_ue_execute.return_value = {"status": "success"}
+        call_tool("spawn_blueprint_actor",
+            blueprint_name="MyBP", name="MyInstance",
+        )
+        params = mock_ue_execute.call_args[0][1]
+        assert params["blueprint_name"] == "MyBP"
+        assert params["name"] == "MyInstance"
+        assert "location" not in params
+        assert "rotation" not in params
+        assert "scale" not in params
+
+    def test_with_all_optional_params(self, mock_ue_execute):
+        mock_ue_execute.return_value = {"status": "success"}
+        call_tool("spawn_blueprint_actor",
+            blueprint_name="MyBP", name="MyInstance",
+            location=[1.0, 2.0, 3.0],
+            rotation=[0.0, 90.0, 0.0],
+            scale=[2.0, 2.0, 2.0],
+        )
+        params = mock_ue_execute.call_args[0][1]
+        assert params["location"] == [1.0, 2.0, 3.0]
+        assert params["rotation"] == [0.0, 90.0, 0.0]
+        assert params["scale"] == [2.0, 2.0, 2.0]
+
+    def test_omitted_optionals_not_sent(self, mock_ue_execute):
+        mock_ue_execute.return_value = {"status": "success"}
+        call_tool("spawn_blueprint_actor",
+            blueprint_name="MyBP", name="MyInstance",
+            location=[0, 0, 0],
+        )
+        params = mock_ue_execute.call_args[0][1]
+        assert "location" in params
+        assert "rotation" not in params
+        assert "scale" not in params
+
+
+# =============================================================================
 # Error Handling
 # =============================================================================
 
@@ -437,8 +480,8 @@ class TestErrorHandling:
 
 
 class TestToolRegistration:
-    def test_all_20_tools_registered(self):
-        """Verify all 20 tools are registered in the MCP server."""
+    def test_all_21_tools_registered(self):
+        """Verify all 21 tools are registered in the MCP server."""
         expected_tools = {
             # Actor (6)
             "get_actors_in_level", "find_actors_by_name", "spawn_actor",
@@ -454,6 +497,8 @@ class TestToolRegistration:
             "read_components_from_blueprint",
             # Property (2)
             "set_static_mesh_properties", "set_physics_properties",
+            # BlueprintSpawn (1)
+            "spawn_blueprint_actor",
         }
 
         tools = asyncio.run(mcp.list_tools())
