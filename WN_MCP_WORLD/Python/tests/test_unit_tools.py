@@ -314,6 +314,109 @@ class TestReadComponentsFromBlueprint:
 
 
 # =============================================================================
+# Property Tools
+# =============================================================================
+
+
+class TestSetStaticMeshProperties:
+    def test_required_params_only(self, mock_ue_execute):
+        mock_ue_execute.return_value = {"status": "success"}
+        call_tool("set_static_mesh_properties",
+            blueprint_name="MyBP", component_name="Mesh1",
+        )
+        params = mock_ue_execute.call_args[0][1]
+        assert params["blueprint_name"] == "MyBP"
+        assert params["component_name"] == "Mesh1"
+        assert "static_mesh" not in params
+        assert "material" not in params
+
+    def test_with_static_mesh(self, mock_ue_execute):
+        mock_ue_execute.return_value = {"status": "success"}
+        call_tool("set_static_mesh_properties",
+            blueprint_name="MyBP", component_name="Mesh1",
+            static_mesh="/Engine/BasicShapes/Cube.Cube",
+        )
+        params = mock_ue_execute.call_args[0][1]
+        assert params["static_mesh"] == "/Engine/BasicShapes/Cube.Cube"
+
+    def test_with_material(self, mock_ue_execute):
+        mock_ue_execute.return_value = {"status": "success"}
+        call_tool("set_static_mesh_properties",
+            blueprint_name="MyBP", component_name="Mesh1",
+            material="/Game/Materials/M_Red",
+        )
+        params = mock_ue_execute.call_args[0][1]
+        assert params["material"] == "/Game/Materials/M_Red"
+
+    def test_with_all_params(self, mock_ue_execute):
+        mock_ue_execute.return_value = {"status": "success"}
+        call_tool("set_static_mesh_properties",
+            blueprint_name="MyBP", component_name="Mesh1",
+            static_mesh="/Engine/BasicShapes/Sphere.Sphere",
+            material="/Game/Materials/M_Blue",
+        )
+        params = mock_ue_execute.call_args[0][1]
+        assert params["static_mesh"] == "/Engine/BasicShapes/Sphere.Sphere"
+        assert params["material"] == "/Game/Materials/M_Blue"
+
+
+class TestSetPhysicsProperties:
+    def test_required_params_only(self, mock_ue_execute):
+        mock_ue_execute.return_value = {"status": "success"}
+        call_tool("set_physics_properties",
+            blueprint_name="MyBP", component_name="Mesh1",
+        )
+        params = mock_ue_execute.call_args[0][1]
+        assert params["blueprint_name"] == "MyBP"
+        assert params["component_name"] == "Mesh1"
+        assert "simulate_physics" not in params
+        assert "mass" not in params
+
+    def test_with_simulate_physics(self, mock_ue_execute):
+        mock_ue_execute.return_value = {"status": "success"}
+        call_tool("set_physics_properties",
+            blueprint_name="MyBP", component_name="Mesh1",
+            simulate_physics=True,
+        )
+        params = mock_ue_execute.call_args[0][1]
+        assert params["simulate_physics"] is True
+
+    def test_with_mass(self, mock_ue_execute):
+        mock_ue_execute.return_value = {"status": "success"}
+        call_tool("set_physics_properties",
+            blueprint_name="MyBP", component_name="Mesh1",
+            mass=50.0,
+        )
+        params = mock_ue_execute.call_args[0][1]
+        assert params["mass"] == 50.0
+
+    def test_with_all_params(self, mock_ue_execute):
+        mock_ue_execute.return_value = {"status": "success"}
+        call_tool("set_physics_properties",
+            blueprint_name="MyBP", component_name="Mesh1",
+            simulate_physics=True, mass=10.0,
+            linear_damping=0.5, angular_damping=1.0,
+        )
+        params = mock_ue_execute.call_args[0][1]
+        assert params["simulate_physics"] is True
+        assert params["mass"] == 10.0
+        assert params["linear_damping"] == 0.5
+        assert params["angular_damping"] == 1.0
+
+    def test_omitted_optionals_not_sent(self, mock_ue_execute):
+        mock_ue_execute.return_value = {"status": "success"}
+        call_tool("set_physics_properties",
+            blueprint_name="MyBP", component_name="Mesh1",
+            simulate_physics=True,
+        )
+        params = mock_ue_execute.call_args[0][1]
+        assert "simulate_physics" in params
+        assert "mass" not in params
+        assert "linear_damping" not in params
+        assert "angular_damping" not in params
+
+
+# =============================================================================
 # Error Handling
 # =============================================================================
 
@@ -334,8 +437,8 @@ class TestErrorHandling:
 
 
 class TestToolRegistration:
-    def test_all_18_tools_registered(self):
-        """Verify all 18 tools are registered in the MCP server."""
+    def test_all_20_tools_registered(self):
+        """Verify all 20 tools are registered in the MCP server."""
         expected_tools = {
             # Actor (6)
             "get_actors_in_level", "find_actors_by_name", "spawn_actor",
@@ -349,6 +452,8 @@ class TestToolRegistration:
             # BlueprintComponent (3)
             "add_component_to_blueprint", "remove_component_from_blueprint",
             "read_components_from_blueprint",
+            # Property (2)
+            "set_static_mesh_properties", "set_physics_properties",
         }
 
         tools = asyncio.run(mcp.list_tools())

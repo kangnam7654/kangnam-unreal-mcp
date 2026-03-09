@@ -7,6 +7,7 @@ Skip with: uv run python -m pytest -m "not integration"
 import json
 import sys
 import os
+import asyncio
 import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
@@ -20,18 +21,16 @@ pytestmark = pytest.mark.integration
 # Helpers
 # =============================================================================
 
-_tool_cache = {}
+_tool_cache: dict = {}
 
 
 def call(tool_name: str, **kwargs) -> dict:
     """Call a registered tool by name and return parsed result."""
     if tool_name not in _tool_cache:
-        for tool in mcp._tool_manager._tools.values():
-            if tool.name == tool_name:
-                _tool_cache[tool_name] = tool.fn
-                break
-        else:
-            raise LookupError(f"Tool not found: {tool_name}")
+        async def _resolve():
+            tool = await mcp.get_tool(tool_name)
+            return tool.fn
+        _tool_cache[tool_name] = asyncio.run(_resolve())
 
     result_str = _tool_cache[tool_name](**kwargs)
     return json.loads(result_str)

@@ -37,11 +37,11 @@ Agent (Claude/Cursor) <--stdio--> Python MCP Server (Tool) <--TCP JSON-RPC 2.0--
 
 ## Work Rules
 
-1. **WN_MCP 수정 금지**: `WN_MCP/` 플러그인 코드는 절대 수정하지 않는다. `WN_MCP_WORLD/`는 수정 가능.
-2. **C++ 커맨드만 이식**: Python Tool은 별도 담당자가 작업 중이므로 건드리지 않는다.
-3. **커맨드 단위 작업**: 커맨드 하나를 이식할 때마다 사용자에게 설명하고 허락을 받는다.
-4. **커맨드 단위 커밋**: 커맨드 하나를 이식할 때마다 git commit한다.
-5. **새 파일만 추가**: 새 CommandGroup은 `Private/Commands/`에 새 .h/.cpp 파일로 추가한다.
+1. **WN_MCP 수정 금지**: `WN_MCP/` 플러그인 코드를 수정하면 안 된다. `WN_MCP_WORLD/`만 수정 대상이다.
+2. **WN_MCP Python 수정 금지**: `WN_MCP/Python/`의 Python 코드를 수정하면 안 된다. `WN_MCP_WORLD/Python/`만 수정 대상이다.
+3. **사전 승인 필수**: 커맨드 이식 전 사용자에게 설명 없이 바로 구현하면 안 된다.
+4. **커맨드 단위 커밋**: 커맨드 이식 후 커밋하지 않고 다음 커맨드로 넘어가면 안 된다.
+5. **새 파일만 추가**: 기존 CommandGroup 파일을 수정하면 안 된다. 새 CommandGroup은 `Private/Commands/`에 새 .h/.cpp 파일로 추가한다.
 
 ---
 
@@ -73,6 +73,18 @@ WN_MCP_WORLD/Source/
   WN_MCP_WORLD/Python/                         # Python MCP Server
     mcp_server.py                              # FastMCP server (stdio transport)
     pyproject.toml
+    tools/                                     # Tool 모듈 (용도별 분리)
+      __init__.py                              # register_all_tools()
+      ue_connection.py                         # UE TCP 연결 유틸리티
+      actor_tools.py                           # Actor CRUD 6개
+      actor_component_tools.py                 # ActorComponent CRD 3개
+      blueprint_tools.py                       # Blueprint CRUD 6개
+      blueprint_component_tools.py             # BlueprintComponent CRD 3개
+    tests/                                     # 테스트 (unit/integration/e2e)
+      conftest.py                              # 공통 fixture
+      test_unit_tools.py                       # Unit 테스트 (UE Mock)
+      test_integration.py                      # 통합 테스트 (UE 필요)
+      test_e2e.py                              # E2E 테스트 (UE 필요)
 ```
 
 ### Naming Rules
@@ -289,18 +301,25 @@ New command plugins MUST follow this pattern:
 
 ---
 
+## Testing
+
+- 테스트 커버리지가 80% 미만이면 안 된다
+- 새 Tool/Command 추가 시 Unit 테스트 없이 코드만 추가하면 안 된다
+- Unit 테스트에서 외부 의존성(UE 연결 등)을 Mock 없이 직접 호출하면 안 된다
+- 코드 변경 후 `uv run python -m pytest tests/ -q` 실행 없이 작업을 완료하면 안 된다
+
 ## CRITICAL RULES
 
-1. **NEVER** modify `WN_MCP/` plugin files. `WN_MCP_WORLD/` files are modifiable.
-2. New command groups go in `Private/Commands/` directory as new .h/.cpp pairs
-3. Every `OnExecute` MUST end with `WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_METHOD_NOT_FOUND, TEXT(""));`
-4. All UE API calls in `OnExecute` run on GameThread (already dispatched by ServerThread)
-5. Command names are globally unique across all plugins - check for conflicts
-6. Python Tool 작업은 하지 않는다 (별도 담당자 영역)
-7. 커맨드 이식 전 반드시 사용자에게 설명 및 승인을 받는다
-8. 커맨드 이식 후 반드시 git commit한다
-9. Copyright header: `// Copyright WemadeNext, Inc. All Rights Reserved.` (only in .build.cs files)
-10. **Co-Authored-By 금지**: git commit 메시지에 `Co-Authored-By` 라인을 절대 추가하지 않는다
+1. `WN_MCP/` 플러그인 파일(C++ 및 Python 모두)을 수정하면 안 된다. `WN_MCP_WORLD/`만 수정 대상이다
+2. 기존 CommandGroup .h/.cpp 파일에 새 커맨드를 끼워 넣으면 안 된다. 새 .h/.cpp 파일로 추가해야 한다
+3. `OnExecute`를 `WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_METHOD_NOT_FOUND, TEXT(""));` 없이 끝내면 안 된다
+4. `OnExecute` 내에서 GameThread 외 스레드에서 UE API를 호출하면 안 된다 (ServerThread가 이미 GameThread로 디스패치)
+5. 커맨드 이름이 다른 플러그인과 충돌하면 안 된다 — 등록 전 반드시 확인
+6. `WN_MCP/Python/`의 Python Tool을 수정하면 안 된다. `WN_MCP_WORLD/Python/`의 Tool만 작업 대상이다
+7. 사용자 승인 없이 커맨드를 이식하면 안 된다
+8. 커맨드 이식 후 커밋하지 않고 다음 작업으로 넘어가면 안 된다
+9. Copyright header를 `.build.cs` 외 파일에 추가하면 안 된다: `// Copyright WemadeNext, Inc. All Rights Reserved.`
+10. git commit 메시지에 `Co-Authored-By` 라인을 추가하면 안 된다
 
 ---
 
@@ -344,11 +363,18 @@ New command plugins MUST follow this pattern:
 | `remove_component_from_blueprint` | BlueprintComponent | Done |
 | `read_components_from_blueprint` | BlueprintComponent | Done |
 
+### Property Commands — `WN_MCP_WORLD_Editor` (Editor)
+
+| Command | CommandGroup | Status |
+|---------|-------------|--------|
+| `set_static_mesh_properties` | Property | Done |
+| `set_physics_properties` | Property | Done |
+
 ### Shared Utilities — `WN_MCP_WORLD_Editor`
 
 | Utility | File | Used By |
 |---------|------|---------|
-| `FWN_MCP_BlueprintUtils::FindBlueprintByName` | `WN_MCP_BlueprintUtils.h/.cpp` | Blueprint, BlueprintComponent |
+| `FWN_MCP_BlueprintUtils::FindBlueprintByName` | `WN_MCP_BlueprintUtils.h/.cpp` | Blueprint, BlueprintComponent, Property |
 
 ### Skipped
 
