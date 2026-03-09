@@ -41,6 +41,7 @@ void FWN_MCP_CommandGroup_Blueprint::OnRegisterCommands(TArray<FString>& InOutCo
 	InOutCommandNames.Add(FString(TEXT("read_blueprint_content")));
 	InOutCommandNames.Add(FString(TEXT("compile_blueprint")));
 	InOutCommandNames.Add(FString(TEXT("delete_blueprint")));
+	InOutCommandNames.Add(FString(TEXT("get_blueprints")));
 }
 
 TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Blueprint::OnExecute(const FString& InCommandName, const TSharedPtr<FJsonObject>& InParamsPtr, TSharedPtr<FSocket> InClientSocketPtr) const
@@ -350,6 +351,42 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Blueprint::OnExecute(const FString&
 		TSharedPtr<FJsonObject> InResultPtr = MakeShareable(new FJsonObject());
 		InResultPtr->SetStringField(TEXT("status"), TEXT("success"));
 		InResultPtr->SetStringField(TEXT("deleted_path"), blueprintPath);
+		WN_RETURN_COMMAND_RESPONSE(InResultPtr);
+	}
+
+	if (InCommandName == FString(TEXT("get_blueprints")))
+	{
+		// Optional search path (default: /Game/)
+		FString searchPath = TEXT("/Game/");
+		if (InParamsPtr.IsValid())
+		{
+			InParamsPtr->TryGetStringField(TEXT("search_path"), searchPath);
+		}
+
+		// Query asset registry for all Blueprint assets
+		FAssetRegistryModule& assetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>(TEXT("AssetRegistry"));
+
+		FARFilter filter;
+		filter.ClassPaths.Add(UBlueprint::StaticClass()->GetClassPathName());
+		filter.PackagePaths.Add(FName(*searchPath));
+		filter.bRecursivePaths = true;
+
+		TArray<FAssetData> assetList;
+		assetRegistryModule.Get().GetAssets(filter, assetList);
+
+		TArray<TSharedPtr<FJsonValue>> blueprintArray;
+		for (const FAssetData& assetData : assetList)
+		{
+			TSharedPtr<FJsonObject> bpObj = MakeShareable(new FJsonObject());
+			bpObj->SetStringField(TEXT("name"), assetData.AssetName.ToString());
+			bpObj->SetStringField(TEXT("path"), assetData.GetObjectPathString());
+			bpObj->SetStringField(TEXT("package_path"), assetData.PackagePath.ToString());
+			blueprintArray.Add(MakeShareable(new FJsonValueObject(bpObj)));
+		}
+
+		TSharedPtr<FJsonObject> InResultPtr = MakeShareable(new FJsonObject());
+		InResultPtr->SetNumberField(TEXT("count"), blueprintArray.Num());
+		InResultPtr->SetArrayField(TEXT("blueprints"), blueprintArray);
 		WN_RETURN_COMMAND_RESPONSE(InResultPtr);
 	}
 
