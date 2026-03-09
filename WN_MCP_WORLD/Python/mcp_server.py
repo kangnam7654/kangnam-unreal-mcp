@@ -213,15 +213,74 @@ def set_actor_transform(
 
 @mcp.tool
 def read_actor_content(name: str) -> str:
-    """Read detailed content of a single actor, including its components.
+    """Read detailed content of a single actor.
 
     Args:
         name: Exact name of the actor to inspect
 
-    Returns name, class, transform (location/rotation/scale), and a list of
-    all components attached to the actor with their name and class.
+    Returns name, class, and transform (location/rotation/scale).
+    For component info, use read_components_from_actor() instead.
     """
     result = _ue_execute("read_actor_content", {"name": name})
+    return json.dumps(result, indent=2, ensure_ascii=False)
+
+
+# =============================================================================
+# Actor Component CRD Tools
+# =============================================================================
+
+
+@mcp.tool
+def add_component_to_actor(
+    name: str,
+    component_class: str,
+    component_name: Optional[str] = None,
+) -> str:
+    """Add a component to an existing actor in the level.
+
+    Args:
+        name: Exact name of the target actor
+        component_class: Component class name (e.g. "StaticMeshComponent", "PointLightComponent")
+        component_name: Optional name for the new component (auto-generated if omitted)
+
+    SceneComponents are automatically attached to the actor's root component.
+    """
+    params: Dict[str, Any] = {"name": name, "component_class": component_class}
+    if component_name is not None:
+        params["component_name"] = component_name
+
+    result = _ue_execute("add_component_to_actor", params)
+    return json.dumps(result, indent=2, ensure_ascii=False)
+
+
+@mcp.tool
+def remove_component_from_actor(name: str, component_name: str) -> str:
+    """Remove a component from an actor in the level.
+
+    Args:
+        name: Exact name of the target actor
+        component_name: Exact name of the component to remove
+
+    The root component cannot be removed. Use delete_actor() to remove the entire actor.
+    """
+    result = _ue_execute("remove_component_from_actor", {
+        "name": name,
+        "component_name": component_name,
+    })
+    return json.dumps(result, indent=2, ensure_ascii=False)
+
+
+@mcp.tool
+def read_components_from_actor(name: str) -> str:
+    """Read all components attached to an actor.
+
+    Args:
+        name: Exact name of the actor to inspect
+
+    Returns a list of components with name, class, is_root flag,
+    and transform info (relative_location/rotation/scale) for SceneComponents.
+    """
+    result = _ue_execute("read_components_from_actor", {"name": name})
     return json.dumps(result, indent=2, ensure_ascii=False)
 
 
@@ -284,7 +343,6 @@ def read_blueprint_content(
     include_event_graph: Optional[bool] = None,
     include_functions: Optional[bool] = None,
     include_variables: Optional[bool] = None,
-    include_components: Optional[bool] = None,
     include_interfaces: Optional[bool] = None,
 ) -> str:
     """Read the content/structure of a Blueprint asset.
@@ -294,11 +352,11 @@ def read_blueprint_content(
         include_event_graph: Include event graph info (default: true)
         include_functions: Include function list (default: true)
         include_variables: Include variable list (default: true)
-        include_components: Include component list (default: true)
         include_interfaces: Include implemented interfaces (default: true)
 
     Returns detailed information about the Blueprint's variables, functions,
-    event graph, components, and interfaces.
+    event graph, and interfaces.
+    For component info, use read_components_from_blueprint() instead.
     """
     params: Dict[str, Any] = {"blueprint_path": blueprint_path}
     if include_event_graph is not None:
@@ -307,8 +365,6 @@ def read_blueprint_content(
         params["include_functions"] = include_functions
     if include_variables is not None:
         params["include_variables"] = include_variables
-    if include_components is not None:
-        params["include_components"] = include_components
     if include_interfaces is not None:
         params["include_interfaces"] = include_interfaces
 
@@ -345,6 +401,72 @@ def delete_blueprint(blueprint_path: str, force: bool = False) -> str:
         params["force"] = True
 
     result = _ue_execute("delete_blueprint", params)
+    return json.dumps(result, indent=2, ensure_ascii=False)
+
+
+# =============================================================================
+# Blueprint Component CRD Tools
+# =============================================================================
+
+
+@mcp.tool
+def add_component_to_blueprint(
+    blueprint_name: str,
+    component_class: str,
+    component_name: Optional[str] = None,
+    parent_component: Optional[str] = None,
+) -> str:
+    """Add a component to a Blueprint's component hierarchy (SCS).
+
+    Args:
+        blueprint_name: Blueprint name or full path (e.g. "MyBP" or "/Game/Blueprints/MyBP")
+        component_class: Component class name (e.g. "StaticMeshComponent", "BoxCollisionComponent")
+        component_name: Optional name for the component (auto-generated if omitted)
+        parent_component: Optional parent component name to attach under (added as root if omitted)
+
+    The Blueprint is automatically recompiled after adding the component.
+    """
+    params: Dict[str, Any] = {
+        "blueprint_name": blueprint_name,
+        "component_class": component_class,
+    }
+    if component_name is not None:
+        params["component_name"] = component_name
+    if parent_component is not None:
+        params["parent_component"] = parent_component
+
+    result = _ue_execute("add_component_to_blueprint", params)
+    return json.dumps(result, indent=2, ensure_ascii=False)
+
+
+@mcp.tool
+def remove_component_from_blueprint(blueprint_name: str, component_name: str) -> str:
+    """Remove a component from a Blueprint's component hierarchy (SCS).
+
+    Args:
+        blueprint_name: Blueprint name or full path
+        component_name: Exact name of the component to remove
+
+    Children of the removed component are re-parented to its parent (or promoted to root).
+    The default scene root cannot be removed. The Blueprint is automatically recompiled.
+    """
+    result = _ue_execute("remove_component_from_blueprint", {
+        "blueprint_name": blueprint_name,
+        "component_name": component_name,
+    })
+    return json.dumps(result, indent=2, ensure_ascii=False)
+
+
+@mcp.tool
+def read_components_from_blueprint(blueprint_name: str) -> str:
+    """Read all components in a Blueprint's component hierarchy (SCS).
+
+    Args:
+        blueprint_name: Blueprint name or full path
+
+    Returns a list of components with name, class, is_root flag, and parent info.
+    """
+    result = _ue_execute("read_components_from_blueprint", {"blueprint_name": blueprint_name})
     return json.dumps(result, indent=2, ensure_ascii=False)
 
 
