@@ -9,7 +9,10 @@
 #include "EditorAssetLibrary.h"
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "Components/ActorComponent.h"
+#include "Components/SceneComponent.h"
 #include "Kismet2/KismetEditorUtilities.h"
+#include "GameFramework/Actor.h"
+#include "Kismet/GameplayStatics.h"
 
 //-----------------------------------------------------------------------------
 // FWN_MCP_CommandGroup_Component
@@ -35,6 +38,7 @@ void FWN_MCP_CommandGroup_Component::OnRegisterCommands(TArray<FString>& InOutCo
 {
 	InOutCommandNames.Add(FString(TEXT("add_component_to_blueprint")));
 	InOutCommandNames.Add(FString(TEXT("remove_component_from_blueprint")));
+	InOutCommandNames.Add(FString(TEXT("add_component_to_actor")));
 }
 
 TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Component::OnExecute(const FString& InCommandName, const TSharedPtr<FJsonObject>& InParamsPtr, TSharedPtr<FSocket> InClientSocketPtr) const
@@ -268,6 +272,97 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Component::OnExecute(const FString&
 		{
 			InResultPtr->SetNumberField(TEXT("reparented_children"), children.Num());
 		}
+		WN_RETURN_COMMAND_RESPONSE(InResultPtr);
+	}
+
+	if (InCommandName == FString(TEXT("add_component_to_actor")))
+	{
+		// Get required parameters
+		FString actorName;
+		if (!InParamsPtr.IsValid() || !InParamsPtr->TryGetStringField(TEXT("name"), actorName))
+		{
+			WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: name"));
+		}
+
+		FString componentClassName;
+		if (!InParamsPtr->TryGetStringField(TEXT("component_class"), componentClassName))
+		{
+			WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: component_class"));
+		}
+
+		// Optional component name
+		FString componentName;
+		InParamsPtr->TryGetStringField(TEXT("component_name"), componentName);
+
+		// Find actor by name
+		TArray<AActor*> allActors;
+		UGameplayStatics::GetAllActorsOfClass(GWorld, AActor::StaticClass(), allActors);
+
+		AActor* foundActor = nullptr;
+		for (AActor* actor : allActors)
+		{
+			if (actor && actor->GetName() == actorName)
+			{
+				foundActor = actor;
+				break;
+			}
+		}
+
+		if (!foundActor)
+		{
+			WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_INVALID_PARAMS,
+				*FString::Printf(TEXT("Actor '%s' not found"), *actorName));
+		}
+
+		// Find component class
+		UClass* compClass = LoadClass<UActorComponent>(nullptr, *FString::Printf(TEXT("/Script/Engine.%s"), *componentClassName));
+		if (!compClass)
+		{
+			compClass = LoadClass<UActorComponent>(nullptr, *FString::Printf(TEXT("/Script/CoreUObject.%s"), *componentClassName));
+		}
+		if (!compClass)
+		{
+			FString strippedName = componentClassName;
+			if (strippedName.StartsWith(TEXT("U")))
+			{
+				strippedName = strippedName.RightChop(1);
+				compClass = LoadClass<UActorComponent>(nullptr, *FString::Printf(TEXT("/Script/Engine.%s"), *strippedName));
+			}
+		}
+		if (!compClass)
+		{
+			WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_INVALID_PARAMS,
+				*FString::Printf(TEXT("Unknown component class: %s"), *componentClassName));
+		}
+
+		// Create the component
+		FName compName = componentName.IsEmpty() ? MakeUniqueObjectName(foundActor, compClass) : FName(*componentName);
+		UActorComponent* newComponent = NewObject<UActorComponent>(foundActor, compClass, compName);
+		if (!newComponent)
+		{
+			WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_COMMAND_FAILED, TEXT("Failed to create component"));
+		}
+
+		// If it's a SceneComponent, attach to root
+		USceneComponent* sceneComponent = Cast<USceneComponent>(newComponent);
+		if (sceneComponent && foundActor->GetRootComponent())
+		{
+			sceneComponent->SetupAttachment(foundActor->GetRootComponent());
+		}
+		else if (sceneComponent && !foundActor->GetRootComponent())
+		{
+			foundActor->SetRootComponent(sceneComponent);
+		}
+
+		// Register the component to activate it
+		newComponent->RegisterComponent();
+
+		// Return result
+		TSharedPtr<FJsonObject> InResultPtr = MakeShareable(new FJsonObject());
+		InResultPtr->SetStringField(TEXT("status"), TEXT("success"));
+		InResultPtr->SetStringField(TEXT("actor_name"), foundActor->GetName());
+		InResultPtr->SetStringField(TEXT("component_name"), newComponent->GetName());
+		InResultPtr->SetStringField(TEXT("component_class"), compClass->GetName());
 		WN_RETURN_COMMAND_RESPONSE(InResultPtr);
 	}
 
