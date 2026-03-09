@@ -346,23 +346,6 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Actor::OnExecute(const FString& InC
 		scaleArray.Add(MakeShareable(new FJsonValueNumber(actorScale.Z)));
 		InResultPtr->SetArrayField(TEXT("scale"), scaleArray);
 
-		// components
-		TArray<TSharedPtr<FJsonValue>> componentArray;
-		TArray<UActorComponent*> components;
-		foundActor->GetComponents(components);
-		for (UActorComponent* comp : components)
-		{
-			if (comp)
-			{
-				TSharedPtr<FJsonObject> compObj = MakeShareable(new FJsonObject());
-				compObj->SetStringField(TEXT("name"), comp->GetName());
-				compObj->SetStringField(TEXT("class"), comp->GetClass()->GetName());
-				componentArray.Add(MakeShareable(new FJsonValueObject(compObj)));
-			}
-		}
-		InResultPtr->SetNumberField(TEXT("component_count"), componentArray.Num());
-		InResultPtr->SetArrayField(TEXT("components"), componentArray);
-
 		WN_RETURN_COMMAND_RESPONSE(InResultPtr);
 	}
 

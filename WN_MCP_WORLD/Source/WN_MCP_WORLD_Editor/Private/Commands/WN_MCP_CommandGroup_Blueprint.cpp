@@ -149,13 +149,11 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Blueprint::OnExecute(const FString&
 		bool bIncludeEventGraph = true;
 		bool bIncludeFunctions = true;
 		bool bIncludeVariables = true;
-		bool bIncludeComponents = true;
 		bool bIncludeInterfaces = true;
 
 		InParamsPtr->TryGetBoolField(TEXT("include_event_graph"), bIncludeEventGraph);
 		InParamsPtr->TryGetBoolField(TEXT("include_functions"), bIncludeFunctions);
 		InParamsPtr->TryGetBoolField(TEXT("include_variables"), bIncludeVariables);
-		InParamsPtr->TryGetBoolField(TEXT("include_components"), bIncludeComponents);
 		InParamsPtr->TryGetBoolField(TEXT("include_interfaces"), bIncludeInterfaces);
 
 		// Load the blueprint
@@ -234,27 +232,6 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Blueprint::OnExecute(const FString&
 			}
 
 			InResultPtr->SetObjectField(TEXT("event_graph"), eventGraphObj);
-		}
-
-		// Components
-		if (bIncludeComponents)
-		{
-			TArray<TSharedPtr<FJsonValue>> componentArray;
-			if (blueprint->SimpleConstructionScript)
-			{
-				for (USCS_Node* node : blueprint->SimpleConstructionScript->GetAllNodes())
-				{
-					if (node && node->ComponentTemplate)
-					{
-						TSharedPtr<FJsonObject> compObj = MakeShareable(new FJsonObject());
-						compObj->SetStringField(TEXT("name"), node->GetVariableName().ToString());
-						compObj->SetStringField(TEXT("class"), node->ComponentTemplate->GetClass()->GetName());
-						compObj->SetBoolField(TEXT("is_root"), node == blueprint->SimpleConstructionScript->GetDefaultSceneRootNode());
-						componentArray.Add(MakeShareable(new FJsonValueObject(compObj)));
-					}
-				}
-			}
-			InResultPtr->SetArrayField(TEXT("components"), componentArray);
 		}
 
 		// Interfaces
