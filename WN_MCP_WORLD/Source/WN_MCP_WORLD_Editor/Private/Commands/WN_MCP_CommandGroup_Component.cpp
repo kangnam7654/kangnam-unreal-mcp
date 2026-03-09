@@ -34,6 +34,7 @@ FString FWN_MCP_CommandGroup_Component::GetName() const
 void FWN_MCP_CommandGroup_Component::OnRegisterCommands(TArray<FString>& InOutCommandNames) const
 {
 	InOutCommandNames.Add(FString(TEXT("add_component_to_blueprint")));
+	InOutCommandNames.Add(FString(TEXT("remove_component_from_blueprint")));
 }
 
 TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Component::OnExecute(const FString& InCommandName, const TSharedPtr<FJsonObject>& InParamsPtr, TSharedPtr<FSocket> InClientSocketPtr) const
@@ -157,6 +158,115 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Component::OnExecute(const FString&
 		if (!parentComponentName.IsEmpty())
 		{
 			InResultPtr->SetStringField(TEXT("parent_component"), parentComponentName);
+		}
+		WN_RETURN_COMMAND_RESPONSE(InResultPtr);
+	}
+
+	if (InCommandName == FString(TEXT("remove_component_from_blueprint")))
+	{
+		// Get required parameters
+		FString blueprintName;
+		if (!InParamsPtr.IsValid() || !InParamsPtr->TryGetStringField(TEXT("blueprint_name"), blueprintName))
+		{
+			WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: blueprint_name"));
+		}
+
+		FString componentName;
+		if (!InParamsPtr->TryGetStringField(TEXT("component_name"), componentName))
+		{
+			WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: component_name"));
+		}
+
+		// Find blueprint
+		UBlueprint* blueprint = FindBlueprintByName(blueprintName);
+		if (!blueprint)
+		{
+			WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_COMMAND_FAILED,
+				*FString::Printf(TEXT("Blueprint not found: %s"), *blueprintName));
+		}
+
+		if (!blueprint->SimpleConstructionScript)
+		{
+			WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_COMMAND_FAILED,
+				TEXT("Blueprint has no SimpleConstructionScript"));
+		}
+
+		// Find the target node
+		USCS_Node* targetNode = nullptr;
+		for (USCS_Node* node : blueprint->SimpleConstructionScript->GetAllNodes())
+		{
+			if (node && node->GetVariableName().ToString() == componentName)
+			{
+				targetNode = node;
+				break;
+			}
+		}
+
+		if (!targetNode)
+		{
+			WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_INVALID_PARAMS,
+				*FString::Printf(TEXT("Component not found: %s"), *componentName));
+		}
+
+		// Prevent removing the default scene root
+		if (targetNode == blueprint->SimpleConstructionScript->GetDefaultSceneRootNode())
+		{
+			WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_COMMAND_FAILED,
+				TEXT("Cannot remove the default scene root component"));
+		}
+
+		// Save component info before removal
+		FString removedClassName = targetNode->ComponentTemplate ? targetNode->ComponentTemplate->GetClass()->GetName() : TEXT("Unknown");
+
+		// Find parent node (if any)
+		USCS_Node* parentNode = nullptr;
+		for (USCS_Node* node : blueprint->SimpleConstructionScript->GetAllNodes())
+		{
+			if (node && node != targetNode)
+			{
+				for (USCS_Node* child : node->GetChildNodes())
+				{
+					if (child == targetNode)
+					{
+						parentNode = node;
+						break;
+					}
+				}
+				if (parentNode) break;
+			}
+		}
+
+		// Re-parent children before removal
+		TArray<USCS_Node*> children = targetNode->GetChildNodes();
+		for (USCS_Node* child : children)
+		{
+			targetNode->RemoveChildNode(child);
+			if (parentNode)
+			{
+				parentNode->AddChildNode(child);
+			}
+			else
+			{
+				blueprint->SimpleConstructionScript->AddNode(child);
+			}
+		}
+
+		// Remove the target node from SCS
+		blueprint->SimpleConstructionScript->RemoveNode(targetNode);
+
+		// Mark dirty and compile
+		blueprint->Modify();
+		FKismetEditorUtilities::CompileBlueprint(blueprint);
+
+		// Return result
+		TSharedPtr<FJsonObject> InResultPtr = MakeShareable(new FJsonObject());
+		InResultPtr->SetStringField(TEXT("status"), TEXT("success"));
+		InResultPtr->SetStringField(TEXT("blueprint_name"), blueprint->GetName());
+		InResultPtr->SetStringField(TEXT("removed_component"), componentName);
+		InResultPtr->SetStringField(TEXT("removed_class"), removedClassName);
+		if (children.Num() > 0)
+		{
+			InResultPtr->SetNumberField(TEXT("reparented_children"), children.Num());
 		}
 		WN_RETURN_COMMAND_RESPONSE(InResultPtr);
 	}
