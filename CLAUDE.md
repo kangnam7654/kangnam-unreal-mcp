@@ -370,6 +370,12 @@ New command plugins MUST follow this pattern:
 | `set_static_mesh_properties` | Property | Done |
 | `set_physics_properties` | Property | Done |
 
+### Blueprint Spawn Commands — `WN_MCP_WORLD_Editor` (Editor)
+
+| Command | CommandGroup | Status |
+|---------|-------------|--------|
+| `spawn_blueprint_actor` | BlueprintSpawn | Done |
+
 ### Shared Utilities — `WN_MCP_WORLD_Editor`
 
 | Utility | File | Used By |
