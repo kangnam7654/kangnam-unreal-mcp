@@ -238,3 +238,167 @@ async def test_blueprint_crud_e2e(mcp_client):
             assert result["status"] == "success"
         finally:
             await safe_delete_blueprint(mcp_client, bp_path)
+
+
+# =============================================================================
+# Property E2E
+# =============================================================================
+
+
+@pytest.mark.asyncio
+async def test_property_e2e(mcp_client):
+    """Property lifecycle: create BP -> add mesh comp -> set mesh -> set physics -> cleanup."""
+    bp_name = "_E2E_PropBP"
+    bp_path = f"/Game/Blueprints/{bp_name}"
+    comp_name = "_E2E_PropMesh"
+
+    async with mcp_client:
+        await safe_delete_blueprint(mcp_client, bp_path)
+
+        try:
+            # Create blueprint with StaticMeshComponent
+            await call_tool(mcp_client, "create_blueprint", {"name": bp_name})
+            await call_tool(mcp_client, "add_component_to_blueprint", {
+                "blueprint_name": bp_name,
+                "component_class": "StaticMeshComponent",
+                "component_name": comp_name,
+            })
+
+            # Set static mesh
+            result = await call_tool(mcp_client, "set_static_mesh_properties", {
+                "blueprint_name": bp_name,
+                "component_name": comp_name,
+                "static_mesh": "/Engine/BasicShapes/Cube.Cube",
+            })
+            assert result["status"] == "success"
+
+            # Set physics
+            result = await call_tool(mcp_client, "set_physics_properties", {
+                "blueprint_name": bp_name,
+                "component_name": comp_name,
+                "simulate_physics": True,
+                "mass": 25.0,
+            })
+            assert result["status"] == "success"
+        finally:
+            await safe_delete_blueprint(mcp_client, bp_path)
+
+
+# =============================================================================
+# Blueprint Spawn E2E
+# =============================================================================
+
+
+@pytest.mark.asyncio
+async def test_blueprint_spawn_e2e(mcp_client):
+    """Blueprint spawn lifecycle: create BP -> compile -> spawn -> verify -> cleanup."""
+    bp_name = "_E2E_SpawnBP"
+    bp_path = f"/Game/Blueprints/{bp_name}"
+    actor_name = "_E2E_SpawnedActor"
+
+    async with mcp_client:
+        await safe_delete_actor(mcp_client, actor_name)
+        await safe_delete_blueprint(mcp_client, bp_path)
+
+        try:
+            # Create and compile blueprint
+            await call_tool(mcp_client, "create_blueprint", {"name": bp_name})
+            await call_tool(mcp_client, "compile_blueprint", {
+                "blueprint_name": bp_name,
+            })
+
+            # Spawn blueprint actor
+            result = await call_tool(mcp_client, "spawn_blueprint_actor", {
+                "blueprint_name": bp_name,
+                "name": actor_name,
+                "location": [300, 400, 0],
+            })
+            assert result["status"] == "success"
+
+            # Verify actor exists
+            result = await call_tool(mcp_client, "find_actors_by_name", {
+                "search_text": actor_name,
+            })
+            assert result["count"] >= 1
+        finally:
+            await safe_delete_actor(mcp_client, actor_name)
+            await safe_delete_blueprint(mcp_client, bp_path)
+
+
+# =============================================================================
+# Material E2E
+# =============================================================================
+
+
+@pytest.mark.asyncio
+async def test_material_e2e(mcp_client):
+    """Material lifecycle: list -> apply to actor -> info -> apply to BP -> color -> cleanup."""
+    actor_name = "_E2E_MatActor"
+    bp_name = "_E2E_MatBP"
+    bp_path = f"/Game/Blueprints/{bp_name}"
+    comp_name = "_E2E_MatMesh"
+
+    async with mcp_client:
+        await safe_delete_actor(mcp_client, actor_name)
+        await safe_delete_blueprint(mcp_client, bp_path)
+
+        try:
+            # List available materials
+            result = await call_tool(mcp_client, "get_available_materials", {})
+            assert result["count"] > 0
+
+            # Spawn actor and apply material
+            await call_tool(mcp_client, "spawn_actor", {
+                "type": "StaticMeshActor", "name": actor_name,
+            })
+            result = await call_tool(mcp_client, "get_actor_material_info", {
+                "actor_name": actor_name,
+            })
+            assert result["actor_name"] == actor_name
+            assert "material_slots" in result
+
+            result = await call_tool(mcp_client, "apply_material_to_actor", {
+                "actor_name": actor_name,
+                "material_path": "/Engine/BasicShapes/BasicShapeMaterial",
+            })
+            assert result["status"] == "success"
+
+            # Create blueprint with mesh component
+            await call_tool(mcp_client, "create_blueprint", {"name": bp_name})
+            await call_tool(mcp_client, "add_component_to_blueprint", {
+                "blueprint_name": bp_name,
+                "component_class": "StaticMeshComponent",
+                "component_name": comp_name,
+            })
+            await call_tool(mcp_client, "set_static_mesh_properties", {
+                "blueprint_name": bp_name,
+                "component_name": comp_name,
+                "static_mesh": "/Engine/BasicShapes/Cube.Cube",
+            })
+
+            # Get blueprint material info
+            result = await call_tool(mcp_client, "get_blueprint_material_info", {
+                "blueprint_name": bp_name,
+                "component_name": comp_name,
+            })
+            assert result["blueprint_name"] == bp_name
+            assert "material_slots" in result
+
+            # Apply material to blueprint
+            result = await call_tool(mcp_client, "apply_material_to_blueprint", {
+                "blueprint_name": bp_name,
+                "component_name": comp_name,
+                "material_path": "/Engine/BasicShapes/BasicShapeMaterial",
+            })
+            assert result["status"] == "success"
+
+            # Set mesh material color
+            result = await call_tool(mcp_client, "set_mesh_material_color", {
+                "blueprint_name": bp_name,
+                "component_name": comp_name,
+                "color": [1.0, 0.0, 0.0],
+            })
+            assert result["status"] == "success"
+        finally:
+            await safe_delete_actor(mcp_client, actor_name)
+            await safe_delete_blueprint(mcp_client, bp_path)
