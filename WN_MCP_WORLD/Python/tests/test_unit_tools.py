@@ -94,6 +94,18 @@ class TestSetActorTransform:
         assert params["location"] == [10, 20, 30]
         assert "rotation" not in params
 
+    def test_with_all_transform(self, mock_ue_execute):
+        mock_ue_execute.return_value = {"status": "success"}
+        call_tool("set_actor_transform",
+            name="MyCube",
+            location=[1, 2, 3],
+            rotation=[10, 20, 30],
+            scale=[2, 2, 2],
+        )
+        params = mock_ue_execute.call_args[0][1]
+        assert params["rotation"] == [10, 20, 30]
+        assert params["scale"] == [2, 2, 2]
+
 
 class TestReadActorContent:
     def test_passes_name(self, mock_ue_execute):
@@ -208,11 +220,15 @@ class TestReadBlueprintContent:
         call_tool("read_blueprint_content",
             blueprint_path="/Game/Blueprints/MyBP",
             include_event_graph=False,
+            include_functions=True,
             include_variables=True,
+            include_interfaces=False,
         )
         params = mock_ue_execute.call_args[0][1]
         assert params["include_event_graph"] is False
+        assert params["include_functions"] is True
         assert params["include_variables"] is True
+        assert params["include_interfaces"] is False
 
 
 class TestCompileBlueprint:
