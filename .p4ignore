@@ -3,4 +3,27 @@
 .gitignore
 CLAUDE.md
 .claude/
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+.coverage
+.pytest_cache/
+*.egg-info/
+
+# Build artifacts
+Binaries/
+Intermediate/
+
+# IDE / OS
+.vs/
+.vscode/
+*.suo
+*.user
+Thumbs.db
+Desktop.ini
+
+# Old test dirs
 python_tool_4_tests/

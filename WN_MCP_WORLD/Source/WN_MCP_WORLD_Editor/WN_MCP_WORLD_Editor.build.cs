@@ -1,4 +1,4 @@
-// Copyright WemadeNext, Inc. All Rights Reserved.
+﻿// Copyright WemadeNext, Inc. All Rights Reserved.
 
 using UnrealBuildTool;
 
@@ -35,11 +35,11 @@ public class WN_MCP_WORLD_Editor : ModuleRules
 			new string[]
 			{
 				"UnrealEd",
-				"EditorScriptingUtilities",
 				"Kismet",
 				"KismetCompiler",
 				"BlueprintGraph",
 				"AssetRegistry",
+				"EditorScriptingUtilities",
 				"WN_MCP",
 				"WN_MCP_WORLD"
 			}
