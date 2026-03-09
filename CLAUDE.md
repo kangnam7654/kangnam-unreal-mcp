@@ -84,7 +84,7 @@ WN_MCP_WORLD/Source/
 | Classes (UObject) | `U` prefix + `WN_MCP_` | `UWN_MCP_Subsystem` |
 | Input params | `In` prefix | `InCommandName`, `InParamsPtr` |
 | Output params | `InOut` prefix | `InOutCommandNames` |
-| Local result objects | No prefix + `Ptr` suffix | `ResultPtr` (NOT `InResultPtr`) |
+| Local result objects | `InResultPtr` | WN_MCP 매크로가 이 변수명에 의존 |
 | Smart pointers | `Ptr` suffix | `ListenerSocketPtr`, `InClientSocketPtr` |
 | Booleans | `b` prefix | `bIsRunning` |
 | Methods | PascalCase | `OnExecute`, `GetName`, `OnRegisterCommands` |
@@ -200,9 +200,9 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_XXX::OnExecute(const FString& InCom
 	if (InCommandName == FString(TEXT("command_name_here")))
 	{
 		// Implementation here
-		TSharedPtr<FJsonObject> ResultPtr = MakeShareable(new FJsonObject());
-		ResultPtr->SetStringField(TEXT("key"), TEXT("value"));
-		WN_RETURN_COMMAND_RESPONSE(ResultPtr);
+		TSharedPtr<FJsonObject> InResultPtr = MakeShareable(new FJsonObject());
+		InResultPtr->SetStringField(TEXT("key"), TEXT("value"));
+		WN_RETURN_COMMAND_RESPONSE(InResultPtr);
 	}
 
 	WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_METHOD_NOT_FOUND, TEXT(""));
@@ -213,7 +213,7 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_XXX::OnExecute(const FString& InCom
 
 | Macro | Usage |
 |-------|-------|
-| `WN_RETURN_COMMAND_RESPONSE(ResultPtr)` | Object result |
+| `WN_RETURN_COMMAND_RESPONSE(InResultPtr)` | Object result |
 | `WN_RETURN_COMMAND_TEXT_RESPONSE(TEXT("msg"))` | Text result |
 | `WN_RETURN_COMMAND_ARRAY_RESPONSE(jsonArray)` | Array result |
 | `WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(code, TEXT("msg"))` | Error with text |
