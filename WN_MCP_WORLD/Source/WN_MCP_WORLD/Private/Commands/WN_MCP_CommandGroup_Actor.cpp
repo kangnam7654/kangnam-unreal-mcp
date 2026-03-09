@@ -1,4 +1,4 @@
-#include "WN_MCP_CommandGroup_Actor.h"
+﻿#include "WN_MCP_CommandGroup_Actor.h"
 #include "WN_MCP_Module.h"
 
 #include "Dom/JsonObject.h"
@@ -19,7 +19,6 @@ FWN_MCP_CommandGroup_Actor::FWN_MCP_CommandGroup_Actor()
 
 FWN_MCP_CommandGroup_Actor::~FWN_MCP_CommandGroup_Actor()
 {
-
 }
 
 FString FWN_MCP_CommandGroup_Actor::GetName() const
@@ -34,7 +33,6 @@ void FWN_MCP_CommandGroup_Actor::OnRegisterCommands(TArray<FString>& InOutComman
 	InOutCommandNames.Add(FString(TEXT("spawn_actor")));
 	InOutCommandNames.Add(FString(TEXT("delete_actor")));
 	InOutCommandNames.Add(FString(TEXT("set_actor_transform")));
-	InOutCommandNames.Add(FString(TEXT("read_actor_content")));
 }
 
 TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Actor::OnExecute(const FString& InCommandName, const TSharedPtr<FJsonObject>& InParamsPtr, TSharedPtr<FSocket> InClientSocketPtr) const
@@ -99,7 +97,7 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Actor::OnExecute(const FString& InC
 			WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: name"));
 		}
 
-		// Optional transform parameters
+		// optional transform parameters
 		FVector location(0.0f, 0.0f, 0.0f);
 		FRotator rotation(0.0f, 0.0f, 0.0f);
 		FVector scale(1.0f, 1.0f, 1.0f);
@@ -137,7 +135,7 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Actor::OnExecute(const FString& InC
 			}
 		}
 
-		// Check for duplicate name
+		// check for duplicate name
 		TArray<AActor*> allActors;
 		UGameplayStatics::GetAllActorsOfClass(GWorld, AActor::StaticClass(), allActors);
 		for (AActor* actor : allActors)
@@ -149,7 +147,7 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Actor::OnExecute(const FString& InC
 			}
 		}
 
-		// Find UClass by type name
+		// find UClass by type name
 		UClass* actorClass = LoadClass<AActor>(nullptr, *FString::Printf(TEXT("/Script/Engine.%s"), *actorType));
 		if (!actorClass)
 		{
@@ -170,7 +168,7 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Actor::OnExecute(const FString& InC
 			WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_COMMAND_FAILED, TEXT("Failed to spawn actor"));
 		}
 
-		// Apply scale
+		// apply scale
 		newActor->SetActorScale3D(scale);
 
 		TSharedPtr<FJsonObject> InResultPtr = MakeShareable(new FJsonObject());
@@ -222,7 +220,7 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Actor::OnExecute(const FString& InC
 			WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: name"));
 		}
 
-		// Find actor by name
+		// find actor by name
 		TArray<AActor*> allActors;
 		UGameplayStatics::GetAllActorsOfClass(GWorld, AActor::StaticClass(), allActors);
 
@@ -242,7 +240,7 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Actor::OnExecute(const FString& InC
 				*FString::Printf(TEXT("Actor '%s' not found"), *actorName));
 		}
 
-		// Apply only provided transform components
+		// apply only provided transform components
 		if (InParamsPtr->HasField(TEXT("location")))
 		{
 			const TArray<TSharedPtr<FJsonValue>>* locationArray;
@@ -285,41 +283,6 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Actor::OnExecute(const FString& InC
 		TSharedPtr<FJsonObject> InResultPtr = MakeShareable(new FJsonObject());
 		InResultPtr->SetStringField(TEXT("status"), TEXT("success"));
 		InResultPtr->SetField(TEXT("actor"), ActorToJsonValue(foundActor));
-		WN_RETURN_COMMAND_RESPONSE(InResultPtr);
-	}
-
-	if (InCommandName == FString(TEXT("read_actor_content")))
-	{
-		FString actorName;
-		if (!InParamsPtr.IsValid() || !InParamsPtr->TryGetStringField(TEXT("name"), actorName))
-		{
-			WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: name"));
-		}
-
-		// Find actor by name
-		TArray<AActor*> allActors;
-		UGameplayStatics::GetAllActorsOfClass(GWorld, AActor::StaticClass(), allActors);
-
-		AActor* foundActor = nullptr;
-		for (AActor* actor : allActors)
-		{
-			if (actor && actor->GetName() == actorName)
-			{
-				foundActor = actor;
-				break;
-			}
-		}
-
-		if (!foundActor)
-		{
-			WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_INVALID_PARAMS,
-				*FString::Printf(TEXT("Actor '%s' not found"), *actorName));
-		}
-
-		// Reuse ActorToJsonValue for base info (name, class, location, rotation, scale)
-		TSharedPtr<FJsonValue> actorJsonValue = ActorToJsonValue(foundActor);
-		TSharedPtr<FJsonObject> InResultPtr = actorJsonValue->AsObject();
-
 		WN_RETURN_COMMAND_RESPONSE(InResultPtr);
 	}
 

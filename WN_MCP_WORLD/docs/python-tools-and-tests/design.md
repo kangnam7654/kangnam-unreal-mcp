@@ -7,16 +7,15 @@ WN_MCP_WORLD의 27개 C++ 커맨드에 대응하는 Python MCP Tool을 구현하
 
 ## 2. 완료 상태
 
-### Python Tools (27개, 7개 모듈)
+### Python Tools (27개, 6개 모듈)
 
 | 모듈 | Tool 수 | 파일 | 상태 |
 |------|---------|------|------|
 | Actor | 6 | `actor_tools.py` | Done |
 | ActorComponent | 3 | `actor_component_tools.py` | Done |
-| Blueprint | 6 | `blueprint_tools.py` | Done |
+| Blueprint | 7 | `blueprint_tools.py` | Done |
 | BlueprintComponent | 3 | `blueprint_component_tools.py` | Done |
 | Property | 2 | `property_tools.py` | Done |
-| BlueprintSpawn | 1 | `blueprint_spawn_tools.py` | Done |
 | Material | 6 | `material_tools.py` | Done |
 
 ### 테스트 (108개)
@@ -46,10 +45,9 @@ tools/
 ├── ue_connection.py         # UE TCP 연결 (connect, disconnect, execute)
 ├── actor_tools.py           # Actor CRUD 6개
 ├── actor_component_tools.py # ActorComponent CRD 3개
-├── blueprint_tools.py       # Blueprint CRUD 6개
+├── blueprint_tools.py       # Blueprint CRUD 7개 (스폰 포함)
 ├── blueprint_component_tools.py # BlueprintComponent CRD 3개
 ├── property_tools.py        # Property 설정 2개
-├── blueprint_spawn_tools.py # Blueprint 스폰 1개
 └── material_tools.py        # Material CRUD 6개
 ```
 
@@ -173,7 +171,7 @@ uv run python -m pytest tests/test_unit_tools.py --cov=tools --cov-report=term-m
 
 | 결정 | 근거 |
 |------|------|
-| Tool 모듈 분리 (7개 파일) | 용도별 분리로 파일당 2~6개 함수, 사람이 읽기 쉬움 |
+| Tool 모듈 분리 (6개 파일) | 용도별 분리로 파일당 2~7개 함수, 사람이 읽기 쉬움 |
 | `register_tools(mcp)` 패턴 | 각 모듈이 자체 등록 — `__init__.py`에서 호출만 하면 됨 |
 | `ue_connection.execute()` 공개 API | `_ue_execute` 접두어 제거 — 모든 모듈이 사용하는 공개 함수이므로 |
 | `if X is not None` 패턴 유지 | 헬퍼 추출 대신 반복 — 읽기 쉽고, 각 함수가 자기 완결적 |

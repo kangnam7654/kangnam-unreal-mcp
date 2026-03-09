@@ -68,8 +68,10 @@ WN_MCP_WORLD/Source/
     Private/
       WN_MCP_BlueprintUtils.h/.cpp             # 공유 유틸리티 (FindBlueprintByName)
       Commands/
-        WN_MCP_CommandGroup_Blueprint.h/.cpp    # Blueprint CRUD
+        WN_MCP_CommandGroup_Blueprint.h/.cpp    # Blueprint CRUD + Spawn
         WN_MCP_CommandGroup_BlueprintComponent.h/.cpp # Blueprint component CRD
+        WN_MCP_CommandGroup_Property.h/.cpp    # Property 설정
+        WN_MCP_CommandGroup_Material.h/.cpp    # Material 조회/적용
   WN_MCP_WORLD/Python/                         # Python MCP Server
     mcp_server.py                              # FastMCP server (stdio transport)
     pyproject.toml
@@ -78,8 +80,10 @@ WN_MCP_WORLD/Source/
       ue_connection.py                         # UE TCP 연결 유틸리티
       actor_tools.py                           # Actor CRUD 6개
       actor_component_tools.py                 # ActorComponent CRD 3개
-      blueprint_tools.py                       # Blueprint CRUD 6개
+      blueprint_tools.py                       # Blueprint CRUD 7개 (스폰 포함)
       blueprint_component_tools.py             # BlueprintComponent CRD 3개
+      property_tools.py                        # Property 설정 2개
+      material_tools.py                        # Material 조회/적용 6개
     tests/                                     # 테스트 (unit/integration/e2e)
       conftest.py                              # 공통 fixture
       test_unit_tools.py                       # Unit 테스트 (UE Mock)
@@ -354,6 +358,7 @@ New command plugins MUST follow this pattern:
 | `delete_blueprint` | Blueprint | Done |
 | `get_blueprints` | Blueprint | Done |
 | `find_blueprints_by_name` | Blueprint | Done |
+| `spawn_blueprint_actor` | Blueprint | Done |
 
 ### Blueprint Component Commands — `WN_MCP_WORLD_Editor` (Editor)
 
@@ -369,12 +374,6 @@ New command plugins MUST follow this pattern:
 |---------|-------------|--------|
 | `set_static_mesh_properties` | Property | Done |
 | `set_physics_properties` | Property | Done |
-
-### Blueprint Spawn Commands — `WN_MCP_WORLD_Editor` (Editor)
-
-| Command | CommandGroup | Status |
-|---------|-------------|--------|
-| `spawn_blueprint_actor` | BlueprintSpawn | Done |
 
 ### Material Commands — `WN_MCP_WORLD_Editor` (Editor)
 

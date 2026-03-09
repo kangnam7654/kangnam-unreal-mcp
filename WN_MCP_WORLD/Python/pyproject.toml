@@ -5,6 +5,7 @@ description = "MCP tools for WN_MCP_WORLD commands (Actor, Blueprint, Component)
 requires-python = ">=3.13"
 dependencies = [
     "fastmcp>=3.0.2",
+    "pytest-cov>=7.0.0",
 ]
 
 [dependency-groups]
