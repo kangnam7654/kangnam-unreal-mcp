@@ -1,4 +1,5 @@
 #include "WN_MCP_CommandGroup_Blueprint.h"
+#include "WN_MCP_BlueprintUtils.h"
 #include "WN_MCP_Module.h"
 
 #include "Dom/JsonObject.h"
@@ -261,7 +262,7 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Blueprint::OnExecute(const FString&
 		}
 
 		// Find the blueprint
-		UBlueprint* blueprint = FindBlueprintByName(blueprintName);
+		UBlueprint* blueprint = FWN_MCP_BlueprintUtils::FindBlueprintByName(blueprintName);
 		if (!blueprint)
 		{
 			WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_COMMAND_FAILED,
@@ -409,46 +410,4 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Blueprint::OnExecute(const FString&
 	}
 
 	WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_METHOD_NOT_FOUND, TEXT(""));
-}
-
-UBlueprint* FWN_MCP_CommandGroup_Blueprint::FindBlueprintByName(const FString& InBlueprintName)
-{
-	FString objectPath;
-
-	// Check if it's already a full path
-	if (InBlueprintName.StartsWith(TEXT("/")))
-	{
-		FString assetName = FPaths::GetBaseFilename(InBlueprintName);
-		objectPath = FString::Printf(TEXT("%s.%s"), *InBlueprintName, *assetName);
-	}
-	else
-	{
-		objectPath = FString::Printf(TEXT("/Game/Blueprints/%s.%s"), *InBlueprintName, *InBlueprintName);
-	}
-
-	// Try direct load first
-	UBlueprint* blueprint = LoadObject<UBlueprint>(nullptr, *objectPath);
-	if (blueprint)
-	{
-		return blueprint;
-	}
-
-	// Try asset registry
-	FAssetRegistryModule& assetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>(TEXT("AssetRegistry"));
-	FAssetData assetData = assetRegistryModule.Get().GetAssetByObjectPath(FSoftObjectPath(objectPath));
-
-	if (assetData.IsValid())
-	{
-		blueprint = Cast<UBlueprint>(assetData.GetAsset());
-		if (blueprint)
-		{
-			return blueprint;
-		}
-	}
-
-	// Fallback: in-memory search
-	FString packagePath = TEXT("/Game/Blueprints/") + InBlueprintName;
-	blueprint = FindObject<UBlueprint>(nullptr, *packagePath);
-
-	return blueprint;
 }

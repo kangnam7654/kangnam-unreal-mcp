@@ -3,12 +3,6 @@
 #include "WN_MCP_CommandGroup.h"
 
 //-----------------------------------------------------------------------------
-// Forward Declarations
-//-----------------------------------------------------------------------------
-
-class UBlueprint;
-
-//-----------------------------------------------------------------------------
 // FWN_MCP_CommandGroup_Blueprint
 //-----------------------------------------------------------------------------
 
@@ -41,11 +35,4 @@ public:
 
 	/// destructor.
 	~FWN_MCP_CommandGroup_Blueprint();
-
-private:
-
-	/// Find a Blueprint asset by name or full path.
-	/// @param InBlueprintName Blueprint name (e.g. "MyBP") or full path (e.g. "/Game/Blueprints/MyBP").
-	/// @return Blueprint object, or nullptr if not found.
-	static UBlueprint* FindBlueprintByName(const FString& InBlueprintName);
 };
