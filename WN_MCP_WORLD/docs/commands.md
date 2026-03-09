@@ -1,4 +1,4 @@
-# 커맨드 레퍼런스 (29개)
+# 커맨드 레퍼런스 (38개)
 
 ## 요약
 
@@ -11,6 +11,8 @@
 | [Property](#property-2개) | 2 | U | 블루프린트 컴포넌트 속성 설정 |
 | [Material](#material-6개) | 6 | RU | 머티리얼 조회/적용/색상 변경 |
 | [StaticMesh](#static-mesh-2개) | 2 | R | 스태틱 메시 에셋 조회 |
+| [BlueprintVariable](#blueprint-variable-2개) | 2 | CD | 블루프린트 변수 추가/제거 |
+| [BlueprintGraph](#blueprint-graph-7개) | 7 | CRUD | 블루프린트 이벤트 그래프 노드/연결 조작 |
 
 ---
 
@@ -380,3 +382,123 @@
   - `search_text` (str, 필수) — 검색할 텍스트 (대소문자 구분, 부분 일치)
   - `include_engine_meshes` (bool, 선택) — 엔진 내장 메시 포함 (기본: true)
 - 응답: `{ count, static_meshes: [{ name, path, package }] }`
+
+---
+
+## Blueprint Variable (2개)
+
+**CD** — 블루프린트 멤버 변수 추가/제거
+
+| 커맨드 | CRUD | 설명 |
+|--------|------|------|
+| `add_variable_to_blueprint` | C | 블루프린트에 변수 추가 |
+| `remove_variable_from_blueprint` | D | 블루프린트에서 변수 제거 |
+
+### `add_variable_to_blueprint`
+
+블루프린트에 새 멤버 변수를 추가한다.
+
+- 파라미터:
+  - `blueprint_name` (str, 필수) — 블루프린트 이름 또는 경로
+  - `variable_name` (str, 필수) — 변수 이름
+  - `variable_type` (str, 필수) — 변수 타입: `Bool`, `Int`, `Float`, `String`, `Name`, `Text`, `Vector`, `Rotator`, `Transform`
+  - `default_value` (str, 선택) — 기본값 (문자열)
+  - `is_instance_editable` (bool, 선택) — 인스턴스별 편집 허용 (기본: false)
+- 응답: `{ status: "success", variable_name, variable_type }`
+
+### `remove_variable_from_blueprint`
+
+블루프린트에서 멤버 변수를 제거한다.
+
+- 파라미터:
+  - `blueprint_name` (str, 필수) — 블루프린트 이름 또는 경로
+  - `variable_name` (str, 필수) — 제거할 변수 이름
+- 응답: `{ status: "success" }`
+
+---
+
+## Blueprint Graph (7개)
+
+**CRUD** — 블루프린트 이벤트 그래프의 노드와 연결 조작
+
+| 커맨드 | CRUD | 설명 |
+|--------|------|------|
+| `read_blueprint_graph` | R | 이벤트 그래프의 노드/핀/연결 상세 조회 |
+| `add_event_node` | C | 이벤트 노드 추가 (BeginPlay, Tick 등) |
+| `add_function_call_node` | C | 함수 호출 노드 추가 |
+| `add_variable_get_node` | C | 변수 Getter 노드 추가 |
+| `add_variable_set_node` | C | 변수 Setter 노드 추가 |
+| `connect_nodes` | U | 두 노드의 핀 연결 |
+| `disconnect_nodes` | D | 핀의 모든 연결 해제 |
+
+### `read_blueprint_graph`
+
+블루프린트의 이벤트 그래프를 상세 조회한다. 각 노드의 GUID, 클래스, 핀 목록, 연결 정보를 반환한다.
+
+- 파라미터:
+  - `blueprint_name` (str, 필수) — 블루프린트 이름 또는 경로
+- 응답: `{ blueprint_name, graph_name, node_count, nodes: [{ node_id, class, title, position, pins }] }`
+
+### `add_event_node`
+
+이벤트 그래프에 이벤트 노드를 추가한다.
+
+- 파라미터:
+  - `blueprint_name` (str, 필수) — 블루프린트 이름 또는 경로
+  - `event_type` (str, 필수) — 이벤트 타입: `BeginPlay`, `Tick`, `EndPlay`, `ActorBeginOverlap`, `ActorEndOverlap`, `AnyDamage`, `Hit`
+  - `node_position` (list[int], 선택) — `[X, Y]` 그래프 위치 (기본: `[0, 0]`)
+- 응답: `{ status: "success", node_id, pins: [...] }`
+
+### `add_function_call_node`
+
+이벤트 그래프에 함수 호출 노드를 추가한다. 부모 클래스 → 공통 UE 라이브러리 순으로 함수를 자동 검색한다.
+
+- 파라미터:
+  - `blueprint_name` (str, 필수) — 블루프린트 이름 또는 경로
+  - `function_name` (str, 필수) — 함수 이름 (예: `"PrintString"`, `"SetActorLocation"`, `"Delay"`)
+  - `target_class` (str, 선택) — 함수를 소유한 클래스 (예: `"KismetSystemLibrary"`). 생략 시 자동 검색
+  - `node_position` (list[int], 선택) — `[X, Y]` 그래프 위치 (기본: `[0, 0]`)
+- 응답: `{ status: "success", node_id, function_name, pins: [...] }`
+
+### `add_variable_get_node`
+
+이벤트 그래프에 변수 Getter 노드를 추가한다.
+
+- 파라미터:
+  - `blueprint_name` (str, 필수) — 블루프린트 이름 또는 경로
+  - `variable_name` (str, 필수) — 블루프린트에 존재하는 변수 이름
+  - `node_position` (list[int], 선택) — `[X, Y]` 그래프 위치 (기본: `[0, 0]`)
+- 응답: `{ status: "success", node_id, variable_name, pins: [...] }`
+
+### `add_variable_set_node`
+
+이벤트 그래프에 변수 Setter 노드를 추가한다.
+
+- 파라미터:
+  - `blueprint_name` (str, 필수) — 블루프린트 이름 또는 경로
+  - `variable_name` (str, 필수) — 블루프린트에 존재하는 변수 이름
+  - `node_position` (list[int], 선택) — `[X, Y]` 그래프 위치 (기본: `[0, 0]`)
+- 응답: `{ status: "success", node_id, variable_name, pins: [...] }`
+
+### `connect_nodes`
+
+이벤트 그래프에서 두 노드의 핀을 연결한다.
+
+- 파라미터:
+  - `blueprint_name` (str, 필수) — 블루프린트 이름 또는 경로
+  - `source_node_id` (str, 필수) — 소스 노드의 GUID (`add_*_node` 응답의 `node_id`)
+  - `source_pin_name` (str, 필수) — 출력 핀 이름 (예: `"then"`, `"ReturnValue"`)
+  - `target_node_id` (str, 필수) — 타겟 노드의 GUID
+  - `target_pin_name` (str, 필수) — 입력 핀 이름 (예: `"execute"`, `"InString"`)
+- 응답: `{ status: "success" }`
+- 주요 핀 이름: `"execute"` (exec 입력), `"then"` (exec 출력), `"ReturnValue"` (반환값)
+
+### `disconnect_nodes`
+
+핀의 모든 연결을 해제한다.
+
+- 파라미터:
+  - `blueprint_name` (str, 필수) — 블루프린트 이름 또는 경로
+  - `node_id` (str, 필수) — 노드의 GUID
+  - `pin_name` (str, 필수) — 연결 해제할 핀 이름
+- 응답: `{ status: "success", disconnected_count }`

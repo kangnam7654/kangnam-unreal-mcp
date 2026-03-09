@@ -70,7 +70,7 @@ uv run python mcp_server.py   # MCP 서버 실행 (stdio transport)
 }
 ```
 
-## 커맨드 (29개)
+## 커맨드 (38개)
 
 > 상세 파라미터/응답은 [docs/commands.md](docs/commands.md) 참조
 
@@ -83,6 +83,8 @@ uv run python mcp_server.py   # MCP 서버 실행 (stdio transport)
 | Property | 2 | U | `set_static_mesh_properties`, `set_physics_properties` |
 | Material | 6 | RU | `get_available_materials`, `get_actor_material_info`, `get_blueprint_material_info`, `apply_material_to_actor`, `apply_material_to_blueprint`, `set_mesh_material_color` |
 | StaticMesh | 2 | R | `get_static_meshes`, `find_static_meshes_by_name` |
+| BlueprintVariable | 2 | CD | `add_variable_to_blueprint`, `remove_variable_from_blueprint` |
+| BlueprintGraph | 7 | CRUD | `read_blueprint_graph`, `add_event_node`, `add_function_call_node`, `add_variable_get_node`, `add_variable_set_node`, `connect_nodes`, `disconnect_nodes` |
 
 ## 파일 구조
 
@@ -101,7 +103,9 @@ WN_MCP_WORLD/
 │               ├── WN_MCP_CommandGroup_BlueprintComponent.h/.cpp # BlueprintComponent CRD 3개
 │               ├── WN_MCP_CommandGroup_Property.h/.cpp           # Property U 2개
 │               ├── WN_MCP_CommandGroup_Material.h/.cpp           # Material RU 6개
-│               └── WN_MCP_CommandGroup_StaticMesh.h/.cpp         # StaticMesh R 2개
+│               ├── WN_MCP_CommandGroup_StaticMesh.h/.cpp         # StaticMesh R 2개
+│               ├── WN_MCP_CommandGroup_BlueprintVariable.h/.cpp  # BlueprintVariable CD 2개
+│               └── WN_MCP_CommandGroup_BlueprintGraph.h/.cpp     # BlueprintGraph CRUD 7개
 ├── Python/
 │   ├── mcp_server.py                          # FastMCP 서버 진입점
 │   ├── pyproject.toml                         # Python 프로젝트 설정
@@ -114,10 +118,12 @@ WN_MCP_WORLD/
 │   │   ├── blueprint_component_tools.py       # BlueprintComponent Tool 3개
 │   │   ├── property_tools.py                  # Property Tool 2개
 │   │   ├── material_tools.py                  # Material Tool 6개
-│   │   └── static_mesh_tools.py               # StaticMesh Tool 2개
+│   │   ├── static_mesh_tools.py               # StaticMesh Tool 2개
+│   │   ├── blueprint_variable_tools.py        # BlueprintVariable Tool 2개
+│   │   └── blueprint_graph_tools.py           # BlueprintGraph Tool 7개
 │   └── tests/
 │       ├── conftest.py                        # 공통 fixture + call_tool 헬퍼
-│       ├── test_unit_tools.py                 # Unit 테스트 (UE Mock, 66개)
+│       ├── test_unit_tools.py                 # Unit 테스트 (UE Mock, 85개)
 │       ├── test_integration.py                # 통합 테스트 (UE 필요, 42개)
 │       └── test_e2e.py                        # E2E 테스트 (UE 필요, 8개)
 └── docs/
@@ -153,10 +159,10 @@ uv run python -m pytest tests/test_unit_tools.py --cov=tools --cov-report=term-m
 
 | 구분 | 테스트 수 | UE 필요 | 설명 |
 |------|----------|---------|------|
-| Unit | 66개 | 아니오 | Tool 파라미터 전달 + 응답 포맷 검증 (UE Mock) |
+| Unit | 85개 | 아니오 | Tool 파라미터 전달 + 응답 포맷 검증 (UE Mock) |
 | Integration | 42개 | 예 | 실제 UE 에디터에서 CRUD 시나리오 검증 |
 | E2E | 8개 | 예 | MCP Client를 통한 전체 프로토콜 흐름 검증 |
-| **합계** | **116개** | | |
+| **합계** | **135개** | | |
 
 ### 커버리지
 
