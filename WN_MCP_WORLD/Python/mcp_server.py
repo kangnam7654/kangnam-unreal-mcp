@@ -231,6 +231,23 @@ def read_actor_content(name: str) -> str:
 
 
 @mcp.tool
+def get_blueprints(search_path: Optional[str] = None) -> str:
+    """Get all Blueprint assets in the project.
+
+    Args:
+        search_path: Asset path to search in (default: "/Game/"). Use to narrow scope.
+
+    Returns a list of all Blueprint assets with their name, path, and package path.
+    """
+    params: Dict[str, Any] = {}
+    if search_path is not None:
+        params["search_path"] = search_path
+
+    result = _ue_execute("get_blueprints", params)
+    return json.dumps(result, indent=2, ensure_ascii=False)
+
+
+@mcp.tool
 def create_blueprint(name: str, parent_class: Optional[str] = None) -> str:
     """Create a new Blueprint asset in Unreal Engine.
 
