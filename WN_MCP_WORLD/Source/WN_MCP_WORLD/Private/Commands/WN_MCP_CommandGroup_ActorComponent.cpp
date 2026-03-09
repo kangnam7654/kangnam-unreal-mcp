@@ -21,6 +21,7 @@ FWN_MCP_CommandGroup_ActorComponent::FWN_MCP_CommandGroup_ActorComponent()
 
 FWN_MCP_CommandGroup_ActorComponent::~FWN_MCP_CommandGroup_ActorComponent()
 {
+
 }
 
 FString FWN_MCP_CommandGroup_ActorComponent::GetName() const
@@ -120,12 +121,12 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_ActorComponent::OnExecute(const FSt
 		newComponent->RegisterComponent();
 
 		// Return result
-		TSharedPtr<FJsonObject> InResultPtr = MakeShareable(new FJsonObject());
-		InResultPtr->SetStringField(TEXT("status"), TEXT("success"));
-		InResultPtr->SetStringField(TEXT("actor_name"), foundActor->GetName());
-		InResultPtr->SetStringField(TEXT("component_name"), newComponent->GetName());
-		InResultPtr->SetStringField(TEXT("component_class"), compClass->GetName());
-		WN_RETURN_COMMAND_RESPONSE(InResultPtr);
+		TSharedPtr<FJsonObject> ResultPtr = MakeShareable(new FJsonObject());
+		ResultPtr->SetStringField(TEXT("status"), TEXT("success"));
+		ResultPtr->SetStringField(TEXT("actor_name"), foundActor->GetName());
+		ResultPtr->SetStringField(TEXT("component_name"), newComponent->GetName());
+		ResultPtr->SetStringField(TEXT("component_class"), compClass->GetName());
+		WN_RETURN_COMMAND_RESPONSE(ResultPtr);
 	}
 
 	if (InCommandName == FString(TEXT("remove_component_from_actor")))
@@ -196,12 +197,12 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_ActorComponent::OnExecute(const FSt
 		targetComponent->DestroyComponent();
 
 		// Return result
-		TSharedPtr<FJsonObject> InResultPtr = MakeShareable(new FJsonObject());
-		InResultPtr->SetStringField(TEXT("status"), TEXT("success"));
-		InResultPtr->SetStringField(TEXT("actor_name"), foundActor->GetName());
-		InResultPtr->SetStringField(TEXT("removed_component"), componentName);
-		InResultPtr->SetStringField(TEXT("removed_class"), removedClassName);
-		WN_RETURN_COMMAND_RESPONSE(InResultPtr);
+		TSharedPtr<FJsonObject> ResultPtr = MakeShareable(new FJsonObject());
+		ResultPtr->SetStringField(TEXT("status"), TEXT("success"));
+		ResultPtr->SetStringField(TEXT("actor_name"), foundActor->GetName());
+		ResultPtr->SetStringField(TEXT("removed_component"), componentName);
+		ResultPtr->SetStringField(TEXT("removed_class"), removedClassName);
+		WN_RETURN_COMMAND_RESPONSE(ResultPtr);
 	}
 
 	if (InCommandName == FString(TEXT("read_components_from_actor")))
@@ -276,11 +277,11 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_ActorComponent::OnExecute(const FSt
 			}
 		}
 
-		TSharedPtr<FJsonObject> InResultPtr = MakeShareable(new FJsonObject());
-		InResultPtr->SetStringField(TEXT("actor_name"), foundActor->GetName());
-		InResultPtr->SetNumberField(TEXT("count"), componentArray.Num());
-		InResultPtr->SetArrayField(TEXT("components"), componentArray);
-		WN_RETURN_COMMAND_RESPONSE(InResultPtr);
+		TSharedPtr<FJsonObject> ResultPtr = MakeShareable(new FJsonObject());
+		ResultPtr->SetStringField(TEXT("actor_name"), foundActor->GetName());
+		ResultPtr->SetNumberField(TEXT("count"), componentArray.Num());
+		ResultPtr->SetArrayField(TEXT("components"), componentArray);
+		WN_RETURN_COMMAND_RESPONSE(ResultPtr);
 	}
 
 	WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_METHOD_NOT_FOUND, TEXT(""));

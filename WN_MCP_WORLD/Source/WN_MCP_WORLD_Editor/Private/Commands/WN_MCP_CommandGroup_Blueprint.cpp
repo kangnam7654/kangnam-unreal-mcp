@@ -28,6 +28,7 @@ FWN_MCP_CommandGroup_Blueprint::FWN_MCP_CommandGroup_Blueprint()
 
 FWN_MCP_CommandGroup_Blueprint::~FWN_MCP_CommandGroup_Blueprint()
 {
+
 }
 
 FString FWN_MCP_CommandGroup_Blueprint::GetName() const
@@ -130,10 +131,10 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Blueprint::OnExecute(const FString&
 		// Mark the package dirty
 		package->MarkPackageDirty();
 
-		TSharedPtr<FJsonObject> InResultPtr = MakeShareable(new FJsonObject());
-		InResultPtr->SetStringField(TEXT("name"), assetName);
-		InResultPtr->SetStringField(TEXT("path"), packagePath + assetName);
-		WN_RETURN_COMMAND_RESPONSE(InResultPtr);
+		TSharedPtr<FJsonObject> ResultPtr = MakeShareable(new FJsonObject());
+		ResultPtr->SetStringField(TEXT("name"), assetName);
+		ResultPtr->SetStringField(TEXT("path"), packagePath + assetName);
+		WN_RETURN_COMMAND_RESPONSE(ResultPtr);
 	}
 
 	if (InCommandName == FString(TEXT("read_blueprint_content")))
@@ -164,10 +165,10 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Blueprint::OnExecute(const FString&
 				*FString::Printf(TEXT("Failed to load blueprint: %s"), *blueprintPath));
 		}
 
-		TSharedPtr<FJsonObject> InResultPtr = MakeShareable(new FJsonObject());
-		InResultPtr->SetStringField(TEXT("blueprint_path"), blueprintPath);
-		InResultPtr->SetStringField(TEXT("blueprint_name"), blueprint->GetName());
-		InResultPtr->SetStringField(TEXT("parent_class"), blueprint->ParentClass ? blueprint->ParentClass->GetName() : TEXT("None"));
+		TSharedPtr<FJsonObject> ResultPtr = MakeShareable(new FJsonObject());
+		ResultPtr->SetStringField(TEXT("blueprint_path"), blueprintPath);
+		ResultPtr->SetStringField(TEXT("blueprint_name"), blueprint->GetName());
+		ResultPtr->SetStringField(TEXT("parent_class"), blueprint->ParentClass ? blueprint->ParentClass->GetName() : TEXT("None"));
 
 		// Variables
 		if (bIncludeVariables)
@@ -182,7 +183,7 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Blueprint::OnExecute(const FString&
 				varObj->SetBoolField(TEXT("is_editable"), (variable.PropertyFlags & CPF_Edit) != 0);
 				variableArray.Add(MakeShareable(new FJsonValueObject(varObj)));
 			}
-			InResultPtr->SetArrayField(TEXT("variables"), variableArray);
+			ResultPtr->SetArrayField(TEXT("variables"), variableArray);
 		}
 
 		// Functions
@@ -200,7 +201,7 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Blueprint::OnExecute(const FString&
 					functionArray.Add(MakeShareable(new FJsonValueObject(funcObj)));
 				}
 			}
-			InResultPtr->SetArrayField(TEXT("functions"), functionArray);
+			ResultPtr->SetArrayField(TEXT("functions"), functionArray);
 		}
 
 		// Event graph
@@ -231,7 +232,7 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Blueprint::OnExecute(const FString&
 				}
 			}
 
-			InResultPtr->SetObjectField(TEXT("event_graph"), eventGraphObj);
+			ResultPtr->SetObjectField(TEXT("event_graph"), eventGraphObj);
 		}
 
 		// Interfaces
@@ -244,10 +245,10 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Blueprint::OnExecute(const FString&
 				interfaceObj->SetStringField(TEXT("name"), bpInterface.Interface ? bpInterface.Interface->GetName() : TEXT("Unknown"));
 				interfaceArray.Add(MakeShareable(new FJsonValueObject(interfaceObj)));
 			}
-			InResultPtr->SetArrayField(TEXT("interfaces"), interfaceArray);
+			ResultPtr->SetArrayField(TEXT("interfaces"), interfaceArray);
 		}
 
-		WN_RETURN_COMMAND_RESPONSE(InResultPtr);
+		WN_RETURN_COMMAND_RESPONSE(ResultPtr);
 	}
 
 	if (InCommandName == FString(TEXT("compile_blueprint")))
@@ -270,10 +271,10 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Blueprint::OnExecute(const FString&
 		// Compile the blueprint
 		FKismetEditorUtilities::CompileBlueprint(blueprint);
 
-		TSharedPtr<FJsonObject> InResultPtr = MakeShareable(new FJsonObject());
-		InResultPtr->SetStringField(TEXT("name"), blueprintName);
-		InResultPtr->SetBoolField(TEXT("compiled"), true);
-		WN_RETURN_COMMAND_RESPONSE(InResultPtr);
+		TSharedPtr<FJsonObject> ResultPtr = MakeShareable(new FJsonObject());
+		ResultPtr->SetStringField(TEXT("name"), blueprintName);
+		ResultPtr->SetBoolField(TEXT("compiled"), true);
+		WN_RETURN_COMMAND_RESPONSE(ResultPtr);
 	}
 
 	if (InCommandName == FString(TEXT("delete_blueprint")))
@@ -326,10 +327,10 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Blueprint::OnExecute(const FString&
 				*FString::Printf(TEXT("Failed to delete blueprint: %s"), *blueprintPath));
 		}
 
-		TSharedPtr<FJsonObject> InResultPtr = MakeShareable(new FJsonObject());
-		InResultPtr->SetStringField(TEXT("status"), TEXT("success"));
-		InResultPtr->SetStringField(TEXT("deleted_path"), blueprintPath);
-		WN_RETURN_COMMAND_RESPONSE(InResultPtr);
+		TSharedPtr<FJsonObject> ResultPtr = MakeShareable(new FJsonObject());
+		ResultPtr->SetStringField(TEXT("status"), TEXT("success"));
+		ResultPtr->SetStringField(TEXT("deleted_path"), blueprintPath);
+		WN_RETURN_COMMAND_RESPONSE(ResultPtr);
 	}
 
 	if (InCommandName == FString(TEXT("get_blueprints")))
@@ -362,10 +363,10 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Blueprint::OnExecute(const FString&
 			blueprintArray.Add(MakeShareable(new FJsonValueObject(bpObj)));
 		}
 
-		TSharedPtr<FJsonObject> InResultPtr = MakeShareable(new FJsonObject());
-		InResultPtr->SetNumberField(TEXT("count"), blueprintArray.Num());
-		InResultPtr->SetArrayField(TEXT("blueprints"), blueprintArray);
-		WN_RETURN_COMMAND_RESPONSE(InResultPtr);
+		TSharedPtr<FJsonObject> ResultPtr = MakeShareable(new FJsonObject());
+		ResultPtr->SetNumberField(TEXT("count"), blueprintArray.Num());
+		ResultPtr->SetArrayField(TEXT("blueprints"), blueprintArray);
+		WN_RETURN_COMMAND_RESPONSE(ResultPtr);
 	}
 
 	if (InCommandName == FString(TEXT("find_blueprints_by_name")))
@@ -401,10 +402,10 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Blueprint::OnExecute(const FString&
 			}
 		}
 
-		TSharedPtr<FJsonObject> InResultPtr = MakeShareable(new FJsonObject());
-		InResultPtr->SetNumberField(TEXT("count"), blueprintArray.Num());
-		InResultPtr->SetArrayField(TEXT("blueprints"), blueprintArray);
-		WN_RETURN_COMMAND_RESPONSE(InResultPtr);
+		TSharedPtr<FJsonObject> ResultPtr = MakeShareable(new FJsonObject());
+		ResultPtr->SetNumberField(TEXT("count"), blueprintArray.Num());
+		ResultPtr->SetArrayField(TEXT("blueprints"), blueprintArray);
+		WN_RETURN_COMMAND_RESPONSE(ResultPtr);
 	}
 
 	WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_METHOD_NOT_FOUND, TEXT(""));
