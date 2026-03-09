@@ -248,6 +248,19 @@ def get_blueprints(search_path: Optional[str] = None) -> str:
 
 
 @mcp.tool
+def find_blueprints_by_name(search_text: str) -> str:
+    """Find Blueprint assets by partial name match.
+
+    Args:
+        search_text: Text to search for in Blueprint names (partial match, case-sensitive)
+
+    Returns a list of matching Blueprints with their name, path, and package path.
+    """
+    result = _ue_execute("find_blueprints_by_name", {"search_text": search_text})
+    return json.dumps(result, indent=2, ensure_ascii=False)
+
+
+@mcp.tool
 def create_blueprint(name: str, parent_class: Optional[str] = None) -> str:
     """Create a new Blueprint asset in Unreal Engine.
 

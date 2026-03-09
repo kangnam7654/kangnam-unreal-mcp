@@ -42,6 +42,7 @@ void FWN_MCP_CommandGroup_Blueprint::OnRegisterCommands(TArray<FString>& InOutCo
 	InOutCommandNames.Add(FString(TEXT("compile_blueprint")));
 	InOutCommandNames.Add(FString(TEXT("delete_blueprint")));
 	InOutCommandNames.Add(FString(TEXT("get_blueprints")));
+	InOutCommandNames.Add(FString(TEXT("find_blueprints_by_name")));
 }
 
 TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Blueprint::OnExecute(const FString& InCommandName, const TSharedPtr<FJsonObject>& InParamsPtr, TSharedPtr<FSocket> InClientSocketPtr) const
@@ -382,6 +383,45 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Blueprint::OnExecute(const FString&
 			bpObj->SetStringField(TEXT("path"), assetData.GetObjectPathString());
 			bpObj->SetStringField(TEXT("package_path"), assetData.PackagePath.ToString());
 			blueprintArray.Add(MakeShareable(new FJsonValueObject(bpObj)));
+		}
+
+		TSharedPtr<FJsonObject> InResultPtr = MakeShareable(new FJsonObject());
+		InResultPtr->SetNumberField(TEXT("count"), blueprintArray.Num());
+		InResultPtr->SetArrayField(TEXT("blueprints"), blueprintArray);
+		WN_RETURN_COMMAND_RESPONSE(InResultPtr);
+	}
+
+	if (InCommandName == FString(TEXT("find_blueprints_by_name")))
+	{
+		// Get required parameters
+		FString searchText;
+		if (!InParamsPtr.IsValid() || !InParamsPtr->TryGetStringField(TEXT("search_text"), searchText))
+		{
+			WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: search_text"));
+		}
+
+		// Query asset registry for all Blueprint assets
+		FAssetRegistryModule& assetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>(TEXT("AssetRegistry"));
+
+		FARFilter filter;
+		filter.ClassPaths.Add(UBlueprint::StaticClass()->GetClassPathName());
+		filter.PackagePaths.Add(FName(TEXT("/Game/")));
+		filter.bRecursivePaths = true;
+
+		TArray<FAssetData> assetList;
+		assetRegistryModule.Get().GetAssets(filter, assetList);
+
+		TArray<TSharedPtr<FJsonValue>> blueprintArray;
+		for (const FAssetData& assetData : assetList)
+		{
+			if (assetData.AssetName.ToString().Contains(searchText))
+			{
+				TSharedPtr<FJsonObject> bpObj = MakeShareable(new FJsonObject());
+				bpObj->SetStringField(TEXT("name"), assetData.AssetName.ToString());
+				bpObj->SetStringField(TEXT("path"), assetData.GetObjectPathString());
+				bpObj->SetStringField(TEXT("package_path"), assetData.PackagePath.ToString());
+				blueprintArray.Add(MakeShareable(new FJsonValueObject(bpObj)));
+			}
 		}
 
 		TSharedPtr<FJsonObject> InResultPtr = MakeShareable(new FJsonObject());
