@@ -286,6 +286,7 @@ New command plugins MUST follow this pattern:
 7. 커맨드 이식 전 반드시 사용자에게 설명 및 승인을 받는다
 8. 커맨드 이식 후 반드시 git commit한다
 9. Copyright header: `// Copyright WemadeNext, Inc. All Rights Reserved.` (only in .build.cs files)
+10. **Co-Authored-By 금지**: git commit 메시지에 `Co-Authored-By` 라인을 절대 추가하지 않는다
 
 ---
 

@@ -3,3 +3,4 @@
 .gitignore
 CLAUDE.md
 .claude/
+python_tool_4_tests/
