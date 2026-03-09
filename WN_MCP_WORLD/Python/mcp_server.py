@@ -211,6 +211,20 @@ def set_actor_transform(
     return json.dumps(result, indent=2, ensure_ascii=False)
 
 
+@mcp.tool
+def read_actor_content(name: str) -> str:
+    """Read detailed content of a single actor, including its components.
+
+    Args:
+        name: Exact name of the actor to inspect
+
+    Returns name, class, transform (location/rotation/scale), and a list of
+    all components attached to the actor with their name and class.
+    """
+    result = _ue_execute("read_actor_content", {"name": name})
+    return json.dumps(result, indent=2, ensure_ascii=False)
+
+
 # =============================================================================
 # Blueprint CRUD Tools
 # =============================================================================

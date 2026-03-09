@@ -5,6 +5,7 @@
 #include "Dom/JsonValue.h"
 #include "GameFramework/Actor.h"
 #include "Kismet/GameplayStatics.h"
+#include "Components/ActorComponent.h"
 
 //-----------------------------------------------------------------------------
 // FWN_MCP_CommandGroup_Actor
@@ -33,6 +34,7 @@ void FWN_MCP_CommandGroup_Actor::OnRegisterCommands(TArray<FString>& InOutComman
 	InOutCommandNames.Add(FString(TEXT("spawn_actor")));
 	InOutCommandNames.Add(FString(TEXT("delete_actor")));
 	InOutCommandNames.Add(FString(TEXT("set_actor_transform")));
+	InOutCommandNames.Add(FString(TEXT("read_actor_content")));
 }
 
 TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Actor::OnExecute(const FString& InCommandName, const TSharedPtr<FJsonObject>& InParamsPtr, TSharedPtr<FSocket> InClientSocketPtr) const
@@ -283,6 +285,84 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Actor::OnExecute(const FString& InC
 		TSharedPtr<FJsonObject> InResultPtr = MakeShareable(new FJsonObject());
 		InResultPtr->SetStringField(TEXT("status"), TEXT("success"));
 		InResultPtr->SetField(TEXT("actor"), ActorToJsonValue(foundActor));
+		WN_RETURN_COMMAND_RESPONSE(InResultPtr);
+	}
+
+	if (InCommandName == FString(TEXT("read_actor_content")))
+	{
+		FString actorName;
+		if (!InParamsPtr.IsValid() || !InParamsPtr->TryGetStringField(TEXT("name"), actorName))
+		{
+			WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: name"));
+		}
+
+		// find actor by name
+		TArray<AActor*> allActors;
+		UGameplayStatics::GetAllActorsOfClass(GWorld, AActor::StaticClass(), allActors);
+
+		AActor* foundActor = nullptr;
+		for (AActor* actor : allActors)
+		{
+			if (actor && actor->GetName() == actorName)
+			{
+				foundActor = actor;
+				break;
+			}
+		}
+
+		if (!foundActor)
+		{
+			WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_INVALID_PARAMS,
+				*FString::Printf(TEXT("Actor '%s' not found"), *actorName));
+		}
+
+		TSharedPtr<FJsonObject> InResultPtr = MakeShareable(new FJsonObject());
+
+		// basic info (same as ActorToJsonValue)
+		InResultPtr->SetStringField(TEXT("name"), foundActor->GetName());
+		InResultPtr->SetStringField(TEXT("class"), foundActor->GetClass()->GetName());
+
+		// location
+		FVector location = foundActor->GetActorLocation();
+		TArray<TSharedPtr<FJsonValue>> locationArray;
+		locationArray.Add(MakeShareable(new FJsonValueNumber(location.X)));
+		locationArray.Add(MakeShareable(new FJsonValueNumber(location.Y)));
+		locationArray.Add(MakeShareable(new FJsonValueNumber(location.Z)));
+		InResultPtr->SetArrayField(TEXT("location"), locationArray);
+
+		// rotation
+		FRotator rotation = foundActor->GetActorRotation();
+		TArray<TSharedPtr<FJsonValue>> rotationArray;
+		rotationArray.Add(MakeShareable(new FJsonValueNumber(rotation.Pitch)));
+		rotationArray.Add(MakeShareable(new FJsonValueNumber(rotation.Yaw)));
+		rotationArray.Add(MakeShareable(new FJsonValueNumber(rotation.Roll)));
+		InResultPtr->SetArrayField(TEXT("rotation"), rotationArray);
+
+		// scale
+		FVector actorScale = foundActor->GetActorScale3D();
+		TArray<TSharedPtr<FJsonValue>> scaleArray;
+		scaleArray.Add(MakeShareable(new FJsonValueNumber(actorScale.X)));
+		scaleArray.Add(MakeShareable(new FJsonValueNumber(actorScale.Y)));
+		scaleArray.Add(MakeShareable(new FJsonValueNumber(actorScale.Z)));
+		InResultPtr->SetArrayField(TEXT("scale"), scaleArray);
+
+		// components
+		TArray<TSharedPtr<FJsonValue>> componentArray;
+		TArray<UActorComponent*> components;
+		foundActor->GetComponents(components);
+		for (UActorComponent* comp : components)
+		{
+			if (comp)
+			{
+				TSharedPtr<FJsonObject> compObj = MakeShareable(new FJsonObject());
+				compObj->SetStringField(TEXT("name"), comp->GetName());
+				compObj->SetStringField(TEXT("class"), comp->GetClass()->GetName());
+				componentArray.Add(MakeShareable(new FJsonValueObject(compObj)));
+			}
+		}
+		InResultPtr->SetNumberField(TEXT("component_count"), componentArray.Num());
+		InResultPtr->SetArrayField(TEXT("components"), componentArray);
+
 		WN_RETURN_COMMAND_RESPONSE(InResultPtr);
 	}
 
