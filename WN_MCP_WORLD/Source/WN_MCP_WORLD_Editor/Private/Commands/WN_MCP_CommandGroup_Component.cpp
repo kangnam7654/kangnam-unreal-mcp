@@ -39,6 +39,7 @@ void FWN_MCP_CommandGroup_Component::OnRegisterCommands(TArray<FString>& InOutCo
 	InOutCommandNames.Add(FString(TEXT("add_component_to_blueprint")));
 	InOutCommandNames.Add(FString(TEXT("remove_component_from_blueprint")));
 	InOutCommandNames.Add(FString(TEXT("add_component_to_actor")));
+	InOutCommandNames.Add(FString(TEXT("remove_component_from_actor")));
 }
 
 TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Component::OnExecute(const FString& InCommandName, const TSharedPtr<FJsonObject>& InParamsPtr, TSharedPtr<FSocket> InClientSocketPtr) const
@@ -363,6 +364,82 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Component::OnExecute(const FString&
 		InResultPtr->SetStringField(TEXT("actor_name"), foundActor->GetName());
 		InResultPtr->SetStringField(TEXT("component_name"), newComponent->GetName());
 		InResultPtr->SetStringField(TEXT("component_class"), compClass->GetName());
+		WN_RETURN_COMMAND_RESPONSE(InResultPtr);
+	}
+
+	if (InCommandName == FString(TEXT("remove_component_from_actor")))
+	{
+		// Get required parameters
+		FString actorName;
+		if (!InParamsPtr.IsValid() || !InParamsPtr->TryGetStringField(TEXT("name"), actorName))
+		{
+			WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: name"));
+		}
+
+		FString componentName;
+		if (!InParamsPtr->TryGetStringField(TEXT("component_name"), componentName))
+		{
+			WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: component_name"));
+		}
+
+		// Find actor by name
+		TArray<AActor*> allActors;
+		UGameplayStatics::GetAllActorsOfClass(GWorld, AActor::StaticClass(), allActors);
+
+		AActor* foundActor = nullptr;
+		for (AActor* actor : allActors)
+		{
+			if (actor && actor->GetName() == actorName)
+			{
+				foundActor = actor;
+				break;
+			}
+		}
+
+		if (!foundActor)
+		{
+			WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_INVALID_PARAMS,
+				*FString::Printf(TEXT("Actor '%s' not found"), *actorName));
+		}
+
+		// Find the component by name
+		UActorComponent* targetComponent = nullptr;
+		TArray<UActorComponent*> components;
+		foundActor->GetComponents(components);
+		for (UActorComponent* comp : components)
+		{
+			if (comp && comp->GetName() == componentName)
+			{
+				targetComponent = comp;
+				break;
+			}
+		}
+
+		if (!targetComponent)
+		{
+			WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_INVALID_PARAMS,
+				*FString::Printf(TEXT("Component '%s' not found on actor '%s'"), *componentName, *actorName));
+		}
+
+		// Prevent removing root component
+		if (targetComponent == foundActor->GetRootComponent())
+		{
+			WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_COMMAND_FAILED,
+				TEXT("Cannot remove the root component. Delete the actor instead."));
+		}
+
+		// Save info before destruction
+		FString removedClassName = targetComponent->GetClass()->GetName();
+
+		// Destroy the component
+		targetComponent->DestroyComponent();
+
+		// Return result
+		TSharedPtr<FJsonObject> InResultPtr = MakeShareable(new FJsonObject());
+		InResultPtr->SetStringField(TEXT("status"), TEXT("success"));
+		InResultPtr->SetStringField(TEXT("actor_name"), foundActor->GetName());
+		InResultPtr->SetStringField(TEXT("removed_component"), componentName);
+		InResultPtr->SetStringField(TEXT("removed_class"), removedClassName);
 		WN_RETURN_COMMAND_RESPONSE(InResultPtr);
 	}
 
