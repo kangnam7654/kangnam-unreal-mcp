@@ -40,6 +40,8 @@ void FWN_MCP_CommandGroup_Component::OnRegisterCommands(TArray<FString>& InOutCo
 	InOutCommandNames.Add(FString(TEXT("remove_component_from_blueprint")));
 	InOutCommandNames.Add(FString(TEXT("add_component_to_actor")));
 	InOutCommandNames.Add(FString(TEXT("remove_component_from_actor")));
+	InOutCommandNames.Add(FString(TEXT("read_components_from_actor")));
+	InOutCommandNames.Add(FString(TEXT("read_components_from_blueprint")));
 }
 
 TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Component::OnExecute(const FString& InCommandName, const TSharedPtr<FJsonObject>& InParamsPtr, TSharedPtr<FSocket> InClientSocketPtr) const
@@ -440,6 +442,148 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Component::OnExecute(const FString&
 		InResultPtr->SetStringField(TEXT("actor_name"), foundActor->GetName());
 		InResultPtr->SetStringField(TEXT("removed_component"), componentName);
 		InResultPtr->SetStringField(TEXT("removed_class"), removedClassName);
+		WN_RETURN_COMMAND_RESPONSE(InResultPtr);
+	}
+
+	if (InCommandName == FString(TEXT("read_components_from_actor")))
+	{
+		// Get required parameters
+		FString actorName;
+		if (!InParamsPtr.IsValid() || !InParamsPtr->TryGetStringField(TEXT("name"), actorName))
+		{
+			WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: name"));
+		}
+
+		// Find actor by name
+		TArray<AActor*> allActors;
+		UGameplayStatics::GetAllActorsOfClass(GWorld, AActor::StaticClass(), allActors);
+
+		AActor* foundActor = nullptr;
+		for (AActor* actor : allActors)
+		{
+			if (actor && actor->GetName() == actorName)
+			{
+				foundActor = actor;
+				break;
+			}
+		}
+
+		if (!foundActor)
+		{
+			WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_INVALID_PARAMS,
+				*FString::Printf(TEXT("Actor '%s' not found"), *actorName));
+		}
+
+		// Enumerate components
+		TArray<TSharedPtr<FJsonValue>> componentArray;
+		TArray<UActorComponent*> components;
+		foundActor->GetComponents(components);
+		for (UActorComponent* comp : components)
+		{
+			if (comp)
+			{
+				TSharedPtr<FJsonObject> compObj = MakeShareable(new FJsonObject());
+				compObj->SetStringField(TEXT("name"), comp->GetName());
+				compObj->SetStringField(TEXT("class"), comp->GetClass()->GetName());
+				compObj->SetBoolField(TEXT("is_root"), comp == foundActor->GetRootComponent());
+
+				// Include transform for SceneComponents
+				USceneComponent* sceneComp = Cast<USceneComponent>(comp);
+				if (sceneComp)
+				{
+					FVector location = sceneComp->GetRelativeLocation();
+					TArray<TSharedPtr<FJsonValue>> locationArray;
+					locationArray.Add(MakeShareable(new FJsonValueNumber(location.X)));
+					locationArray.Add(MakeShareable(new FJsonValueNumber(location.Y)));
+					locationArray.Add(MakeShareable(new FJsonValueNumber(location.Z)));
+					compObj->SetArrayField(TEXT("relative_location"), locationArray);
+
+					FRotator rotation = sceneComp->GetRelativeRotation();
+					TArray<TSharedPtr<FJsonValue>> rotationArray;
+					rotationArray.Add(MakeShareable(new FJsonValueNumber(rotation.Pitch)));
+					rotationArray.Add(MakeShareable(new FJsonValueNumber(rotation.Yaw)));
+					rotationArray.Add(MakeShareable(new FJsonValueNumber(rotation.Roll)));
+					compObj->SetArrayField(TEXT("relative_rotation"), rotationArray);
+
+					FVector scale = sceneComp->GetRelativeScale3D();
+					TArray<TSharedPtr<FJsonValue>> scaleArray;
+					scaleArray.Add(MakeShareable(new FJsonValueNumber(scale.X)));
+					scaleArray.Add(MakeShareable(new FJsonValueNumber(scale.Y)));
+					scaleArray.Add(MakeShareable(new FJsonValueNumber(scale.Z)));
+					compObj->SetArrayField(TEXT("relative_scale"), scaleArray);
+				}
+
+				componentArray.Add(MakeShareable(new FJsonValueObject(compObj)));
+			}
+		}
+
+		TSharedPtr<FJsonObject> InResultPtr = MakeShareable(new FJsonObject());
+		InResultPtr->SetStringField(TEXT("actor_name"), foundActor->GetName());
+		InResultPtr->SetNumberField(TEXT("count"), componentArray.Num());
+		InResultPtr->SetArrayField(TEXT("components"), componentArray);
+		WN_RETURN_COMMAND_RESPONSE(InResultPtr);
+	}
+
+	if (InCommandName == FString(TEXT("read_components_from_blueprint")))
+	{
+		// Get required parameters
+		FString blueprintName;
+		if (!InParamsPtr.IsValid() || !InParamsPtr->TryGetStringField(TEXT("blueprint_name"), blueprintName))
+		{
+			WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: blueprint_name"));
+		}
+
+		// Find blueprint
+		UBlueprint* blueprint = FindBlueprintByName(blueprintName);
+		if (!blueprint)
+		{
+			WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_COMMAND_FAILED,
+				*FString::Printf(TEXT("Blueprint not found: %s"), *blueprintName));
+		}
+
+		TArray<TSharedPtr<FJsonValue>> componentArray;
+		if (blueprint->SimpleConstructionScript)
+		{
+			for (USCS_Node* node : blueprint->SimpleConstructionScript->GetAllNodes())
+			{
+				if (node && node->ComponentTemplate)
+				{
+					TSharedPtr<FJsonObject> compObj = MakeShareable(new FJsonObject());
+					compObj->SetStringField(TEXT("name"), node->GetVariableName().ToString());
+					compObj->SetStringField(TEXT("class"), node->ComponentTemplate->GetClass()->GetName());
+					compObj->SetBoolField(TEXT("is_root"), node == blueprint->SimpleConstructionScript->GetDefaultSceneRootNode());
+
+					// Include parent info
+					FString parentName = TEXT("");
+					for (USCS_Node* otherNode : blueprint->SimpleConstructionScript->GetAllNodes())
+					{
+						if (otherNode && otherNode != node)
+						{
+							for (USCS_Node* child : otherNode->GetChildNodes())
+							{
+								if (child == node)
+								{
+									parentName = otherNode->GetVariableName().ToString();
+									break;
+								}
+							}
+							if (!parentName.IsEmpty()) break;
+						}
+					}
+					if (!parentName.IsEmpty())
+					{
+						compObj->SetStringField(TEXT("parent"), parentName);
+					}
+
+					componentArray.Add(MakeShareable(new FJsonValueObject(compObj)));
+				}
+			}
+		}
+
+		TSharedPtr<FJsonObject> InResultPtr = MakeShareable(new FJsonObject());
+		InResultPtr->SetStringField(TEXT("blueprint_name"), blueprint->GetName());
+		InResultPtr->SetNumberField(TEXT("count"), componentArray.Num());
+		InResultPtr->SetArrayField(TEXT("components"), componentArray);
 		WN_RETURN_COMMAND_RESPONSE(InResultPtr);
 	}
 
