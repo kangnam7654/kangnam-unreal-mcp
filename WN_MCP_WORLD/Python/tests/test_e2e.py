@@ -7,11 +7,7 @@ Skip with: uv run python -m pytest -m "not e2e"
 """
 
 import json
-import sys
-import os
 import pytest
-
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 pytestmark = pytest.mark.e2e
 

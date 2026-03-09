@@ -39,7 +39,7 @@ def register_tools(mcp: FastMCP):
         if parent_component is not None:
             params["parent_component"] = parent_component
 
-        result = ue_connection._ue_execute("add_component_to_blueprint", params)
+        result = ue_connection.execute("add_component_to_blueprint", params)
         return json.dumps(result, indent=2, ensure_ascii=False)
 
     @mcp.tool
@@ -53,7 +53,7 @@ def register_tools(mcp: FastMCP):
         Children of the removed component are re-parented to its parent (or promoted to root).
         The default scene root cannot be removed. The Blueprint is automatically recompiled.
         """
-        result = ue_connection._ue_execute("remove_component_from_blueprint", {
+        result = ue_connection.execute("remove_component_from_blueprint", {
             "blueprint_name": blueprint_name,
             "component_name": component_name,
         })
@@ -68,5 +68,5 @@ def register_tools(mcp: FastMCP):
 
         Returns a list of components with name, class, is_root flag, and parent info.
         """
-        result = ue_connection._ue_execute("read_components_from_blueprint", {"blueprint_name": blueprint_name})
+        result = ue_connection.execute("read_components_from_blueprint", {"blueprint_name": blueprint_name})
         return json.dumps(result, indent=2, ensure_ascii=False)

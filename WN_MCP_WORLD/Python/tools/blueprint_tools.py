@@ -26,7 +26,7 @@ def register_tools(mcp: FastMCP):
         if search_path is not None:
             params["search_path"] = search_path
 
-        result = ue_connection._ue_execute("get_blueprints", params)
+        result = ue_connection.execute("get_blueprints", params)
         return json.dumps(result, indent=2, ensure_ascii=False)
 
     @mcp.tool
@@ -38,7 +38,7 @@ def register_tools(mcp: FastMCP):
 
         Returns a list of matching Blueprints with their name, path, and package path.
         """
-        result = ue_connection._ue_execute("find_blueprints_by_name", {"search_text": search_text})
+        result = ue_connection.execute("find_blueprints_by_name", {"search_text": search_text})
         return json.dumps(result, indent=2, ensure_ascii=False)
 
     @mcp.tool
@@ -55,7 +55,7 @@ def register_tools(mcp: FastMCP):
         if parent_class is not None:
             params["parent_class"] = parent_class
 
-        result = ue_connection._ue_execute("create_blueprint", params)
+        result = ue_connection.execute("create_blueprint", params)
         return json.dumps(result, indent=2, ensure_ascii=False)
 
     @mcp.tool
@@ -89,7 +89,7 @@ def register_tools(mcp: FastMCP):
         if include_interfaces is not None:
             params["include_interfaces"] = include_interfaces
 
-        result = ue_connection._ue_execute("read_blueprint_content", params)
+        result = ue_connection.execute("read_blueprint_content", params)
         return json.dumps(result, indent=2, ensure_ascii=False)
 
     @mcp.tool
@@ -101,11 +101,11 @@ def register_tools(mcp: FastMCP):
 
         Compiles the Blueprint to update its generated class.
         """
-        result = ue_connection._ue_execute("compile_blueprint", {"blueprint_name": blueprint_name})
+        result = ue_connection.execute("compile_blueprint", {"blueprint_name": blueprint_name})
         return json.dumps(result, indent=2, ensure_ascii=False)
 
     @mcp.tool
-    def delete_blueprint(blueprint_path: str, force: bool = False) -> str:
+    def delete_blueprint(blueprint_path: str, force: Optional[bool] = None) -> str:
         """Delete a Blueprint asset from the project.
 
         Args:
@@ -116,8 +116,8 @@ def register_tools(mcp: FastMCP):
         WARNING: Deleting a Blueprint that is referenced by other assets may break those assets.
         """
         params: Dict[str, Any] = {"blueprint_path": blueprint_path}
-        if force:
-            params["force"] = True
+        if force is not None:
+            params["force"] = force
 
-        result = ue_connection._ue_execute("delete_blueprint", params)
+        result = ue_connection.execute("delete_blueprint", params)
         return json.dumps(result, indent=2, ensure_ascii=False)

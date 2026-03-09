@@ -3,38 +3,17 @@
 Tests tool parameter passing and response formatting.
 UE connection is mocked — no running editor required.
 
-Each tool module's register_tools() creates closures over _ue_execute.
-We mock _ue_execute at the source (tools.ue_connection) and call tool
-functions via FastMCP's async get_tool() API.
+Each tool module's register_tools() creates closures over ue_connection.execute().
+We mock execute() at the source (tools.ue_connection) and call tool
+functions via conftest.call_tool().
 """
 
 import json
-import sys
-import os
 import asyncio
 import inspect
 import pytest
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-
-from mcp_server import mcp
-
-
-# =============================================================================
-# Helpers
-# =============================================================================
-
-_tool_fn_cache: dict = {}
-
-
-def call_tool(tool_name: str, **kwargs) -> str:
-    """Call a registered MCP tool synchronously and return raw result string."""
-    if tool_name not in _tool_fn_cache:
-        async def _resolve():
-            tool = await mcp.get_tool(tool_name)
-            return tool.fn
-        _tool_fn_cache[tool_name] = asyncio.run(_resolve())
-    return _tool_fn_cache[tool_name](**kwargs)
+from conftest import call_tool, mcp
 
 
 # =============================================================================
@@ -220,10 +199,8 @@ class TestReadBlueprintContent:
 
     def test_no_include_components_param(self):
         """Verify include_components parameter was removed."""
-        fn = _tool_fn_cache.get("read_blueprint_content")
-        if fn is None:
-            fn = asyncio.run(mcp.get_tool("read_blueprint_content")).fn
-        sig = inspect.signature(fn)
+        tool = asyncio.run(mcp.get_tool("read_blueprint_content"))
+        sig = inspect.signature(tool.fn)
         assert "include_components" not in sig.parameters
 
     def test_with_filter_flags(self, mock_ue_execute):

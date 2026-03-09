@@ -32,7 +32,7 @@ def register_tools(mcp: FastMCP):
         if include_engine_materials is not None:
             params["include_engine_materials"] = include_engine_materials
 
-        result = ue_connection._ue_execute("get_available_materials", params)
+        result = ue_connection.execute("get_available_materials", params)
         return json.dumps(result, indent=2, ensure_ascii=False)
 
     @mcp.tool
@@ -57,7 +57,7 @@ def register_tools(mcp: FastMCP):
         if material_slot is not None:
             params["material_slot"] = material_slot
 
-        result = ue_connection._ue_execute("apply_material_to_actor", params)
+        result = ue_connection.execute("apply_material_to_actor", params)
         return json.dumps(result, indent=2, ensure_ascii=False)
 
     @mcp.tool
@@ -85,7 +85,7 @@ def register_tools(mcp: FastMCP):
         if material_slot is not None:
             params["material_slot"] = material_slot
 
-        result = ue_connection._ue_execute("apply_material_to_blueprint", params)
+        result = ue_connection.execute("apply_material_to_blueprint", params)
         return json.dumps(result, indent=2, ensure_ascii=False)
 
     @mcp.tool
@@ -97,7 +97,7 @@ def register_tools(mcp: FastMCP):
 
         Returns material slot info (name, path, class) for all StaticMeshComponents.
         """
-        result = ue_connection._ue_execute("get_actor_material_info", {"actor_name": actor_name})
+        result = ue_connection.execute("get_actor_material_info", {"actor_name": actor_name})
         return json.dumps(result, indent=2, ensure_ascii=False)
 
     @mcp.tool
@@ -113,7 +113,7 @@ def register_tools(mcp: FastMCP):
 
         Returns material slot info and whether a static mesh is assigned.
         """
-        result = ue_connection._ue_execute("get_blueprint_material_info", {
+        result = ue_connection.execute("get_blueprint_material_info", {
             "blueprint_name": blueprint_name,
             "component_name": component_name,
         })
@@ -153,5 +153,5 @@ def register_tools(mcp: FastMCP):
         if material_path is not None:
             params["material_path"] = material_path
 
-        result = ue_connection._ue_execute("set_mesh_material_color", params)
+        result = ue_connection.execute("set_mesh_material_color", params)
         return json.dumps(result, indent=2, ensure_ascii=False)

@@ -43,5 +43,5 @@ def register_tools(mcp: FastMCP):
         if scale is not None:
             params["scale"] = scale
 
-        result = ue_connection._ue_execute("spawn_blueprint_actor", params)
+        result = ue_connection.execute("spawn_blueprint_actor", params)
         return json.dumps(result, indent=2, ensure_ascii=False)
