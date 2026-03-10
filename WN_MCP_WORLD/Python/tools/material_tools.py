@@ -127,6 +127,8 @@ def register_tools(mcp: FastMCP):
         material_slot: Optional[int] = None,
         parameter_name: Optional[str] = None,
         material_path: Optional[str] = None,
+        metallic: Optional[float] = None,
+        roughness: Optional[float] = None,
     ) -> str:
         """Set a color parameter on a Blueprint component's material.
 
@@ -137,8 +139,12 @@ def register_tools(mcp: FastMCP):
             material_slot: Material slot index (default: 0)
             parameter_name: Shader parameter name to set (default: "BaseColor")
             material_path: Optional base material path to use
+            metallic: Metallic value (0.0 = non-metal, 1.0 = full metal). Sets "Metallic" scalar parameter.
+            roughness: Roughness value (0.0 = mirror, 1.0 = rough). Sets "Roughness" scalar parameter.
 
         Creates a Dynamic Material Instance and sets the specified color parameter.
+        When metallic or roughness is provided and the current material lacks these
+        parameters, a PBR fallback material is automatically used.
         The Blueprint is automatically marked as modified.
         """
         params: Dict[str, Any] = {
@@ -152,6 +158,10 @@ def register_tools(mcp: FastMCP):
             params["parameter_name"] = parameter_name
         if material_path is not None:
             params["material_path"] = material_path
+        if metallic is not None:
+            params["metallic"] = metallic
+        if roughness is not None:
+            params["roughness"] = roughness
 
         result = ue_connection.execute("set_mesh_material_color", params)
         return json.dumps(result, indent=2, ensure_ascii=False)

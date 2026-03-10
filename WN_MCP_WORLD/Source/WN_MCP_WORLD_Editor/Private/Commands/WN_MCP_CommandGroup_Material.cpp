@@ -18,7 +18,68 @@
 #include "Materials/MaterialInstanceConstant.h"
 #include "EditorAssetLibrary.h"
 #include "AssetRegistry/AssetRegistryModule.h"
+#include "Materials/MaterialExpressionVectorParameter.h"
+#include "Materials/MaterialExpressionScalarParameter.h"
 #include "Kismet2/BlueprintEditorUtils.h"
+
+//-----------------------------------------------------------------------------
+// Helper Functions
+//-----------------------------------------------------------------------------
+
+/// Get or create a PBR material with BaseColor, Metallic, and Roughness parameters.
+/// The material is cached at /Game/MCP_Generated/M_MCP_PBR.
+static UMaterial* GetOrCreateMCPPBRMaterial()
+{
+	static const TCHAR* AssetPath = TEXT("/Game/MCP_Generated/M_MCP_PBR");
+	static const TCHAR* FullObjectPath = TEXT("/Game/MCP_Generated/M_MCP_PBR.M_MCP_PBR");
+
+	// Try loading existing material first
+	UMaterial* mat = LoadObject<UMaterial>(nullptr, FullObjectPath);
+	if (mat)
+	{
+		return mat;
+	}
+
+	// Create package and material
+	UPackage* package = CreatePackage(AssetPath);
+	package->FullyLoad();
+
+	mat = NewObject<UMaterial>(package, TEXT("M_MCP_PBR"), RF_Public | RF_Standalone);
+
+	UMaterialEditorOnlyData* editorData = mat->GetEditorOnlyData();
+
+	// BaseColor VectorParameter (default: White)
+	UMaterialExpressionVectorParameter* baseColorParam = NewObject<UMaterialExpressionVectorParameter>(mat);
+	baseColorParam->ParameterName = TEXT("BaseColor");
+	baseColorParam->DefaultValue = FLinearColor::White;
+	editorData->ExpressionCollection.Expressions.Add(baseColorParam);
+	editorData->BaseColor.Connect(0, baseColorParam);
+
+	// Metallic ScalarParameter (default: 0.0)
+	UMaterialExpressionScalarParameter* metallicParam = NewObject<UMaterialExpressionScalarParameter>(mat);
+	metallicParam->ParameterName = TEXT("Metallic");
+	metallicParam->DefaultValue = 0.0f;
+	editorData->ExpressionCollection.Expressions.Add(metallicParam);
+	editorData->Metallic.Connect(0, metallicParam);
+
+	// Roughness ScalarParameter (default: 0.5)
+	UMaterialExpressionScalarParameter* roughnessParam = NewObject<UMaterialExpressionScalarParameter>(mat);
+	roughnessParam->ParameterName = TEXT("Roughness");
+	roughnessParam->DefaultValue = 0.5f;
+	editorData->ExpressionCollection.Expressions.Add(roughnessParam);
+	editorData->Roughness.Connect(0, roughnessParam);
+
+	// Compile material
+	mat->PreEditChange(nullptr);
+	mat->PostEditChange();
+
+	// Register and save
+	FAssetRegistryModule::AssetCreated(mat);
+	package->MarkPackageDirty();
+	UEditorAssetLibrary::SaveAsset(AssetPath, false);
+
+	return mat;
+}
 
 //-----------------------------------------------------------------------------
 // FWN_MCP_CommandGroup_Material
@@ -482,6 +543,13 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Material::OnExecute(const FString& 
 		float b = static_cast<float>((*colorArray)[2]->AsNumber());
 		float a = (colorArray->Num() >= 4) ? static_cast<float>((*colorArray)[3]->AsNumber()) : 1.0f;
 
+		// Optional scalar parameters
+		double metallicValue = 0.0;
+		bool bHasMetallic = InParamsPtr->TryGetNumberField(TEXT("metallic"), metallicValue);
+
+		double roughnessValue = 0.5;
+		bool bHasRoughness = InParamsPtr->TryGetNumberField(TEXT("roughness"), roughnessValue);
+
 		// Optional parameters
 		int32 materialSlot = 0;
 		double slotValue;
@@ -546,27 +614,66 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Material::OnExecute(const FString& 
 			}
 		}
 
-		// Defensive fallback: verify the material supports the requested vector parameter.
-		// If not (e.g. engine default material without BaseColor), fall back to BasicShapeMaterial.
+		// Defensive fallback: verify the material supports all requested parameters.
+		// If not, fall back to the generated PBR material (BaseColor + Metallic + Roughness).
 		if (existingMaterial)
 		{
-			TArray<FMaterialParameterInfo> paramInfos;
-			TArray<FGuid> paramIds;
-			existingMaterial->GetAllVectorParameterInfo(paramInfos, paramIds);
+			bool bNeedsFallback = false;
 
-			bool bHasParameter = false;
-			for (const FMaterialParameterInfo& info : paramInfos)
+			// Check vector parameter (BaseColor)
 			{
-				if (info.Name == FName(*parameterName))
+				TArray<FMaterialParameterInfo> paramInfos;
+				TArray<FGuid> paramIds;
+				existingMaterial->GetAllVectorParameterInfo(paramInfos, paramIds);
+
+				bool bHasVectorParam = false;
+				for (const FMaterialParameterInfo& info : paramInfos)
 				{
-					bHasParameter = true;
-					break;
+					if (info.Name == FName(*parameterName))
+					{
+						bHasVectorParam = true;
+						break;
+					}
+				}
+
+				if (!bHasVectorParam)
+				{
+					bNeedsFallback = true;
 				}
 			}
 
-			if (!bHasParameter)
+			// Check scalar parameters (Metallic / Roughness) if requested
+			if (!bNeedsFallback && (bHasMetallic || bHasRoughness))
 			{
-				UMaterialInterface* fallbackMat = LoadObject<UMaterial>(nullptr, TEXT("/Engine/BasicShapes/BasicShapeMaterial.BasicShapeMaterial"));
+				TArray<FMaterialParameterInfo> scalarInfos;
+				TArray<FGuid> scalarIds;
+				existingMaterial->GetAllScalarParameterInfo(scalarInfos, scalarIds);
+
+				auto HasScalarParam = [&scalarInfos](const TCHAR* InName) -> bool
+				{
+					for (const FMaterialParameterInfo& info : scalarInfos)
+					{
+						if (info.Name == FName(InName))
+						{
+							return true;
+						}
+					}
+					return false;
+				};
+
+				if (bHasMetallic && !HasScalarParam(TEXT("Metallic")))
+				{
+					bNeedsFallback = true;
+				}
+				if (bHasRoughness && !HasScalarParam(TEXT("Roughness")))
+				{
+					bNeedsFallback = true;
+				}
+			}
+
+			if (bNeedsFallback)
+			{
+				UMaterial* fallbackMat = GetOrCreateMCPPBRMaterial();
 				if (fallbackMat)
 				{
 					existingMaterial = fallbackMat;
@@ -575,8 +682,8 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Material::OnExecute(const FString& 
 		}
 		else
 		{
-			// No material at all, try BasicShapeMaterial fallback
-			existingMaterial = LoadObject<UMaterial>(nullptr, TEXT("/Engine/BasicShapes/BasicShapeMaterial.BasicShapeMaterial"));
+			// No material at all, use generated PBR material
+			existingMaterial = GetOrCreateMCPPBRMaterial();
 		}
 
 		if (!existingMaterial)
@@ -588,6 +695,17 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Material::OnExecute(const FString& 
 		// Create dynamic material instance and set color
 		UMaterialInstanceDynamic* dynMaterial = UMaterialInstanceDynamic::Create(existingMaterial->GetMaterial(), primComponent);
 		dynMaterial->SetVectorParameterValue(FName(*parameterName), FLinearColor(r, g, b, a));
+
+		// Set optional scalar parameters
+		if (bHasMetallic)
+		{
+			dynMaterial->SetScalarParameterValue(FName(TEXT("Metallic")), static_cast<float>(metallicValue));
+		}
+		if (bHasRoughness)
+		{
+			dynMaterial->SetScalarParameterValue(FName(TEXT("Roughness")), static_cast<float>(roughnessValue));
+		}
+
 		primComponent->SetMaterial(materialSlot, dynMaterial);
 
 		FBlueprintEditorUtils::MarkBlueprintAsModified(blueprint);
@@ -605,6 +723,16 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Material::OnExecute(const FString& 
 		colorResult.Add(MakeShareable(new FJsonValueNumber(b)));
 		colorResult.Add(MakeShareable(new FJsonValueNumber(a)));
 		InResultPtr->SetArrayField(TEXT("color"), colorResult);
+
+		if (bHasMetallic)
+		{
+			InResultPtr->SetNumberField(TEXT("metallic"), metallicValue);
+		}
+		if (bHasRoughness)
+		{
+			InResultPtr->SetNumberField(TEXT("roughness"), roughnessValue);
+		}
+
 		WN_RETURN_COMMAND_RESPONSE(InResultPtr);
 	}
 
