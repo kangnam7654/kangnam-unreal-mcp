@@ -96,7 +96,7 @@ static UFunction* FindFunctionByName(const FString& InFunctionName, const FStrin
 	// If target class specified, search there first
 	if (!InTargetClass.IsEmpty())
 	{
-		UClass* targetClass = FindObject<UClass>(ANY_PACKAGE, *InTargetClass);
+		UClass* targetClass = FindObject<UClass>(nullptr, *InTargetClass);
 		if (targetClass)
 		{
 			UFunction* func = targetClass->FindFunctionByName(FName(*InFunctionName));
@@ -330,6 +330,7 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_BlueprintGraph::OnExecute(const FSt
 
 		// Create event node
 		UK2Node_Event* eventNode = NewObject<UK2Node_Event>(eventGraph);
+		eventNode->CreateNewGuid();
 		eventNode->EventReference.SetExternalMember(functionName, AActor::StaticClass());
 		eventNode->bOverrideFunction = true;
 		eventNode->NodePosX = posX;
@@ -400,6 +401,7 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_BlueprintGraph::OnExecute(const FSt
 
 		// Create function call node
 		UK2Node_CallFunction* callNode = NewObject<UK2Node_CallFunction>(eventGraph);
+		callNode->CreateNewGuid();
 		callNode->FunctionReference.SetExternalMember(function->GetFName(), function->GetOwnerClass());
 		callNode->NodePosX = posX;
 		callNode->NodePosY = posY;
@@ -458,6 +460,7 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_BlueprintGraph::OnExecute(const FSt
 
 		// Create variable get node
 		UK2Node_VariableGet* getNode = NewObject<UK2Node_VariableGet>(eventGraph);
+		getNode->CreateNewGuid();
 		getNode->VariableReference.SetSelfMember(FName(*variableName));
 		getNode->NodePosX = posX;
 		getNode->NodePosY = posY;
@@ -516,6 +519,7 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_BlueprintGraph::OnExecute(const FSt
 
 		// Create variable set node
 		UK2Node_VariableSet* setNode = NewObject<UK2Node_VariableSet>(eventGraph);
+		setNode->CreateNewGuid();
 		setNode->VariableReference.SetSelfMember(FName(*variableName));
 		setNode->NodePosX = posX;
 		setNode->NodePosY = posY;

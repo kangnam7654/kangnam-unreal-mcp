@@ -76,6 +76,16 @@ def execute(command_name: str, params: Optional[Dict[str, Any]] = None) -> Dict[
     }
 
     try:
+        # Flush any leftover data in receive buffer before sending
+        _socket.setblocking(False)
+        try:
+            while _socket.recv(65536):
+                pass
+        except (BlockingIOError, OSError):
+            pass
+        _socket.setblocking(True)
+        _socket.settimeout(UE_TIMEOUT)
+
         _socket.send(json.dumps(request).encode("utf-8"))
 
         # Read until we have a complete JSON response
