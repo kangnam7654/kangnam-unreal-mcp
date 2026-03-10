@@ -120,7 +120,8 @@ async def test_actor_crud_e2e(mcp_client):
 
             # Read
             result = await call_tool(mcp_client, "read_actor_content", {"name": name})
-            assert result["name"] == name
+            assert result["status"] == "success"
+            assert result["actor"]["name"] == name
 
             # Update transform
             result = await call_tool(mcp_client, "set_actor_transform", {

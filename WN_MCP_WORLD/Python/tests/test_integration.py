@@ -47,9 +47,11 @@ class TestActorCRUD:
 
     def test_03_read_actor(self):
         result = call("read_actor_content", name=self.ACTOR_NAME)
-        assert result["name"] == self.ACTOR_NAME
-        assert "class" in result
-        assert "location" in result
+        assert result["status"] == "success"
+        actor = result["actor"]
+        assert actor["name"] == self.ACTOR_NAME
+        assert "class" in actor
+        assert "location" in actor
 
     def test_04_set_transform(self):
         result = call("set_actor_transform",
@@ -58,7 +60,7 @@ class TestActorCRUD:
         assert result["status"] == "success"
         # Verify new location
         read = call("read_actor_content", name=self.ACTOR_NAME)
-        assert abs(read["location"][0] - 500.0) < 1.0
+        assert abs(read["actor"]["location"][0] - 500.0) < 1.0
 
     def test_05_delete_actor(self):
         result = call("delete_actor", name=self.ACTOR_NAME)
