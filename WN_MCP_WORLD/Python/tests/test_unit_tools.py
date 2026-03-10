@@ -205,9 +205,9 @@ class TestCreateBlueprint:
 class TestReadBlueprintContent:
     def test_required_params_only(self, mock_ue_execute):
         mock_ue_execute.return_value = {"blueprint_name": "MyBP"}
-        call_tool("read_blueprint_content", blueprint_path="/Game/Blueprints/MyBP")
+        call_tool("read_blueprint_content", blueprint_name="MyBP")
         params = mock_ue_execute.call_args[0][1]
-        assert params["blueprint_path"] == "/Game/Blueprints/MyBP"
+        assert params["blueprint_name"] == "MyBP"
 
     def test_no_include_components_param(self):
         """Verify include_components parameter was removed."""
@@ -218,7 +218,7 @@ class TestReadBlueprintContent:
     def test_with_filter_flags(self, mock_ue_execute):
         mock_ue_execute.return_value = {"blueprint_name": "MyBP"}
         call_tool("read_blueprint_content",
-            blueprint_path="/Game/Blueprints/MyBP",
+            blueprint_name="MyBP",
             include_event_graph=False,
             include_functions=True,
             include_variables=True,
@@ -243,15 +243,15 @@ class TestCompileBlueprint:
 class TestDeleteBlueprint:
     def test_default_no_force(self, mock_ue_execute):
         mock_ue_execute.return_value = {"status": "success"}
-        call_tool("delete_blueprint", blueprint_path="/Game/Blueprints/MyBP")
+        call_tool("delete_blueprint", blueprint_name="MyBP")
         params = mock_ue_execute.call_args[0][1]
-        assert params["blueprint_path"] == "/Game/Blueprints/MyBP"
+        assert params["blueprint_name"] == "MyBP"
         assert "force" not in params
 
     def test_with_force(self, mock_ue_execute):
         mock_ue_execute.return_value = {"status": "success"}
         call_tool("delete_blueprint",
-            blueprint_path="/Game/Blueprints/MyBP", force=True,
+            blueprint_name="MyBP", force=True,
         )
         params = mock_ue_execute.call_args[0][1]
         assert params["force"] is True
@@ -565,6 +565,8 @@ class TestSetMeshMaterialColor:
         assert "material_slot" not in params
         assert "parameter_name" not in params
         assert "material_path" not in params
+        assert "metallic" not in params
+        assert "roughness" not in params
 
     def test_with_all_optional_params(self, mock_ue_execute):
         mock_ue_execute.return_value = {"status": "success"}
@@ -572,12 +574,15 @@ class TestSetMeshMaterialColor:
             blueprint_name="MyBP", component_name="Mesh1",
             color=[0.0, 1.0, 0.0, 1.0], material_slot=1,
             parameter_name="Emissive", material_path="/Game/Materials/M_Base",
+            metallic=1.0, roughness=0.2,
         )
         params = mock_ue_execute.call_args[0][1]
         assert params["color"] == [0.0, 1.0, 0.0, 1.0]
         assert params["material_slot"] == 1
         assert params["parameter_name"] == "Emissive"
         assert params["material_path"] == "/Game/Materials/M_Base"
+        assert params["metallic"] == 1.0
+        assert params["roughness"] == 0.2
 
     def test_omitted_optionals_not_sent(self, mock_ue_execute):
         mock_ue_execute.return_value = {"status": "success"}
@@ -589,6 +594,28 @@ class TestSetMeshMaterialColor:
         assert "material_slot" in params
         assert "parameter_name" not in params
         assert "material_path" not in params
+        assert "metallic" not in params
+        assert "roughness" not in params
+
+    def test_metallic_only(self, mock_ue_execute):
+        mock_ue_execute.return_value = {"status": "success"}
+        call_tool("set_mesh_material_color",
+            blueprint_name="MyBP", component_name="Mesh1",
+            color=[0.7, 0.7, 0.7], metallic=1.0,
+        )
+        params = mock_ue_execute.call_args[0][1]
+        assert params["metallic"] == 1.0
+        assert "roughness" not in params
+
+    def test_roughness_only(self, mock_ue_execute):
+        mock_ue_execute.return_value = {"status": "success"}
+        call_tool("set_mesh_material_color",
+            blueprint_name="MyBP", component_name="Mesh1",
+            color=[0.5, 0.5, 0.5], roughness=0.1,
+        )
+        params = mock_ue_execute.call_args[0][1]
+        assert params["roughness"] == 0.1
+        assert "metallic" not in params
 
 
 # =============================================================================
