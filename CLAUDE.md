@@ -219,9 +219,14 @@ void FWN_MCP_CommandGroup_XXX::OnRegisterCommands(TArray<FString>& InOutCommandN
 
 TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_XXX::OnExecute(const FString& InCommandName, const TSharedPtr<FJsonObject>& InParamsPtr, TSharedPtr<FSocket> InClientSocketPtr) const
 {
+	//-------------------------------------------------------------------------
+	// command_name_here
+	//-------------------------------------------------------------------------
+
 	if (InCommandName == FString(TEXT("command_name_here")))
 	{
 		// Implementation here
+
 		TSharedPtr<FJsonObject> InResultPtr = MakeShareable(new FJsonObject());
 		InResultPtr->SetStringField(TEXT("key"), TEXT("value"));
 		WN_RETURN_COMMAND_RESPONSE(InResultPtr);
@@ -247,11 +252,16 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_XXX::OnExecute(const FString& InCom
 - Opening brace on next line for functions/classes
 - Opening brace on same line for `if/else/for/while`
 - Access specifiers (`public:`, `private:`) with blank line after
-- Empty constructor/destructor bodies: opening brace on next line, empty line, closing brace
+- Empty constructor body: opening brace on next line, empty line, closing brace
+- Empty destructor body: opening brace on next line, closing brace (NO empty line)
 - `FString(TEXT("..."))` for command name comparisons
 - `MakeShareable(new FJsonObject())` for creating JSON objects
 - Always end `OnExecute` with `WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_METHOD_NOT_FOUND, TEXT(""));`
+- `OnExecute` 내 각 커맨드 블록 앞에 72-dash 구분선 추가 (커맨드 이름 포함)
+- 자명한 주석 금지: `// Get required parameters`, `// Return result` 등 — 코드가 이미 설명하는 내용 반복 금지
+- `InResultPtr` 앞에는 빈 줄 1개 (결과 생성부와 로직 분리)
 - Inline comments start with capital letter: `// Find actor by name` (NOT `// find actor by name`)
+- 공유 헬퍼는 파일 스코프 `static` 함수로 선언 (클래스 멤버 아님)
 
 ### Extension Plugin Pattern (like WN_MCPTest)
 
