@@ -42,10 +42,10 @@ async def safe_delete_actor(client, name: str):
         pass
 
 
-async def safe_delete_blueprint(client, bp_path: str):
+async def safe_delete_blueprint(client, bp_name: str):
     """Delete blueprint, ignoring errors if it doesn't exist."""
     try:
-        await client.call_tool("delete_blueprint", {"blueprint_path": bp_path, "force": True})
+        await client.call_tool("delete_blueprint", {"blueprint_name": bp_name, "force": True})
     except Exception:
         pass
 
@@ -194,11 +194,11 @@ async def test_actor_component_crud_e2e(mcp_client):
 async def test_blueprint_crud_e2e(mcp_client):
     """Blueprint lifecycle: create -> read -> compile -> add component -> remove -> delete."""
     bp_name = "_E2E_Blueprint"
-    bp_path = f"/Game/Blueprints/{bp_name}"
+
     comp_name = "_E2E_Mesh"
 
     async with mcp_client:
-        await safe_delete_blueprint(mcp_client, bp_path)
+        await safe_delete_blueprint(mcp_client, bp_name)
 
         try:
             # Create blueprint
@@ -207,7 +207,7 @@ async def test_blueprint_crud_e2e(mcp_client):
 
             # Read content
             result = await call_tool(mcp_client, "read_blueprint_content", {
-                "blueprint_path": bp_path,
+                "blueprint_name": bp_name,
             })
             assert result["blueprint_name"] == bp_name
 
@@ -240,11 +240,11 @@ async def test_blueprint_crud_e2e(mcp_client):
 
             # Delete blueprint
             result = await call_tool(mcp_client, "delete_blueprint", {
-                "blueprint_path": bp_path, "force": True,
+                "blueprint_name": bp_name, "force": True,
             })
             assert result["status"] == "success"
         finally:
-            await safe_delete_blueprint(mcp_client, bp_path)
+            await safe_delete_blueprint(mcp_client, bp_name)
 
 
 # =============================================================================
@@ -256,11 +256,11 @@ async def test_blueprint_crud_e2e(mcp_client):
 async def test_property_e2e(mcp_client):
     """Property lifecycle: create BP -> add mesh comp -> set mesh -> set physics -> cleanup."""
     bp_name = "_E2E_PropBP"
-    bp_path = f"/Game/Blueprints/{bp_name}"
+
     comp_name = "_E2E_PropMesh"
 
     async with mcp_client:
-        await safe_delete_blueprint(mcp_client, bp_path)
+        await safe_delete_blueprint(mcp_client, bp_name)
 
         try:
             # Create blueprint with StaticMeshComponent
@@ -288,7 +288,7 @@ async def test_property_e2e(mcp_client):
             })
             assert result["status"] == "success"
         finally:
-            await safe_delete_blueprint(mcp_client, bp_path)
+            await safe_delete_blueprint(mcp_client, bp_name)
 
 
 # =============================================================================
@@ -300,12 +300,12 @@ async def test_property_e2e(mcp_client):
 async def test_blueprint_spawn_e2e(mcp_client):
     """Blueprint spawn lifecycle: create BP -> compile -> spawn -> verify -> cleanup."""
     bp_name = "_E2E_SpawnBP"
-    bp_path = f"/Game/Blueprints/{bp_name}"
+
     actor_name = "_E2E_SpawnedActor"
 
     async with mcp_client:
         await safe_delete_actor(mcp_client, actor_name)
-        await safe_delete_blueprint(mcp_client, bp_path)
+        await safe_delete_blueprint(mcp_client, bp_name)
 
         try:
             # Create and compile blueprint
@@ -329,7 +329,7 @@ async def test_blueprint_spawn_e2e(mcp_client):
             assert result["count"] >= 1
         finally:
             await safe_delete_actor(mcp_client, actor_name)
-            await safe_delete_blueprint(mcp_client, bp_path)
+            await safe_delete_blueprint(mcp_client, bp_name)
 
 
 # =============================================================================
@@ -342,12 +342,12 @@ async def test_material_e2e(mcp_client):
     """Material lifecycle: list -> apply to actor -> info -> apply to BP -> color -> cleanup."""
     actor_name = "_E2E_MatActor"
     bp_name = "_E2E_MatBP"
-    bp_path = f"/Game/Blueprints/{bp_name}"
+
     comp_name = "_E2E_MatMesh"
 
     async with mcp_client:
         await safe_delete_actor(mcp_client, actor_name)
-        await safe_delete_blueprint(mcp_client, bp_path)
+        await safe_delete_blueprint(mcp_client, bp_name)
 
         try:
             # List available materials
@@ -408,7 +408,7 @@ async def test_material_e2e(mcp_client):
             assert result["status"] == "success"
         finally:
             await safe_delete_actor(mcp_client, actor_name)
-            await safe_delete_blueprint(mcp_client, bp_path)
+            await safe_delete_blueprint(mcp_client, bp_name)
 
 
 # =============================================================================
