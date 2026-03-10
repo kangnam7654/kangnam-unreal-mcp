@@ -33,6 +33,7 @@ void FWN_MCP_CommandGroup_Actor::OnRegisterCommands(TArray<FString>& InOutComman
 	InOutCommandNames.Add(FString(TEXT("spawn_actor")));
 	InOutCommandNames.Add(FString(TEXT("delete_actor")));
 	InOutCommandNames.Add(FString(TEXT("set_actor_transform")));
+	InOutCommandNames.Add(FString(TEXT("read_actor_content")));
 }
 
 TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Actor::OnExecute(const FString& InCommandName, const TSharedPtr<FJsonObject>& InParamsPtr, TSharedPtr<FSocket> InClientSocketPtr) const
@@ -204,6 +205,10 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Actor::OnExecute(const FString& InC
 				*FString::Printf(TEXT("Actor '%s' not found"), *actorName));
 		}
 
+		// Rename actor before destruction to free up the name for immediate reuse
+		FName uniqueName = MakeUniqueObjectName(foundActor->GetOuter(), foundActor->GetClass(), FName(TEXT("DELETED")));
+		foundActor->Rename(*uniqueName.ToString());
+
 		GWorld->DestroyActor(foundActor);
 
 		TSharedPtr<FJsonObject> InResultPtr = MakeShareable(new FJsonObject());
@@ -278,6 +283,40 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Actor::OnExecute(const FString& InC
 				scale.Z = (*scaleArray)[2]->AsNumber();
 				foundActor->SetActorScale3D(scale);
 			}
+		}
+
+		TSharedPtr<FJsonObject> InResultPtr = MakeShareable(new FJsonObject());
+		InResultPtr->SetStringField(TEXT("status"), TEXT("success"));
+		InResultPtr->SetField(TEXT("actor"), ActorToJsonValue(foundActor));
+		WN_RETURN_COMMAND_RESPONSE(InResultPtr);
+	}
+
+	if (InCommandName == FString(TEXT("read_actor_content")))
+	{
+		FString actorName;
+		if (!InParamsPtr.IsValid() || !InParamsPtr->TryGetStringField(TEXT("name"), actorName))
+		{
+			WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: name"));
+		}
+
+		// Find actor by name
+		TArray<AActor*> allActors;
+		UGameplayStatics::GetAllActorsOfClass(GWorld, AActor::StaticClass(), allActors);
+
+		AActor* foundActor = nullptr;
+		for (AActor* actor : allActors)
+		{
+			if (actor && actor->GetName() == actorName)
+			{
+				foundActor = actor;
+				break;
+			}
+		}
+
+		if (!foundActor)
+		{
+			WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_INVALID_PARAMS,
+				*FString::Printf(TEXT("Actor '%s' not found"), *actorName));
 		}
 
 		TSharedPtr<FJsonObject> InResultPtr = MakeShareable(new FJsonObject());
