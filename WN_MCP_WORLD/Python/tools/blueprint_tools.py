@@ -61,7 +61,7 @@ def register_tools(mcp: FastMCP):
 
     @mcp.tool
     def read_blueprint_content(
-        blueprint_path: str,
+        blueprint_name: str,
         include_event_graph: Optional[bool] = None,
         include_functions: Optional[bool] = None,
         include_variables: Optional[bool] = None,
@@ -70,7 +70,7 @@ def register_tools(mcp: FastMCP):
         """Read the content/structure of a Blueprint asset.
 
         Args:
-            blueprint_path: Full asset path (e.g. "/Game/Blueprints/MyBP")
+            blueprint_name: Blueprint name or full path (e.g. "MyBP" or "/Game/Blueprints/MyBP")
             include_event_graph: Include event graph info (default: true)
             include_functions: Include function list (default: true)
             include_variables: Include variable list (default: true)
@@ -80,7 +80,7 @@ def register_tools(mcp: FastMCP):
         event graph, and interfaces.
         For component info, use read_components_from_blueprint() instead.
         """
-        params: Dict[str, Any] = {"blueprint_path": blueprint_path}
+        params: Dict[str, Any] = {"blueprint_name": blueprint_name}
         if include_event_graph is not None:
             params["include_event_graph"] = include_event_graph
         if include_functions is not None:
@@ -106,17 +106,17 @@ def register_tools(mcp: FastMCP):
         return json.dumps(result, indent=2, ensure_ascii=False)
 
     @mcp.tool
-    def delete_blueprint(blueprint_path: str, force: Optional[bool] = None) -> str:
+    def delete_blueprint(blueprint_name: str, force: Optional[bool] = None) -> str:
         """Delete a Blueprint asset from the project.
 
         Args:
-            blueprint_path: Full asset path (e.g. "/Game/Blueprints/MyBP")
+            blueprint_name: Blueprint name or full path (e.g. "MyBP" or "/Game/Blueprints/MyBP")
             force: If true, delete even if other assets reference this Blueprint.
                    If false (default), returns error with list of referencers.
 
         WARNING: Deleting a Blueprint that is referenced by other assets may break those assets.
         """
-        params: Dict[str, Any] = {"blueprint_path": blueprint_path}
+        params: Dict[str, Any] = {"blueprint_name": blueprint_name}
         if force is not None:
             params["force"] = force
 

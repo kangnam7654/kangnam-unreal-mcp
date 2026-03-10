@@ -2,28 +2,35 @@
 .git/
 .gitignore
 CLAUDE.md
+AGENTS.md.lnk
 .claude/
+.mcp.json
 
-# Python
-.venv/
-__pycache__/
+# Python (recursive — matches in any subdirectory)
+**/.venv/
+**/__pycache__/
 *.pyc
 *.pyo
-.coverage
-.pytest_cache/
-*.egg-info/
+**/.coverage
+**/.pytest_cache/
+**/*.egg-info/
 
-# Build artifacts
-Binaries/
-Intermediate/
+# Build artifacts (recursive)
+**/Intermediate/
 
 # IDE / OS
 .vs/
-.vscode/
+**/.vscode/
 *.suo
 *.user
 Thumbs.db
 Desktop.ini
 
 # Old test dirs
-python_tool_4_tests/
+**/python_tool_4_tests/
+
+# Misc generated
+%programdata%/
+**/logs/
+**/.env
+**/.env.example

@@ -135,7 +135,7 @@ class TestBlueprintCRUD:
         assert result["count"] >= 1
 
     def test_03_read_blueprint(self):
-        result = call("read_blueprint_content", blueprint_path=self.BP_PATH)
+        result = call("read_blueprint_content", blueprint_name=self.BP_NAME)
         assert result["blueprint_name"] == self.BP_NAME
         assert "parent_class" in result
 
@@ -144,7 +144,7 @@ class TestBlueprintCRUD:
         assert result["compiled"] is True
 
     def test_05_delete_blueprint(self):
-        result = call("delete_blueprint", blueprint_path=self.BP_PATH, force=True)
+        result = call("delete_blueprint", blueprint_name=self.BP_NAME, force=True)
         assert result["status"] == "success"
 
 
@@ -189,7 +189,7 @@ class TestBlueprintComponentCRD:
         assert result["status"] == "success"
 
     def test_06_cleanup_blueprint(self):
-        call("delete_blueprint", blueprint_path=self.BP_PATH, force=True)
+        call("delete_blueprint", blueprint_name=self.BP_NAME, force=True)
 
 
 # =============================================================================
@@ -235,7 +235,7 @@ class TestPropertyCommands:
         assert result["status"] == "success"
 
     def test_05_cleanup_blueprint(self):
-        call("delete_blueprint", blueprint_path=self.BP_PATH, force=True)
+        call("delete_blueprint", blueprint_name=self.BP_NAME, force=True)
 
 
 # =============================================================================
@@ -275,7 +275,7 @@ class TestBlueprintSpawn:
         call("delete_actor", name=self.ACTOR_NAME)
 
     def test_06_cleanup_blueprint(self):
-        call("delete_blueprint", blueprint_path=self.BP_PATH, force=True)
+        call("delete_blueprint", blueprint_name=self.BP_NAME, force=True)
 
 
 # =============================================================================
@@ -355,4 +355,4 @@ class TestMaterialCommands:
         call("delete_actor", name=self.ACTOR_NAME)
 
     def test_10_cleanup_blueprint(self):
-        call("delete_blueprint", blueprint_path=self.BP_PATH, force=True)
+        call("delete_blueprint", blueprint_name=self.BP_NAME, force=True)
