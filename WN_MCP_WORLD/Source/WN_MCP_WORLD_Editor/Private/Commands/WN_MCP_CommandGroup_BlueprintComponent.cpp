@@ -25,7 +25,6 @@ FWN_MCP_CommandGroup_BlueprintComponent::FWN_MCP_CommandGroup_BlueprintComponent
 
 FWN_MCP_CommandGroup_BlueprintComponent::~FWN_MCP_CommandGroup_BlueprintComponent()
 {
-
 }
 
 FString FWN_MCP_CommandGroup_BlueprintComponent::GetName() const
@@ -42,9 +41,12 @@ void FWN_MCP_CommandGroup_BlueprintComponent::OnRegisterCommands(TArray<FString>
 
 TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_BlueprintComponent::OnExecute(const FString& InCommandName, const TSharedPtr<FJsonObject>& InParamsPtr, TSharedPtr<FSocket> InClientSocketPtr) const
 {
+	//-------------------------------------------------------------------------
+	// add_component_to_blueprint
+	//-------------------------------------------------------------------------
+
 	if (InCommandName == FString(TEXT("add_component_to_blueprint")))
 	{
-		// Get required parameters
 		FString blueprintName;
 		if (!InParamsPtr.IsValid() || !InParamsPtr->TryGetStringField(TEXT("blueprint_name"), blueprintName))
 		{
@@ -152,7 +154,6 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_BlueprintComponent::OnExecute(const
 		blueprint->Modify();
 		FKismetEditorUtilities::CompileBlueprint(blueprint);
 
-		// Return result
 		TSharedPtr<FJsonObject> InResultPtr = MakeShareable(new FJsonObject());
 		InResultPtr->SetStringField(TEXT("status"), TEXT("success"));
 		InResultPtr->SetStringField(TEXT("blueprint_name"), blueprint->GetName());
@@ -165,9 +166,12 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_BlueprintComponent::OnExecute(const
 		WN_RETURN_COMMAND_RESPONSE(InResultPtr);
 	}
 
+	//-------------------------------------------------------------------------
+	// remove_component_from_blueprint
+	//-------------------------------------------------------------------------
+
 	if (InCommandName == FString(TEXT("remove_component_from_blueprint")))
 	{
-		// Get required parameters
 		FString blueprintName;
 		if (!InParamsPtr.IsValid() || !InParamsPtr->TryGetStringField(TEXT("blueprint_name"), blueprintName))
 		{
@@ -261,7 +265,6 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_BlueprintComponent::OnExecute(const
 		blueprint->Modify();
 		FKismetEditorUtilities::CompileBlueprint(blueprint);
 
-		// Return result
 		TSharedPtr<FJsonObject> InResultPtr = MakeShareable(new FJsonObject());
 		InResultPtr->SetStringField(TEXT("status"), TEXT("success"));
 		InResultPtr->SetStringField(TEXT("blueprint_name"), blueprint->GetName());
@@ -274,9 +277,12 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_BlueprintComponent::OnExecute(const
 		WN_RETURN_COMMAND_RESPONSE(InResultPtr);
 	}
 
+	//-------------------------------------------------------------------------
+	// read_components_from_blueprint
+	//-------------------------------------------------------------------------
+
 	if (InCommandName == FString(TEXT("read_components_from_blueprint")))
 	{
-		// Get required parameters
 		FString blueprintName;
 		if (!InParamsPtr.IsValid() || !InParamsPtr->TryGetStringField(TEXT("blueprint_name"), blueprintName))
 		{
