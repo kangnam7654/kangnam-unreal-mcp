@@ -546,10 +546,43 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Material::OnExecute(const FString& 
 			}
 		}
 
+		// Defensive fallback: verify the material supports the requested vector parameter.
+		// If not (e.g. engine default material without BaseColor), fall back to BasicShapeMaterial.
+		if (existingMaterial)
+		{
+			TArray<FMaterialParameterInfo> paramInfos;
+			TArray<FGuid> paramIds;
+			existingMaterial->GetAllVectorParameterInfo(paramInfos, paramIds);
+
+			bool bHasParameter = false;
+			for (const FMaterialParameterInfo& info : paramInfos)
+			{
+				if (info.Name == FName(*parameterName))
+				{
+					bHasParameter = true;
+					break;
+				}
+			}
+
+			if (!bHasParameter)
+			{
+				UMaterialInterface* fallbackMat = LoadObject<UMaterial>(nullptr, TEXT("/Engine/BasicShapes/BasicShapeMaterial.BasicShapeMaterial"));
+				if (fallbackMat)
+				{
+					existingMaterial = fallbackMat;
+				}
+			}
+		}
+		else
+		{
+			// No material at all, try BasicShapeMaterial fallback
+			existingMaterial = LoadObject<UMaterial>(nullptr, TEXT("/Engine/BasicShapes/BasicShapeMaterial.BasicShapeMaterial"));
+		}
+
 		if (!existingMaterial)
 		{
 			WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_COMMAND_FAILED,
-				*FString::Printf(TEXT("No material found at slot %d on component '%s'"), materialSlot, *componentName));
+				*FString::Printf(TEXT("No material found at slot %d on component '%s'. Provide 'material_path' with a material that supports the '%s' parameter."), materialSlot, *componentName, *parameterName));
 		}
 
 		// Create dynamic material instance and set color
