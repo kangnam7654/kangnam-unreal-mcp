@@ -309,7 +309,7 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Blueprint::OnExecute(const FString&
 		{
 			TArray<FName> referencers;
 			FAssetRegistryModule& assetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>(TEXT("AssetRegistry"));
-			assetRegistryModule.Get().GetReferencers(FName(*blueprintPath), referencers);
+			assetRegistryModule.Get().GetReferencers(FName(*packagePath), referencers);
 
 			if (referencers.Num() > 0)
 			{
