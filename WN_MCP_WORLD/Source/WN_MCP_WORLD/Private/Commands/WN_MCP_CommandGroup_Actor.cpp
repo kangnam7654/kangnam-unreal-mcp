@@ -82,6 +82,10 @@ void FWN_MCP_CommandGroup_Actor::OnRegisterCommands(TArray<FString>& InOutComman
 
 TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Actor::OnExecute(const FString& InCommandName, const TSharedPtr<FJsonObject>& InParamsPtr, TSharedPtr<FSocket> InClientSocketPtr) const
 {
+	//-------------------------------------------------------------------------
+	// get_actors_in_level
+	//-------------------------------------------------------------------------
+
 	if (InCommandName == FString(TEXT("get_actors_in_level")))
 	{
 		TArray<AActor*> allActors;
@@ -101,6 +105,10 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Actor::OnExecute(const FString& InC
 		InResultPtr->SetArrayField(TEXT("actors"), jsonActorValues);
 		WN_RETURN_COMMAND_RESPONSE(InResultPtr);
 	}
+
+	//-------------------------------------------------------------------------
+	// find_actors_by_name
+	//-------------------------------------------------------------------------
 
 	if (InCommandName == FString(TEXT("find_actors_by_name")))
 	{
@@ -127,6 +135,10 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Actor::OnExecute(const FString& InC
 		InResultPtr->SetArrayField(TEXT("actors"), jsonActorValues);
 		WN_RETURN_COMMAND_RESPONSE(InResultPtr);
 	}
+
+	//-------------------------------------------------------------------------
+	// spawn_actor
+	//-------------------------------------------------------------------------
 
 	if (InCommandName == FString(TEXT("spawn_actor")))
 	{
@@ -217,6 +229,10 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Actor::OnExecute(const FString& InC
 		WN_RETURN_COMMAND_RESPONSE(InResultPtr);
 	}
 
+	//-------------------------------------------------------------------------
+	// delete_actor
+	//-------------------------------------------------------------------------
+
 	if (InCommandName == FString(TEXT("delete_actor")))
 	{
 		FString actorName;
@@ -243,6 +259,10 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Actor::OnExecute(const FString& InC
 		InResultPtr->SetStringField(TEXT("deleted_actor"), actorName);
 		WN_RETURN_COMMAND_RESPONSE(InResultPtr);
 	}
+
+	//-------------------------------------------------------------------------
+	// set_actor_transform
+	//-------------------------------------------------------------------------
 
 	if (InCommandName == FString(TEXT("set_actor_transform")))
 	{
@@ -304,6 +324,10 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Actor::OnExecute(const FString& InC
 		InResultPtr->SetField(TEXT("actor"), ActorToJsonValue(foundActor));
 		WN_RETURN_COMMAND_RESPONSE(InResultPtr);
 	}
+
+	//-------------------------------------------------------------------------
+	// read_actor_content
+	//-------------------------------------------------------------------------
 
 	if (InCommandName == FString(TEXT("read_actor_content")))
 	{

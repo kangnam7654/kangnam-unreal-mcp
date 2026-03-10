@@ -20,7 +20,6 @@ FWN_MCP_CommandGroup_BlueprintVariable::FWN_MCP_CommandGroup_BlueprintVariable()
 
 FWN_MCP_CommandGroup_BlueprintVariable::~FWN_MCP_CommandGroup_BlueprintVariable()
 {
-
 }
 
 FString FWN_MCP_CommandGroup_BlueprintVariable::GetName() const
@@ -42,7 +41,6 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_BlueprintVariable::OnExecute(const 
 
 	if (InCommandName == FString(TEXT("add_variable_to_blueprint")))
 	{
-		// Get required parameters
 		FString blueprintName;
 		if (!InParamsPtr.IsValid() || !InParamsPtr->TryGetStringField(TEXT("blueprint_name"), blueprintName))
 		{
@@ -180,7 +178,6 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_BlueprintVariable::OnExecute(const 
 
 	if (InCommandName == FString(TEXT("remove_variable_from_blueprint")))
 	{
-		// Get required parameters
 		FString blueprintName;
 		if (!InParamsPtr.IsValid() || !InParamsPtr->TryGetStringField(TEXT("blueprint_name"), blueprintName))
 		{

@@ -94,7 +94,6 @@ FWN_MCP_CommandGroup_Material::FWN_MCP_CommandGroup_Material()
 
 FWN_MCP_CommandGroup_Material::~FWN_MCP_CommandGroup_Material()
 {
-
 }
 
 FString FWN_MCP_CommandGroup_Material::GetName() const
@@ -175,7 +174,6 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Material::OnExecute(const FString& 
 
 	if (InCommandName == FString(TEXT("apply_material_to_actor")))
 	{
-		// Get required parameters
 		FString actorName;
 		if (!InParamsPtr.IsValid() || !InParamsPtr->TryGetStringField(TEXT("actor_name"), actorName))
 		{
@@ -254,7 +252,6 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Material::OnExecute(const FString& 
 
 	if (InCommandName == FString(TEXT("apply_material_to_blueprint")))
 	{
-		// Get required parameters
 		FString blueprintName;
 		if (!InParamsPtr.IsValid() || !InParamsPtr->TryGetStringField(TEXT("blueprint_name"), blueprintName))
 		{
@@ -347,7 +344,6 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Material::OnExecute(const FString& 
 
 	if (InCommandName == FString(TEXT("get_actor_material_info")))
 	{
-		// Get required parameters
 		FString actorName;
 		if (!InParamsPtr.IsValid() || !InParamsPtr->TryGetStringField(TEXT("actor_name"), actorName))
 		{
@@ -419,7 +415,6 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Material::OnExecute(const FString& 
 
 	if (InCommandName == FString(TEXT("get_blueprint_material_info")))
 	{
-		// Get required parameters
 		FString blueprintName;
 		if (!InParamsPtr.IsValid() || !InParamsPtr->TryGetStringField(TEXT("blueprint_name"), blueprintName))
 		{
@@ -517,7 +512,6 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Material::OnExecute(const FString& 
 
 	if (InCommandName == FString(TEXT("set_mesh_material_color")))
 	{
-		// Get required parameters
 		FString blueprintName;
 		if (!InParamsPtr.IsValid() || !InParamsPtr->TryGetStringField(TEXT("blueprint_name"), blueprintName))
 		{
@@ -710,7 +704,6 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Material::OnExecute(const FString& 
 
 		FBlueprintEditorUtils::MarkBlueprintAsModified(blueprint);
 
-		// Return result
 		TSharedPtr<FJsonObject> InResultPtr = MakeShareable(new FJsonObject());
 		InResultPtr->SetStringField(TEXT("status"), TEXT("success"));
 		InResultPtr->SetStringField(TEXT("component_name"), componentName);

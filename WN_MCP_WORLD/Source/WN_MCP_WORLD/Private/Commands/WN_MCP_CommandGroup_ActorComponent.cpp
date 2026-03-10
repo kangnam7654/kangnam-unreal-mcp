@@ -21,7 +21,6 @@ FWN_MCP_CommandGroup_ActorComponent::FWN_MCP_CommandGroup_ActorComponent()
 
 FWN_MCP_CommandGroup_ActorComponent::~FWN_MCP_CommandGroup_ActorComponent()
 {
-
 }
 
 FString FWN_MCP_CommandGroup_ActorComponent::GetName() const
@@ -38,9 +37,12 @@ void FWN_MCP_CommandGroup_ActorComponent::OnRegisterCommands(TArray<FString>& In
 
 TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_ActorComponent::OnExecute(const FString& InCommandName, const TSharedPtr<FJsonObject>& InParamsPtr, TSharedPtr<FSocket> InClientSocketPtr) const
 {
+	//-------------------------------------------------------------------------
+	// add_component_to_actor
+	//-------------------------------------------------------------------------
+
 	if (InCommandName == FString(TEXT("add_component_to_actor")))
 	{
-		// Get required parameters
 		FString actorName;
 		if (!InParamsPtr.IsValid() || !InParamsPtr->TryGetStringField(TEXT("name"), actorName))
 		{
@@ -107,7 +109,6 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_ActorComponent::OnExecute(const FSt
 		// Register the component to activate it
 		newComponent->RegisterComponent();
 
-		// Return result
 		TSharedPtr<FJsonObject> InResultPtr = MakeShareable(new FJsonObject());
 		InResultPtr->SetStringField(TEXT("status"), TEXT("success"));
 		InResultPtr->SetStringField(TEXT("actor_name"), foundActor->GetName());
@@ -116,9 +117,12 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_ActorComponent::OnExecute(const FSt
 		WN_RETURN_COMMAND_RESPONSE(InResultPtr);
 	}
 
+	//-------------------------------------------------------------------------
+	// remove_component_from_actor
+	//-------------------------------------------------------------------------
+
 	if (InCommandName == FString(TEXT("remove_component_from_actor")))
 	{
-		// Get required parameters
 		FString actorName;
 		if (!InParamsPtr.IsValid() || !InParamsPtr->TryGetStringField(TEXT("name"), actorName))
 		{
@@ -170,7 +174,6 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_ActorComponent::OnExecute(const FSt
 		// Destroy the component
 		targetComponent->DestroyComponent();
 
-		// Return result
 		TSharedPtr<FJsonObject> InResultPtr = MakeShareable(new FJsonObject());
 		InResultPtr->SetStringField(TEXT("status"), TEXT("success"));
 		InResultPtr->SetStringField(TEXT("actor_name"), foundActor->GetName());
@@ -179,9 +182,12 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_ActorComponent::OnExecute(const FSt
 		WN_RETURN_COMMAND_RESPONSE(InResultPtr);
 	}
 
+	//-------------------------------------------------------------------------
+	// read_components_from_actor
+	//-------------------------------------------------------------------------
+
 	if (InCommandName == FString(TEXT("read_components_from_actor")))
 	{
-		// Get required parameters
 		FString actorName;
 		if (!InParamsPtr.IsValid() || !InParamsPtr->TryGetStringField(TEXT("name"), actorName))
 		{

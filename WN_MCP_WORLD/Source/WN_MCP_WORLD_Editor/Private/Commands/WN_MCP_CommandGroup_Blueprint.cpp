@@ -30,7 +30,6 @@ FWN_MCP_CommandGroup_Blueprint::FWN_MCP_CommandGroup_Blueprint()
 
 FWN_MCP_CommandGroup_Blueprint::~FWN_MCP_CommandGroup_Blueprint()
 {
-
 }
 
 FString FWN_MCP_CommandGroup_Blueprint::GetName() const
@@ -51,9 +50,12 @@ void FWN_MCP_CommandGroup_Blueprint::OnRegisterCommands(TArray<FString>& InOutCo
 
 TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Blueprint::OnExecute(const FString& InCommandName, const TSharedPtr<FJsonObject>& InParamsPtr, TSharedPtr<FSocket> InClientSocketPtr) const
 {
+	//-------------------------------------------------------------------------
+	// create_blueprint
+	//-------------------------------------------------------------------------
+
 	if (InCommandName == FString(TEXT("create_blueprint")))
 	{
-		// Get required parameters
 		FString blueprintName;
 		if (!InParamsPtr.IsValid() || !InParamsPtr->TryGetStringField(TEXT("name"), blueprintName))
 		{
@@ -140,9 +142,12 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Blueprint::OnExecute(const FString&
 		WN_RETURN_COMMAND_RESPONSE(InResultPtr);
 	}
 
+	//-------------------------------------------------------------------------
+	// read_blueprint_content
+	//-------------------------------------------------------------------------
+
 	if (InCommandName == FString(TEXT("read_blueprint_content")))
 	{
-		// Get required parameters
 		FString blueprintName;
 		if (!InParamsPtr.IsValid() || !InParamsPtr->TryGetStringField(TEXT("blueprint_name"), blueprintName))
 		{
@@ -253,9 +258,12 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Blueprint::OnExecute(const FString&
 		WN_RETURN_COMMAND_RESPONSE(InResultPtr);
 	}
 
+	//-------------------------------------------------------------------------
+	// compile_blueprint
+	//-------------------------------------------------------------------------
+
 	if (InCommandName == FString(TEXT("compile_blueprint")))
 	{
-		// Get required parameters
 		FString blueprintName;
 		if (!InParamsPtr.IsValid() || !InParamsPtr->TryGetStringField(TEXT("blueprint_name"), blueprintName))
 		{
@@ -279,9 +287,12 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Blueprint::OnExecute(const FString&
 		WN_RETURN_COMMAND_RESPONSE(InResultPtr);
 	}
 
+	//-------------------------------------------------------------------------
+	// delete_blueprint
+	//-------------------------------------------------------------------------
+
 	if (InCommandName == FString(TEXT("delete_blueprint")))
 	{
-		// Get required parameters
 		FString blueprintName;
 		if (!InParamsPtr.IsValid() || !InParamsPtr->TryGetStringField(TEXT("blueprint_name"), blueprintName))
 		{
@@ -339,6 +350,10 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Blueprint::OnExecute(const FString&
 		WN_RETURN_COMMAND_RESPONSE(InResultPtr);
 	}
 
+	//-------------------------------------------------------------------------
+	// get_blueprints
+	//-------------------------------------------------------------------------
+
 	if (InCommandName == FString(TEXT("get_blueprints")))
 	{
 		// Optional search path (default: /Game/)
@@ -375,9 +390,12 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Blueprint::OnExecute(const FString&
 		WN_RETURN_COMMAND_RESPONSE(InResultPtr);
 	}
 
+	//-------------------------------------------------------------------------
+	// find_blueprints_by_name
+	//-------------------------------------------------------------------------
+
 	if (InCommandName == FString(TEXT("find_blueprints_by_name")))
 	{
-		// Get required parameters
 		FString searchText;
 		if (!InParamsPtr.IsValid() || !InParamsPtr->TryGetStringField(TEXT("search_text"), searchText))
 		{
@@ -414,9 +432,12 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Blueprint::OnExecute(const FString&
 		WN_RETURN_COMMAND_RESPONSE(InResultPtr);
 	}
 
+	//-------------------------------------------------------------------------
+	// spawn_blueprint_actor
+	//-------------------------------------------------------------------------
+
 	if (InCommandName == FString(TEXT("spawn_blueprint_actor")))
 	{
-		// Get required parameters
 		FString blueprintName;
 		if (!InParamsPtr.IsValid() || !InParamsPtr->TryGetStringField(TEXT("blueprint_name"), blueprintName))
 		{
@@ -534,7 +555,6 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Blueprint::OnExecute(const FString&
 		scaleJsonArray.Add(MakeShareable(new FJsonValueNumber(actorScale.Z)));
 		actorObject->SetArrayField(TEXT("scale"), scaleJsonArray);
 
-		// Return result
 		TSharedPtr<FJsonObject> InResultPtr = MakeShareable(new FJsonObject());
 		InResultPtr->SetStringField(TEXT("status"), TEXT("success"));
 		InResultPtr->SetStringField(TEXT("blueprint_name"), blueprint->GetName());

@@ -176,7 +176,6 @@ FWN_MCP_CommandGroup_BlueprintGraph::FWN_MCP_CommandGroup_BlueprintGraph()
 
 FWN_MCP_CommandGroup_BlueprintGraph::~FWN_MCP_CommandGroup_BlueprintGraph()
 {
-
 }
 
 FString FWN_MCP_CommandGroup_BlueprintGraph::GetName() const

@@ -25,7 +25,6 @@ FWN_MCP_CommandGroup_Property::FWN_MCP_CommandGroup_Property()
 
 FWN_MCP_CommandGroup_Property::~FWN_MCP_CommandGroup_Property()
 {
-
 }
 
 FString FWN_MCP_CommandGroup_Property::GetName() const
@@ -47,7 +46,6 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Property::OnExecute(const FString& 
 
 	if (InCommandName == FString(TEXT("set_static_mesh_properties")))
 	{
-		// Get required parameters
 		FString blueprintName;
 		if (!InParamsPtr.IsValid() || !InParamsPtr->TryGetStringField(TEXT("blueprint_name"), blueprintName))
 		{
@@ -134,7 +132,6 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Property::OnExecute(const FString& 
 		// Mark blueprint as modified
 		FBlueprintEditorUtils::MarkBlueprintAsModified(blueprint);
 
-		// Return result
 		TSharedPtr<FJsonObject> InResultPtr = MakeShareable(new FJsonObject());
 		InResultPtr->SetStringField(TEXT("status"), TEXT("success"));
 		InResultPtr->SetStringField(TEXT("blueprint_name"), blueprint->GetName());
@@ -148,7 +145,6 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Property::OnExecute(const FString& 
 
 	if (InCommandName == FString(TEXT("set_physics_properties")))
 	{
-		// Get required parameters
 		FString blueprintName;
 		if (!InParamsPtr.IsValid() || !InParamsPtr->TryGetStringField(TEXT("blueprint_name"), blueprintName))
 		{
@@ -228,7 +224,6 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Property::OnExecute(const FString& 
 		// Mark blueprint as modified
 		FBlueprintEditorUtils::MarkBlueprintAsModified(blueprint);
 
-		// Return result
 		TSharedPtr<FJsonObject> InResultPtr = MakeShareable(new FJsonObject());
 		InResultPtr->SetStringField(TEXT("status"), TEXT("success"));
 		InResultPtr->SetStringField(TEXT("blueprint_name"), blueprint->GetName());
