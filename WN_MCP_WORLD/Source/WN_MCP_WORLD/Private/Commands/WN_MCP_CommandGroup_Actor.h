@@ -3,12 +3,6 @@
 #include "WN_MCP_CommandGroup.h"
 
 //-----------------------------------------------------------------------------
-// Forward Declarations
-//-----------------------------------------------------------------------------
-
-class AActor;
-
-//-----------------------------------------------------------------------------
 // FWN_MCP_CommandGroup_Actor
 //-----------------------------------------------------------------------------
 
@@ -41,11 +35,4 @@ public:
 
 	/// destructor.
 	~FWN_MCP_CommandGroup_Actor();
-
-private:
-
-	/// Convert an actor to a JSON value containing name, class, location, rotation, scale.
-	/// @param InActor actor to convert.
-	/// @return JSON value representing the actor.
-	static TSharedPtr<FJsonValue> ActorToJsonValue(AActor* InActor);
 };

@@ -1,10 +1,10 @@
 #include "WN_MCP_CommandGroup_ActorComponent.h"
+#include "WN_MCP_ActorUtils.h"
 #include "WN_MCP_Module.h"
 
 #include "Dom/JsonObject.h"
 #include "Dom/JsonValue.h"
 #include "GameFramework/Actor.h"
-#include "Kismet/GameplayStatics.h"
 #include "Components/ActorComponent.h"
 #include "Components/SceneComponent.h"
 
@@ -57,20 +57,7 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_ActorComponent::OnExecute(const FSt
 		FString componentName;
 		InParamsPtr->TryGetStringField(TEXT("component_name"), componentName);
 
-		// Find actor by name
-		TArray<AActor*> allActors;
-		UGameplayStatics::GetAllActorsOfClass(GWorld, AActor::StaticClass(), allActors);
-
-		AActor* foundActor = nullptr;
-		for (AActor* actor : allActors)
-		{
-			if (actor && actor->GetName() == actorName)
-			{
-				foundActor = actor;
-				break;
-			}
-		}
-
+		AActor* foundActor = FWN_MCP_ActorUtils::FindActorByName(actorName);
 		if (!foundActor)
 		{
 			WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_INVALID_PARAMS,
@@ -144,20 +131,7 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_ActorComponent::OnExecute(const FSt
 			WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: component_name"));
 		}
 
-		// Find actor by name
-		TArray<AActor*> allActors;
-		UGameplayStatics::GetAllActorsOfClass(GWorld, AActor::StaticClass(), allActors);
-
-		AActor* foundActor = nullptr;
-		for (AActor* actor : allActors)
-		{
-			if (actor && actor->GetName() == actorName)
-			{
-				foundActor = actor;
-				break;
-			}
-		}
-
+		AActor* foundActor = FWN_MCP_ActorUtils::FindActorByName(actorName);
 		if (!foundActor)
 		{
 			WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_INVALID_PARAMS,
@@ -214,20 +188,7 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_ActorComponent::OnExecute(const FSt
 			WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: name"));
 		}
 
-		// Find actor by name
-		TArray<AActor*> allActors;
-		UGameplayStatics::GetAllActorsOfClass(GWorld, AActor::StaticClass(), allActors);
-
-		AActor* foundActor = nullptr;
-		for (AActor* actor : allActors)
-		{
-			if (actor && actor->GetName() == actorName)
-			{
-				foundActor = actor;
-				break;
-			}
-		}
-
+		AActor* foundActor = FWN_MCP_ActorUtils::FindActorByName(actorName);
 		if (!foundActor)
 		{
 			WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_INVALID_PARAMS,

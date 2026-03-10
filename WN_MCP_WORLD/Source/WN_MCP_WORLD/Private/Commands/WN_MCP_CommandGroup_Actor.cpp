@@ -1,10 +1,54 @@
 ﻿#include "WN_MCP_CommandGroup_Actor.h"
+#include "WN_MCP_ActorUtils.h"
 #include "WN_MCP_Module.h"
 
 #include "Dom/JsonObject.h"
 #include "Dom/JsonValue.h"
 #include "GameFramework/Actor.h"
 #include "Kismet/GameplayStatics.h"
+
+//-----------------------------------------------------------------------------
+// Helpers
+//-----------------------------------------------------------------------------
+
+/// Convert an actor to a JSON value containing name, class, location, rotation, scale.
+static TSharedPtr<FJsonValue> ActorToJsonValue(AActor* InActor)
+{
+	if (!InActor)
+	{
+		return MakeShareable(new FJsonValueNull());
+	}
+
+	TSharedPtr<FJsonObject> actorObject = MakeShareable(new FJsonObject());
+	actorObject->SetStringField(TEXT("name"), InActor->GetName());
+	actorObject->SetStringField(TEXT("class"), InActor->GetClass()->GetName());
+
+	// Location
+	FVector location = InActor->GetActorLocation();
+	TArray<TSharedPtr<FJsonValue>> locationArray;
+	locationArray.Add(MakeShareable(new FJsonValueNumber(location.X)));
+	locationArray.Add(MakeShareable(new FJsonValueNumber(location.Y)));
+	locationArray.Add(MakeShareable(new FJsonValueNumber(location.Z)));
+	actorObject->SetArrayField(TEXT("location"), locationArray);
+
+	// Rotation
+	FRotator rotation = InActor->GetActorRotation();
+	TArray<TSharedPtr<FJsonValue>> rotationArray;
+	rotationArray.Add(MakeShareable(new FJsonValueNumber(rotation.Pitch)));
+	rotationArray.Add(MakeShareable(new FJsonValueNumber(rotation.Yaw)));
+	rotationArray.Add(MakeShareable(new FJsonValueNumber(rotation.Roll)));
+	actorObject->SetArrayField(TEXT("rotation"), rotationArray);
+
+	// Scale
+	FVector scale = InActor->GetActorScale3D();
+	TArray<TSharedPtr<FJsonValue>> scaleArray;
+	scaleArray.Add(MakeShareable(new FJsonValueNumber(scale.X)));
+	scaleArray.Add(MakeShareable(new FJsonValueNumber(scale.Y)));
+	scaleArray.Add(MakeShareable(new FJsonValueNumber(scale.Z)));
+	actorObject->SetArrayField(TEXT("scale"), scaleArray);
+
+	return MakeShareable(new FJsonValueObject(actorObject));
+}
 
 //-----------------------------------------------------------------------------
 // FWN_MCP_CommandGroup_Actor
@@ -136,16 +180,11 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Actor::OnExecute(const FString& InC
 			}
 		}
 
-		// check for duplicate name
-		TArray<AActor*> allActors;
-		UGameplayStatics::GetAllActorsOfClass(GWorld, AActor::StaticClass(), allActors);
-		for (AActor* actor : allActors)
+		// Check for duplicate name
+		if (FWN_MCP_ActorUtils::FindActorByName(actorName))
 		{
-			if (actor && actor->GetName() == actorName)
-			{
-				WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_INVALID_PARAMS,
-					*FString::Printf(TEXT("Actor with name '%s' already exists"), *actorName));
-			}
+			WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_INVALID_PARAMS,
+				*FString::Printf(TEXT("Actor with name '%s' already exists"), *actorName));
 		}
 
 		// find UClass by type name
@@ -186,19 +225,7 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Actor::OnExecute(const FString& InC
 			WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: name"));
 		}
 
-		TArray<AActor*> allActors;
-		UGameplayStatics::GetAllActorsOfClass(GWorld, AActor::StaticClass(), allActors);
-
-		AActor* foundActor = nullptr;
-		for (AActor* actor : allActors)
-		{
-			if (actor && actor->GetName() == actorName)
-			{
-				foundActor = actor;
-				break;
-			}
-		}
-
+		AActor* foundActor = FWN_MCP_ActorUtils::FindActorByName(actorName);
 		if (!foundActor)
 		{
 			WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_INVALID_PARAMS,
@@ -225,27 +252,14 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Actor::OnExecute(const FString& InC
 			WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: name"));
 		}
 
-		// find actor by name
-		TArray<AActor*> allActors;
-		UGameplayStatics::GetAllActorsOfClass(GWorld, AActor::StaticClass(), allActors);
-
-		AActor* foundActor = nullptr;
-		for (AActor* actor : allActors)
-		{
-			if (actor && actor->GetName() == actorName)
-			{
-				foundActor = actor;
-				break;
-			}
-		}
-
+		AActor* foundActor = FWN_MCP_ActorUtils::FindActorByName(actorName);
 		if (!foundActor)
 		{
 			WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_INVALID_PARAMS,
 				*FString::Printf(TEXT("Actor '%s' not found"), *actorName));
 		}
 
-		// apply only provided transform components
+		// Apply only provided transform components
 		if (InParamsPtr->HasField(TEXT("location")))
 		{
 			const TArray<TSharedPtr<FJsonValue>>* locationArray;
@@ -299,20 +313,7 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Actor::OnExecute(const FString& InC
 			WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: name"));
 		}
 
-		// Find actor by name
-		TArray<AActor*> allActors;
-		UGameplayStatics::GetAllActorsOfClass(GWorld, AActor::StaticClass(), allActors);
-
-		AActor* foundActor = nullptr;
-		for (AActor* actor : allActors)
-		{
-			if (actor && actor->GetName() == actorName)
-			{
-				foundActor = actor;
-				break;
-			}
-		}
-
+		AActor* foundActor = FWN_MCP_ActorUtils::FindActorByName(actorName);
 		if (!foundActor)
 		{
 			WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_INVALID_PARAMS,
@@ -326,42 +327,4 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Actor::OnExecute(const FString& InC
 	}
 
 	WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_METHOD_NOT_FOUND, TEXT(""));
-}
-
-TSharedPtr<FJsonValue> FWN_MCP_CommandGroup_Actor::ActorToJsonValue(AActor* InActor)
-{
-	if (!InActor)
-	{
-		return MakeShareable(new FJsonValueNull());
-	}
-
-	TSharedPtr<FJsonObject> actorObject = MakeShareable(new FJsonObject());
-	actorObject->SetStringField(TEXT("name"), InActor->GetName());
-	actorObject->SetStringField(TEXT("class"), InActor->GetClass()->GetName());
-
-	// location
-	FVector location = InActor->GetActorLocation();
-	TArray<TSharedPtr<FJsonValue>> locationArray;
-	locationArray.Add(MakeShareable(new FJsonValueNumber(location.X)));
-	locationArray.Add(MakeShareable(new FJsonValueNumber(location.Y)));
-	locationArray.Add(MakeShareable(new FJsonValueNumber(location.Z)));
-	actorObject->SetArrayField(TEXT("location"), locationArray);
-
-	// rotation
-	FRotator rotation = InActor->GetActorRotation();
-	TArray<TSharedPtr<FJsonValue>> rotationArray;
-	rotationArray.Add(MakeShareable(new FJsonValueNumber(rotation.Pitch)));
-	rotationArray.Add(MakeShareable(new FJsonValueNumber(rotation.Yaw)));
-	rotationArray.Add(MakeShareable(new FJsonValueNumber(rotation.Roll)));
-	actorObject->SetArrayField(TEXT("rotation"), rotationArray);
-
-	// scale
-	FVector scale = InActor->GetActorScale3D();
-	TArray<TSharedPtr<FJsonValue>> scaleArray;
-	scaleArray.Add(MakeShareable(new FJsonValueNumber(scale.X)));
-	scaleArray.Add(MakeShareable(new FJsonValueNumber(scale.Y)));
-	scaleArray.Add(MakeShareable(new FJsonValueNumber(scale.Z)));
-	actorObject->SetArrayField(TEXT("scale"), scaleArray);
-
-	return MakeShareable(new FJsonValueObject(actorObject));
 }
