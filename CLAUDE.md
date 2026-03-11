@@ -297,6 +297,7 @@ Each CommandGroup MUST override `GetApplicationName()` to return its plugin name
 - Inline comments start with capital letter: `// Find actor by name` (NOT `// find actor by name`)
 - CommandGroup 내부 헬퍼는 파일 스코프 `static` 함수로 선언 (클래스 멤버 아님)
 - 여러 CommandGroup에서 공유하는 유틸리티는 `FWN_MCP_BlueprintUtils` 등 전용 유틸리티 클래스에 `static` 멤버로 선언
+- IWYU (Include What You Use): 헤더 파일은 자체 완결적이어야 한다. `FString`, `WN_MCP_WORLD_API` 등을 사용하면 `#include "CoreMinimal.h"` 필수. `FModuleManager`를 사용하면 `#include "Modules/ModuleManager.h"` 필수
 
 ### Extension Plugin Pattern (like WN_MCPTest)
 
