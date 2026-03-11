@@ -61,9 +61,13 @@ WN_MCP/Source/WN_MCP/                          # Core plugin (수정 금지)
 
 WN_MCP_WORLD/Source/
   WN_MCP_WORLD/                                # Runtime module (Engine API만 사용)
-    Private/Commands/
-      WN_MCP_CommandGroup_Actor.h/.cpp         # Actor CRUD
-      WN_MCP_CommandGroup_ActorComponent.h/.cpp # Actor component CRD
+    Public/
+      WN_MCP_ActorUtils.h                      # 공유 유틸리티 (FindActorByName, WN_MCP_WORLD_API export)
+    Private/
+      WN_MCP_ActorUtils.cpp                    # FindActorByName 구현
+      Commands/
+        WN_MCP_CommandGroup_Actor.h/.cpp         # Actor CRUD
+        WN_MCP_CommandGroup_ActorComponent.h/.cpp # Actor component CRD
   WN_MCP_WORLD_Editor/                         # Editor module (UnrealEd 의존)
     Private/
       WN_MCP_BlueprintUtils.h/.cpp             # 공유 유틸리티 (FindBlueprintByName, FindSCSNodeByName)
@@ -458,6 +462,12 @@ result = ue_connection.execute("command_name", params, app_name=_APP)
 | `get_actor_material_info` | Material | Done |
 | `get_blueprint_material_info` | Material | Done |
 | `set_mesh_material_color` | Material | Done |
+
+### Shared Utilities — `WN_MCP_WORLD` (Runtime)
+
+| Utility | File | Used By |
+|---------|------|---------|
+| `FWN_MCP_ActorUtils::FindActorByName` | `Public/WN_MCP_ActorUtils.h` | Actor, ActorComponent, Material |
 
 ### Shared Utilities — `WN_MCP_WORLD_Editor`
 

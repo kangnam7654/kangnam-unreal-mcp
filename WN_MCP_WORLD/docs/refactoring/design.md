@@ -25,9 +25,10 @@ WN_MCP_WORLD/Source/WN_MCP_WORLD_Editor/Private/
 ### 변경 후
 
 ```
-WN_MCP_WORLD/Source/WN_MCP_WORLD/Private/
-  WN_MCP_ActorUtils.h/.cpp       ← FindActorByName (신규 공유 유틸리티)
-  Commands/
+WN_MCP_WORLD/Source/WN_MCP_WORLD/
+  Public/WN_MCP_ActorUtils.h     ← FindActorByName (공유 유틸리티, WN_MCP_WORLD_API export)
+  Private/WN_MCP_ActorUtils.cpp  ← FindActorByName 구현
+  Private/Commands/
     Actor.cpp         ← ActorToJsonValue 파일 스코프 static, FindActorByName 사용
     ActorComponent.cpp ← FindActorByName 사용
 
@@ -58,7 +59,7 @@ class AActor;
 //-----------------------------------------------------------------------------
 
 /// Shared utilities for Actor commands.
-class FWN_MCP_ActorUtils
+class WN_MCP_WORLD_API FWN_MCP_ActorUtils
 {
 public:
 
@@ -69,7 +70,7 @@ public:
 };
 ```
 
-**배치**: Runtime 모듈 (`WN_MCP_WORLD/Private/`) — Actor, ActorComponent 둘 다 Runtime이므로.
+**배치**: Runtime 모듈 (`WN_MCP_WORLD/Public/`) — Actor, ActorComponent, Material(Editor) 모두 사용하므로 DLL export 필요.
 
 #### A2. Helper 배치 패턴 통일
 
@@ -161,7 +162,7 @@ TSharedPtr<FJsonObject> OnExecute(...) const
 
 | 파일 | 내용 |
 |------|------|
-| `WN_MCP_WORLD/Private/WN_MCP_ActorUtils.h` | FindActorByName 선언 |
+| `WN_MCP_WORLD/Public/WN_MCP_ActorUtils.h` | FindActorByName 선언 (WN_MCP_WORLD_API export) |
 | `WN_MCP_WORLD/Private/WN_MCP_ActorUtils.cpp` | FindActorByName 구현 |
 
 ### 수정 파일 (C++)
