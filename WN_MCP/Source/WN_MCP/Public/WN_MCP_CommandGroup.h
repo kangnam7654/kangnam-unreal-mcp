@@ -10,6 +10,18 @@ class FSocket;
 class FJsonObject;
 
 //-----------------------------------------------------------------------------
+// FWN_MCP_CommandInfo
+//-----------------------------------------------------------------------------
+
+/// Command registration info.
+struct FWN_MCP_CommandInfo
+{
+	FString Name;
+	FString Description;
+	bool bIsSimple;
+};
+
+//-----------------------------------------------------------------------------
 // Defines
 //-----------------------------------------------------------------------------
 
@@ -53,6 +65,14 @@ public:\
 	}\
 };\
 static RegisterCommandGroup_ ##CommandGroupClass RegisterCommandGroupInstance_ ##CommandGroupClass
+
+/// Register a command (requires custom Python Tool).
+#define WN_MCP_REGISTER_COMMAND(InOutList, CommandName, CommandDesc) \
+	InOutList.Add({ FString(TEXT(CommandName)), FString(TEXT(CommandDesc)), false })
+
+/// Register a simple command (Python Tool auto-generated).
+#define WN_MCP_REGISTER_SIMPLE_COMMAND(InOutList, CommandName, CommandDesc) \
+	InOutList.Add({ FString(TEXT(CommandName)), FString(TEXT(CommandDesc)), true })
 
 /// Parse error - Invalid JSON was received by the server.
 #define WN_JSON_RPC_ERROR_PARSE_ERROR -32700
@@ -294,10 +314,15 @@ public:
 	/// @return name.
 	WN_MCP_API virtual FString GetName() const;
 
-	/// Called when the commands is registered, allowing it to add its name to the list of available commands.
+	/// Get application name used as command name prefix.
+	/// Override in derived classes to set the prefix (e.g. "WN_MCP_WORLD").
+	/// @return application name. Empty string means no prefix.
+	WN_MCP_API virtual FString GetApplicationName() const;
+
+	/// Called when the commands is registered, allowing it to add its info to the list of available commands.
 	/// This is a virtual function that must be implemented by derived classes to define the specific behavior of the command.
-	/// @param InOutCommandNames List of available command names, which the command can add its name to.
-	WN_MCP_API virtual void OnRegisterCommands(TArray<FString>& InOutCommandNames) const;
+	/// @param InOutCommandInfos List of available command infos, which the command can add its info to.
+	WN_MCP_API virtual void OnRegisterCommands(TArray<FWN_MCP_CommandInfo>& InOutCommandInfos) const;
 
 	/// Execute the command with given parameters and client socket. 
 	/// This is a virtual function that must be implemented by derived classes to define the specific behavior of the command.

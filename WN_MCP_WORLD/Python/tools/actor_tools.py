@@ -9,6 +9,8 @@ from typing import Optional, Dict, Any, List
 from fastmcp import FastMCP
 from . import ue_connection
 
+_APP = "WN_MCP_WORLD"
+
 
 def register_tools(mcp: FastMCP):
     """Register Actor CRUD tools with the MCP server."""
@@ -20,7 +22,7 @@ def register_tools(mcp: FastMCP):
         Returns a list of all actors with their name, class, location, rotation, and scale.
         Use this to inspect the current state of the level.
         """
-        result = ue_connection.execute("get_actors_in_level")
+        result = ue_connection.execute("get_actors_in_level", app_name=_APP)
         return json.dumps(result, indent=2, ensure_ascii=False)
 
     @mcp.tool
@@ -32,7 +34,7 @@ def register_tools(mcp: FastMCP):
 
         Returns a list of matching actors with their name, class, location, rotation, and scale.
         """
-        result = ue_connection.execute("find_actors_by_name", {"search_text": search_text})
+        result = ue_connection.execute("find_actors_by_name", {"search_text": search_text}, app_name=_APP)
         return json.dumps(result, indent=2, ensure_ascii=False)
 
     @mcp.tool
@@ -62,7 +64,7 @@ def register_tools(mcp: FastMCP):
         if scale is not None:
             params["scale"] = scale
 
-        result = ue_connection.execute("spawn_actor", params)
+        result = ue_connection.execute("spawn_actor", params, app_name=_APP)
         return json.dumps(result, indent=2, ensure_ascii=False)
 
     @mcp.tool
@@ -74,7 +76,7 @@ def register_tools(mcp: FastMCP):
 
         Permanently removes the actor from the level.
         """
-        result = ue_connection.execute("delete_actor", {"name": name})
+        result = ue_connection.execute("delete_actor", {"name": name}, app_name=_APP)
         return json.dumps(result, indent=2, ensure_ascii=False)
 
     @mcp.tool
@@ -102,7 +104,7 @@ def register_tools(mcp: FastMCP):
         if scale is not None:
             params["scale"] = scale
 
-        result = ue_connection.execute("set_actor_transform", params)
+        result = ue_connection.execute("set_actor_transform", params, app_name=_APP)
         return json.dumps(result, indent=2, ensure_ascii=False)
 
     @mcp.tool
@@ -115,5 +117,5 @@ def register_tools(mcp: FastMCP):
         Returns name, class, and transform (location/rotation/scale).
         For component info, use read_components_from_actor() instead.
         """
-        result = ue_connection.execute("read_actor_content", {"name": name})
+        result = ue_connection.execute("read_actor_content", {"name": name}, app_name=_APP)
         return json.dumps(result, indent=2, ensure_ascii=False)

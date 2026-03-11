@@ -25,7 +25,7 @@ class TestGetActorsInLevel:
     def test_calls_correct_command(self, mock_ue_execute):
         mock_ue_execute.return_value = {"count": 0, "actors": []}
         call_tool("get_actors_in_level")
-        mock_ue_execute.assert_called_once_with("get_actors_in_level")
+        mock_ue_execute.assert_called_once_with("get_actors_in_level", app_name="WN_MCP_WORLD")
 
     def test_returns_json_string(self, mock_ue_execute):
         mock_ue_execute.return_value = {"count": 1, "actors": [{"name": "Cube"}]}
@@ -39,7 +39,7 @@ class TestFindActorsByName:
         mock_ue_execute.return_value = {"count": 0, "actors": []}
         call_tool("find_actors_by_name", search_text="Cube")
         mock_ue_execute.assert_called_once_with(
-            "find_actors_by_name", {"search_text": "Cube"}
+            "find_actors_by_name", {"search_text": "Cube"}, app_name="WN_MCP_WORLD"
         )
 
 
@@ -48,7 +48,7 @@ class TestSpawnActor:
         mock_ue_execute.return_value = {"status": "success"}
         call_tool("spawn_actor", type="StaticMeshActor", name="MyCube")
         mock_ue_execute.assert_called_once_with(
-            "spawn_actor", {"type": "StaticMeshActor", "name": "MyCube"}
+            "spawn_actor", {"type": "StaticMeshActor", "name": "MyCube"}, app_name="WN_MCP_WORLD"
         )
 
     def test_with_all_optional_params(self, mock_ue_execute):
@@ -77,7 +77,7 @@ class TestDeleteActor:
     def test_passes_name(self, mock_ue_execute):
         mock_ue_execute.return_value = {"status": "success"}
         call_tool("delete_actor", name="MyCube")
-        mock_ue_execute.assert_called_once_with("delete_actor", {"name": "MyCube"})
+        mock_ue_execute.assert_called_once_with("delete_actor", {"name": "MyCube"}, app_name="WN_MCP_WORLD")
 
 
 class TestSetActorTransform:
@@ -111,7 +111,7 @@ class TestReadActorContent:
     def test_passes_name(self, mock_ue_execute):
         mock_ue_execute.return_value = {"name": "Cube", "class": "StaticMeshActor"}
         call_tool("read_actor_content", name="Cube")
-        mock_ue_execute.assert_called_once_with("read_actor_content", {"name": "Cube"})
+        mock_ue_execute.assert_called_once_with("read_actor_content", {"name": "Cube"}, app_name="WN_MCP_WORLD")
 
 
 # =============================================================================
@@ -149,6 +149,7 @@ class TestRemoveComponentFromActor:
         mock_ue_execute.assert_called_once_with(
             "remove_component_from_actor",
             {"name": "MyCube", "component_name": "MyLight"},
+            app_name="WN_MCP_WORLD",
         )
 
 
@@ -157,7 +158,7 @@ class TestReadComponentsFromActor:
         mock_ue_execute.return_value = {"actor_name": "Cube", "count": 0, "components": []}
         call_tool("read_components_from_actor", name="Cube")
         mock_ue_execute.assert_called_once_with(
-            "read_components_from_actor", {"name": "Cube"}
+            "read_components_from_actor", {"name": "Cube"}, app_name="WN_MCP_WORLD"
         )
 
 
@@ -170,13 +171,13 @@ class TestGetBlueprints:
     def test_default_no_params(self, mock_ue_execute):
         mock_ue_execute.return_value = {"count": 0, "blueprints": []}
         call_tool("get_blueprints")
-        mock_ue_execute.assert_called_once_with("get_blueprints", {})
+        mock_ue_execute.assert_called_once_with("get_blueprints", {}, app_name="WN_MCP_WORLD")
 
     def test_with_search_path(self, mock_ue_execute):
         mock_ue_execute.return_value = {"count": 0, "blueprints": []}
         call_tool("get_blueprints", search_path="/Game/Maps/")
         mock_ue_execute.assert_called_once_with(
-            "get_blueprints", {"search_path": "/Game/Maps/"}
+            "get_blueprints", {"search_path": "/Game/Maps/"}, app_name="WN_MCP_WORLD"
         )
 
 
@@ -185,7 +186,7 @@ class TestFindBlueprintsByName:
         mock_ue_execute.return_value = {"count": 0, "blueprints": []}
         call_tool("find_blueprints_by_name", search_text="Player")
         mock_ue_execute.assert_called_once_with(
-            "find_blueprints_by_name", {"search_text": "Player"}
+            "find_blueprints_by_name", {"search_text": "Player"}, app_name="WN_MCP_WORLD"
         )
 
 
@@ -193,7 +194,7 @@ class TestCreateBlueprint:
     def test_required_params_only(self, mock_ue_execute):
         mock_ue_execute.return_value = {"name": "MyBP", "path": "/Game/Blueprints/MyBP"}
         call_tool("create_blueprint", name="MyBP")
-        mock_ue_execute.assert_called_once_with("create_blueprint", {"name": "MyBP"})
+        mock_ue_execute.assert_called_once_with("create_blueprint", {"name": "MyBP"}, app_name="WN_MCP_WORLD")
 
     def test_with_parent_class(self, mock_ue_execute):
         mock_ue_execute.return_value = {"name": "MyBP"}
@@ -236,7 +237,7 @@ class TestCompileBlueprint:
         mock_ue_execute.return_value = {"name": "MyBP", "compiled": True}
         call_tool("compile_blueprint", blueprint_name="MyBP")
         mock_ue_execute.assert_called_once_with(
-            "compile_blueprint", {"blueprint_name": "MyBP"}
+            "compile_blueprint", {"blueprint_name": "MyBP"}, app_name="WN_MCP_WORLD"
         )
 
 
@@ -332,6 +333,7 @@ class TestRemoveComponentFromBlueprint:
         mock_ue_execute.assert_called_once_with(
             "remove_component_from_blueprint",
             {"blueprint_name": "MyBP", "component_name": "Mesh1"},
+            app_name="WN_MCP_WORLD",
         )
 
 
@@ -340,7 +342,7 @@ class TestReadComponentsFromBlueprint:
         mock_ue_execute.return_value = {"blueprint_name": "MyBP", "count": 0, "components": []}
         call_tool("read_components_from_blueprint", blueprint_name="MyBP")
         mock_ue_execute.assert_called_once_with(
-            "read_components_from_blueprint", {"blueprint_name": "MyBP"}
+            "read_components_from_blueprint", {"blueprint_name": "MyBP"}, app_name="WN_MCP_WORLD"
         )
 
 
@@ -456,7 +458,7 @@ class TestGetAvailableMaterials:
     def test_default_no_params(self, mock_ue_execute):
         mock_ue_execute.return_value = {"count": 0, "materials": []}
         call_tool("get_available_materials")
-        mock_ue_execute.assert_called_once_with("get_available_materials", {})
+        mock_ue_execute.assert_called_once_with("get_available_materials", {}, app_name="WN_MCP_WORLD")
 
     def test_with_search_path(self, mock_ue_execute):
         mock_ue_execute.return_value = {"count": 0, "materials": []}
@@ -473,7 +475,7 @@ class TestGetAvailableMaterials:
     def test_omitted_optionals_not_sent(self, mock_ue_execute):
         mock_ue_execute.return_value = {"count": 0, "materials": []}
         call_tool("get_available_materials")
-        mock_ue_execute.assert_called_once_with("get_available_materials", {})
+        mock_ue_execute.assert_called_once_with("get_available_materials", {}, app_name="WN_MCP_WORLD")
 
 
 class TestApplyMaterialToActor:
@@ -525,7 +527,7 @@ class TestGetActorMaterialInfo:
         mock_ue_execute.return_value = {"actor_name": "MyCube", "components": []}
         call_tool("get_actor_material_info", actor_name="MyCube")
         mock_ue_execute.assert_called_once_with(
-            "get_actor_material_info", {"actor_name": "MyCube"}
+            "get_actor_material_info", {"actor_name": "MyCube"}, app_name="WN_MCP_WORLD"
         )
 
     def test_returns_json_string(self, mock_ue_execute):
@@ -548,6 +550,7 @@ class TestGetBlueprintMaterialInfo:
         mock_ue_execute.assert_called_once_with(
             "get_blueprint_material_info",
             {"blueprint_name": "MyBP", "component_name": "Mesh1"},
+            app_name="WN_MCP_WORLD",
         )
 
 
@@ -627,7 +630,7 @@ class TestGetStaticMeshes:
     def test_default_no_params(self, mock_ue_execute):
         mock_ue_execute.return_value = {"count": 0, "static_meshes": []}
         call_tool("get_static_meshes")
-        mock_ue_execute.assert_called_once_with("get_static_meshes", {})
+        mock_ue_execute.assert_called_once_with("get_static_meshes", {}, app_name="WN_MCP_WORLD")
 
     def test_with_search_path(self, mock_ue_execute):
         mock_ue_execute.return_value = {"count": 0, "static_meshes": []}
@@ -644,7 +647,7 @@ class TestGetStaticMeshes:
     def test_omitted_optionals_not_sent(self, mock_ue_execute):
         mock_ue_execute.return_value = {"count": 0, "static_meshes": []}
         call_tool("get_static_meshes")
-        mock_ue_execute.assert_called_once_with("get_static_meshes", {})
+        mock_ue_execute.assert_called_once_with("get_static_meshes", {}, app_name="WN_MCP_WORLD")
 
 
 class TestFindStaticMeshesByName:
@@ -652,7 +655,7 @@ class TestFindStaticMeshesByName:
         mock_ue_execute.return_value = {"count": 0, "static_meshes": []}
         call_tool("find_static_meshes_by_name", search_text="Cube")
         mock_ue_execute.assert_called_once_with(
-            "find_static_meshes_by_name", {"search_text": "Cube"}
+            "find_static_meshes_by_name", {"search_text": "Cube"}, app_name="WN_MCP_WORLD"
         )
 
     def test_with_include_engine(self, mock_ue_execute):
@@ -737,6 +740,7 @@ class TestRemoveVariableFromBlueprint:
         mock_ue_execute.assert_called_once_with(
             "remove_variable_from_blueprint",
             {"blueprint_name": "MyBP", "variable_name": "HP"},
+            app_name="WN_MCP_WORLD",
         )
 
 
@@ -750,7 +754,7 @@ class TestReadBlueprintGraph:
         mock_ue_execute.return_value = {"blueprint_name": "MyBP", "nodes": []}
         call_tool("read_blueprint_graph", blueprint_name="MyBP")
         mock_ue_execute.assert_called_once_with(
-            "read_blueprint_graph", {"blueprint_name": "MyBP"}
+            "read_blueprint_graph", {"blueprint_name": "MyBP"}, app_name="WN_MCP_WORLD"
         )
 
 
@@ -875,6 +879,7 @@ class TestConnectNodes:
                 "target_node_id": "BBB",
                 "target_pin_name": "execute",
             },
+            app_name="WN_MCP_WORLD",
         )
 
 
@@ -887,6 +892,7 @@ class TestDisconnectNodes:
         mock_ue_execute.assert_called_once_with(
             "disconnect_nodes",
             {"blueprint_name": "MyBP", "node_id": "AAA", "pin_name": "then"},
+            app_name="WN_MCP_WORLD",
         )
 
 

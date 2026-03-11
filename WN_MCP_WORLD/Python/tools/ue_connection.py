@@ -52,12 +52,13 @@ def disconnect():
         _socket = None
 
 
-def execute(command_name: str, params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+def execute(command_name: str, params: Optional[Dict[str, Any]] = None, app_name: str = "") -> Dict[str, Any]:
     """Send JSON-RPC 2.0 command to UE and return result.
 
     Args:
         command_name: C++ command name (e.g. "get_actors_in_level")
         params: Optional command parameters
+        app_name: Application name prefix (e.g. "WN_MCP_WORLD")
 
     Returns:
         Result dict from UE response
@@ -68,10 +69,11 @@ def execute(command_name: str, params: Optional[Dict[str, Any]] = None) -> Dict[
     """
     connect()
 
+    full_name = f"{app_name}_{command_name}" if app_name else command_name
     request = {
         "jsonrpc": "2.0",
         "method": "command",
-        "id": command_name,
+        "id": full_name,
         "params": params if params is not None else {}
     }
 

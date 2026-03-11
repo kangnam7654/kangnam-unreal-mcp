@@ -24,10 +24,10 @@ public:
 	/// @return name.
 	FString GetName() const override;
 
-	/// Called when the commands is registered, allowing it to add its name to the list of available commands.
+	/// Called when the commands is registered, allowing it to add its info to the list of available commands.
 	/// This is a virtual function that must be implemented by derived classes to define the specific behavior of the command.
-	/// @param InOutCommandNames List of available command names, which the command can add its name to.
-	void OnRegisterCommands(TArray<FString>& InOutCommandNames) const override;
+	/// @param InOutCommandInfos List of available command infos, which the command can add its info to.
+	void OnRegisterCommands(TArray<FWN_MCP_CommandInfo>& InOutCommandInfos) const override;
 
 	/// Execute the command with given parameters and client socket. 
 	/// This is a virtual function that must be implemented by derived classes to define the specific behavior of the command.

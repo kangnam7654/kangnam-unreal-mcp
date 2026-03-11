@@ -23,7 +23,12 @@ FString FWN_MCP_CommandGroup::GetName() const
 	return FString("Unknown");
 }
 
-void FWN_MCP_CommandGroup::OnRegisterCommands(TArray<FString>& InOutCommandNames) const
+FString FWN_MCP_CommandGroup::GetApplicationName() const
+{
+	return FString("");
+}
+
+void FWN_MCP_CommandGroup::OnRegisterCommands(TArray<FWN_MCP_CommandInfo>& InOutCommandInfos) const
 {
 	__noop;
 }
@@ -36,5 +41,14 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup::OnExecute(const FString& InCommand
 
 TSharedPtr<FJsonObject> FWN_MCP_CommandGroup::Execute(const FString& InCommandName, const TSharedPtr<FJsonObject>& InParamsPtr, TSharedPtr<FSocket> InClientSocketPtr) const
 {
-	return OnExecute(InCommandName, InParamsPtr, InClientSocketPtr);
+	// Strip application name prefix before passing to OnExecute
+	FString appName = GetApplicationName();
+	FString rawCommandName = InCommandName;
+	if (!appName.IsEmpty())
+	{
+		FString prefix = appName + TEXT("_");
+		rawCommandName.RemoveFromStart(prefix);
+	}
+
+	return OnExecute(rawCommandName, InParamsPtr, InClientSocketPtr);
 }

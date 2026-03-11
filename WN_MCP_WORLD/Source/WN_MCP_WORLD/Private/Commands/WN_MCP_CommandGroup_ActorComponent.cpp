@@ -28,11 +28,16 @@ FString FWN_MCP_CommandGroup_ActorComponent::GetName() const
 	return FString("ActorComponent");
 }
 
-void FWN_MCP_CommandGroup_ActorComponent::OnRegisterCommands(TArray<FString>& InOutCommandNames) const
+FString FWN_MCP_CommandGroup_ActorComponent::GetApplicationName() const
 {
-	InOutCommandNames.Add(FString(TEXT("add_component_to_actor")));
-	InOutCommandNames.Add(FString(TEXT("remove_component_from_actor")));
-	InOutCommandNames.Add(FString(TEXT("read_components_from_actor")));
+	return FString("WN_MCP_WORLD");
+}
+
+void FWN_MCP_CommandGroup_ActorComponent::OnRegisterCommands(TArray<FWN_MCP_CommandInfo>& InOutCommandInfos) const
+{
+	WN_MCP_REGISTER_COMMAND(InOutCommandInfos, "add_component_to_actor", "Add a component to an actor");
+	WN_MCP_REGISTER_COMMAND(InOutCommandInfos, "remove_component_from_actor", "Remove a component from an actor");
+	WN_MCP_REGISTER_COMMAND(InOutCommandInfos, "read_components_from_actor", "Read all components from an actor");
 }
 
 TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_ActorComponent::OnExecute(const FString& InCommandName, const TSharedPtr<FJsonObject>& InParamsPtr, TSharedPtr<FSocket> InClientSocketPtr) const

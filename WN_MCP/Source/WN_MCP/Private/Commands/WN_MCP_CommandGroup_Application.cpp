@@ -23,10 +23,9 @@ FString FWN_MCP_CommandGroup_Application::GetName() const
 	return FString("Application");
 }
 
-void FWN_MCP_CommandGroup_Application::OnRegisterCommands(TArray<FString>& InOutCommandNames) const
+void FWN_MCP_CommandGroup_Application::OnRegisterCommands(TArray<FWN_MCP_CommandInfo>& InOutCommandInfos) const
 {
-	InOutCommandNames.Add(FString(TEXT("get_user_tool_directories")));
-
+	WN_MCP_REGISTER_COMMAND(InOutCommandInfos, "get_user_tool_directories", "Get user tool directories");
 }
 
 TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Application::OnExecute(const FString& InCommandName, const TSharedPtr<FJsonObject>& InParamsPtr, TSharedPtr<FSocket> InClientSocketPtr) const

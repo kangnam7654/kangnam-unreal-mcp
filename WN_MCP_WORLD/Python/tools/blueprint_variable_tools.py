@@ -8,6 +8,8 @@ from typing import Optional, Dict, Any
 from fastmcp import FastMCP
 from . import ue_connection
 
+_APP = "WN_MCP_WORLD"
+
 
 def register_tools(mcp: FastMCP):
     """Register BlueprintVariable tools with the MCP server."""
@@ -41,7 +43,7 @@ def register_tools(mcp: FastMCP):
         if is_instance_editable is not None:
             params["is_instance_editable"] = is_instance_editable
 
-        result = ue_connection.execute("add_variable_to_blueprint", params)
+        result = ue_connection.execute("add_variable_to_blueprint", params, app_name=_APP)
         return json.dumps(result, indent=2, ensure_ascii=False)
 
     @mcp.tool
@@ -60,5 +62,5 @@ def register_tools(mcp: FastMCP):
         result = ue_connection.execute("remove_variable_from_blueprint", {
             "blueprint_name": blueprint_name,
             "variable_name": variable_name,
-        })
+        }, app_name=_APP)
         return json.dumps(result, indent=2, ensure_ascii=False)

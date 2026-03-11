@@ -1,4 +1,4 @@
-癤�// Copyright Kangnam Kim. All Rights Reserved.
+// Copyright Kangnam Kim. All Rights Reserved.
 
 using UnrealBuildTool;
 
@@ -42,20 +42,21 @@ public class WN_MCPTest : ModuleRules
 				"Slate",
 				"SlateCore",
 				"UMG",
-				"Kismet",
-				"KismetCompiler",
-				"BlueprintGraph",
 				"Projects",
 				"AssetRegistry",
 				"WN_MCP"
 			}
 		);
 
+		// Kismet/Blueprint 관련 모듈은 에디터 전용. 게임 타겟 패키징 시 EditorStyle 비에디터 인스턴스 에러 방지.
 		if (Target.bBuildEditor)
 		{
 			PrivateDependencyModuleNames.AddRange(
 				new string[]
 				{
+					"Kismet",
+					"KismetCompiler",
+					"BlueprintGraph"
 				}
 			);
 		}

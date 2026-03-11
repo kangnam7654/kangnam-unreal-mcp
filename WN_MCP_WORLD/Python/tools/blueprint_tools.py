@@ -10,6 +10,8 @@ from typing import Optional, Dict, Any, List
 from fastmcp import FastMCP
 from . import ue_connection
 
+_APP = "WN_MCP_WORLD"
+
 
 def register_tools(mcp: FastMCP):
     """Register Blueprint CRUD tools with the MCP server."""
@@ -27,7 +29,7 @@ def register_tools(mcp: FastMCP):
         if search_path is not None:
             params["search_path"] = search_path
 
-        result = ue_connection.execute("get_blueprints", params)
+        result = ue_connection.execute("get_blueprints", params, app_name=_APP)
         return json.dumps(result, indent=2, ensure_ascii=False)
 
     @mcp.tool
@@ -39,7 +41,7 @@ def register_tools(mcp: FastMCP):
 
         Returns a list of matching Blueprints with their name, path, and package path.
         """
-        result = ue_connection.execute("find_blueprints_by_name", {"search_text": search_text})
+        result = ue_connection.execute("find_blueprints_by_name", {"search_text": search_text}, app_name=_APP)
         return json.dumps(result, indent=2, ensure_ascii=False)
 
     @mcp.tool
@@ -56,7 +58,7 @@ def register_tools(mcp: FastMCP):
         if parent_class is not None:
             params["parent_class"] = parent_class
 
-        result = ue_connection.execute("create_blueprint", params)
+        result = ue_connection.execute("create_blueprint", params, app_name=_APP)
         return json.dumps(result, indent=2, ensure_ascii=False)
 
     @mcp.tool
@@ -90,7 +92,7 @@ def register_tools(mcp: FastMCP):
         if include_interfaces is not None:
             params["include_interfaces"] = include_interfaces
 
-        result = ue_connection.execute("read_blueprint_content", params)
+        result = ue_connection.execute("read_blueprint_content", params, app_name=_APP)
         return json.dumps(result, indent=2, ensure_ascii=False)
 
     @mcp.tool
@@ -102,7 +104,7 @@ def register_tools(mcp: FastMCP):
 
         Compiles the Blueprint to update its generated class.
         """
-        result = ue_connection.execute("compile_blueprint", {"blueprint_name": blueprint_name})
+        result = ue_connection.execute("compile_blueprint", {"blueprint_name": blueprint_name}, app_name=_APP)
         return json.dumps(result, indent=2, ensure_ascii=False)
 
     @mcp.tool
@@ -120,7 +122,7 @@ def register_tools(mcp: FastMCP):
         if force is not None:
             params["force"] = force
 
-        result = ue_connection.execute("delete_blueprint", params)
+        result = ue_connection.execute("delete_blueprint", params, app_name=_APP)
         return json.dumps(result, indent=2, ensure_ascii=False)
 
     @mcp.tool
@@ -154,5 +156,5 @@ def register_tools(mcp: FastMCP):
         if scale is not None:
             params["scale"] = scale
 
-        result = ue_connection.execute("spawn_blueprint_actor", params)
+        result = ue_connection.execute("spawn_blueprint_actor", params, app_name=_APP)
         return json.dumps(result, indent=2, ensure_ascii=False)
