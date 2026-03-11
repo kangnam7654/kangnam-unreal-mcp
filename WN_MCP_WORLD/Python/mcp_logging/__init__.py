@@ -13,6 +13,7 @@ Usage:
 """
 
 import logging
+import sys
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, Any, Optional
@@ -36,44 +37,57 @@ _file_handler: Optional[logging.FileHandler] = None
 
 
 def initialize():
-    """Initialize logging system. Call once at server startup."""
+    """Initialize logging system. Call once at server startup. Idempotent."""
     logging.addLevelName(MISC, "MISC")
 
-    settings = load_settings()
-    log_level = parse_level(settings.get("log_level", "INFO"))
+    root = logging.getLogger("wn_mcp_world")
 
-    LOG_DIR.mkdir(exist_ok=True)
-    today = datetime.now().strftime("%Y-%m-%d")
-    log_file = LOG_DIR / f"mcp_{today}.log"
+    # Guard: skip if already initialized
+    if root.handlers:
+        return
+
+    settings = load_settings()
+    log_level = parse_level(settings.get("log_level", "MISC"))
 
     formatter = logging.Formatter(
         "%(asctime)s [%(levelname)s] [%(name)s] %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
     )
 
-    # File handler
+    # File handler (with filesystem error fallback)
     global _file_handler
-    _file_handler = logging.FileHandler(log_file, encoding="utf-8")
-    _file_handler.setLevel(MISC)
-    _file_handler.setFormatter(formatter)
+    try:
+        LOG_DIR.mkdir(exist_ok=True)
+        today = datetime.now().strftime("%Y-%m-%d")
+        log_file = LOG_DIR / f"mcp_{today}.log"
+        _file_handler = logging.FileHandler(log_file, encoding="utf-8")
+        _file_handler.setLevel(MISC)
+        _file_handler.setFormatter(formatter)
+        root.addHandler(_file_handler)
+    except OSError as e:
+        # Fallback: stderr if file creation fails
+        fallback = logging.StreamHandler(sys.stderr)
+        fallback.setLevel(MISC)
+        fallback.setFormatter(formatter)
+        root.addHandler(fallback)
+        log_file = None
+        print(f"[WARNING] Log file creation failed, using stderr: {e}", file=sys.stderr)
 
     # Ring buffer handler
     global _ring_handler
     _ring_handler = RingBufferHandler(maxlen=RING_BUFFER_SIZE)
     _ring_handler.setLevel(MISC)
-
-    # Root logger for wn_mcp_world
-    root = logging.getLogger("wn_mcp_world")
-    root.setLevel(log_level)
-    root.addHandler(_file_handler)
     root.addHandler(_ring_handler)
 
+    root.setLevel(log_level)
+
     # Auto cleanup
-    if settings.get("log_auto_cleanup", "true").lower() == "true":
+    if log_file and settings.get("log_auto_cleanup", "true").lower() == "true":
         cleanup_old_logs(settings)
 
     root.info("Logging initialized (level=%s, file=%s)",
-              logging.getLevelName(log_level), log_file.name)
+              logging.getLevelName(log_level),
+              log_file.name if log_file else "stderr")
 
 
 def set_level(level_name: str) -> str:
@@ -100,7 +114,7 @@ def get_recent_entries(
 
     min_level = parse_level(level)
     entries = _ring_handler.get_entries(
-        count=min(count, 200),
+        count=max(1, min(count, 200)),
         min_level=min_level,
         keyword=keyword,
     )

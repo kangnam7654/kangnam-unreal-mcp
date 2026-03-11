@@ -24,12 +24,17 @@ import pytest
 @pytest.fixture(autouse=True)
 def _clean_logger():
     """Remove wn_mcp_world logger handlers before/after each test."""
+    import mcp_logging
     root = logging.getLogger("wn_mcp_world")
     root.handlers.clear()
     root.setLevel(logging.WARNING)
+    mcp_logging._ring_handler = None
+    mcp_logging._file_handler = None
     yield
     root.handlers.clear()
     root.setLevel(logging.WARNING)
+    mcp_logging._ring_handler = None
+    mcp_logging._file_handler = None
 
 
 @pytest.fixture
@@ -99,7 +104,7 @@ class TestConfig:
         with patch("mcp_logging.config.SETTINGS_PATH", missing):
             settings = load_settings()
 
-        assert settings["log_level"] == "INFO"
+        assert settings["log_level"] == "MISC"
         assert settings["max_log_files"] == "2"
 
 
@@ -335,6 +340,33 @@ class TestInitialize:
         mcp_logging._ring_handler = None
         result = mcp_logging.get_recent_entries()
         assert result["total_in_buffer"] == 0
+
+    def test_initialize_is_idempotent(self, tmp_path, tmp_settings):
+        import mcp_logging
+
+        log_dir = tmp_path / "logs"
+        with (
+            patch.object(mcp_logging, "LOG_DIR", log_dir),
+            patch("mcp_logging.config.SETTINGS_PATH", tmp_settings),
+        ):
+            mcp_logging.initialize()
+            mcp_logging.initialize()  # Second call should be no-op
+
+        root = logging.getLogger("wn_mcp_world")
+        assert len(root.handlers) == 2  # FileHandler + RingBufferHandler
+
+    def test_get_recent_entries_count_zero_returns_one(self, tmp_path, tmp_settings):
+        import mcp_logging
+
+        log_dir = tmp_path / "logs"
+        with (
+            patch.object(mcp_logging, "LOG_DIR", log_dir),
+            patch("mcp_logging.config.SETTINGS_PATH", tmp_settings),
+        ):
+            mcp_logging.initialize()
+
+        result = mcp_logging.get_recent_entries(count=0, level="MISC")
+        assert result["returned"] >= 1  # At least "Logging initialized"
 
 
 # ---------------------------------------------------------------------------
