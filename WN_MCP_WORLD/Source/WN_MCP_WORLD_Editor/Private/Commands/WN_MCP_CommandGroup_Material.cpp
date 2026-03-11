@@ -1,5 +1,6 @@
 #include "WN_MCP_CommandGroup_Material.h"
 #include "WN_MCP_BlueprintUtils.h"
+#include "WN_MCP_ActorUtils.h"
 #include "WN_MCP_Module.h"
 
 #include "Dom/JsonObject.h"
@@ -9,7 +10,6 @@
 #include "Engine/SCS_Node.h"
 #include "Engine/StaticMesh.h"
 #include "GameFramework/Actor.h"
-#include "Kismet/GameplayStatics.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/PrimitiveComponent.h"
 #include "Materials/MaterialInterface.h"
@@ -200,19 +200,7 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Material::OnExecute(const FString& 
 		}
 
 		// Find actor
-		TArray<AActor*> allActors;
-		UGameplayStatics::GetAllActorsOfClass(GWorld, AActor::StaticClass(), allActors);
-
-		AActor* foundActor = nullptr;
-		for (AActor* actor : allActors)
-		{
-			if (actor && actor->GetName() == actorName)
-			{
-				foundActor = actor;
-				break;
-			}
-		}
-
+		AActor* foundActor = FWN_MCP_ActorUtils::FindActorByName(actorName);
 		if (!foundActor)
 		{
 			WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_INVALID_PARAMS,
@@ -346,19 +334,7 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Material::OnExecute(const FString& 
 		}
 
 		// Find actor
-		TArray<AActor*> allActors;
-		UGameplayStatics::GetAllActorsOfClass(GWorld, AActor::StaticClass(), allActors);
-
-		AActor* foundActor = nullptr;
-		for (AActor* actor : allActors)
-		{
-			if (actor && actor->GetName() == actorName)
-			{
-				foundActor = actor;
-				break;
-			}
-		}
-
+		AActor* foundActor = FWN_MCP_ActorUtils::FindActorByName(actorName);
 		if (!foundActor)
 		{
 			WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_INVALID_PARAMS,
@@ -663,6 +639,10 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Material::OnExecute(const FString& 
 
 		// Create dynamic material instance and set color
 		UMaterialInstanceDynamic* dynMaterial = UMaterialInstanceDynamic::Create(existingMaterial->GetMaterial(), primComponent);
+		if (!dynMaterial)
+		{
+			WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_COMMAND_FAILED, TEXT("Failed to create dynamic material instance"));
+		}
 		dynMaterial->SetVectorParameterValue(FName(*parameterName), FLinearColor(r, g, b, a));
 
 		// Set optional scalar parameters

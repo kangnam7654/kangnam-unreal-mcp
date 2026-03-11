@@ -9,6 +9,11 @@
 
 AActor* FWN_MCP_ActorUtils::FindActorByName(const FString& InActorName)
 {
+	if (!GWorld)
+	{
+		return nullptr;
+	}
+
 	TArray<AActor*> allActors;
 	UGameplayStatics::GetAllActorsOfClass(GWorld, AActor::StaticClass(), allActors);
 

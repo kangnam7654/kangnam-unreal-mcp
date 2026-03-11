@@ -123,6 +123,9 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_BlueprintComponent::OnExecute(const
 			WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_COMMAND_FAILED, TEXT("Failed to create SCS node"));
 		}
 
+		// Mark dirty before mutation (for correct undo recording)
+		blueprint->Modify();
+
 		// Attach to parent or add as root
 		if (!parentComponentName.IsEmpty())
 		{
@@ -140,8 +143,7 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_BlueprintComponent::OnExecute(const
 			blueprint->SimpleConstructionScript->AddNode(newNode);
 		}
 
-		// Mark dirty and compile
-		blueprint->Modify();
+		// Compile
 		FKismetEditorUtilities::CompileBlueprint(blueprint);
 
 		TSharedPtr<FJsonObject> InResultPtr = MakeShareable(new FJsonObject());
@@ -205,6 +207,9 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_BlueprintComponent::OnExecute(const
 		// Save component info before removal
 		FString removedClassName = targetNode->ComponentTemplate ? targetNode->ComponentTemplate->GetClass()->GetName() : TEXT("Unknown");
 
+		// Mark dirty before mutation (for correct undo recording)
+		blueprint->Modify();
+
 		// Find parent node (if any)
 		USCS_Node* parentNode = nullptr;
 		for (USCS_Node* node : blueprint->SimpleConstructionScript->GetAllNodes())
@@ -241,8 +246,7 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_BlueprintComponent::OnExecute(const
 		// Remove the target node from SCS
 		blueprint->SimpleConstructionScript->RemoveNode(targetNode);
 
-		// Mark dirty and compile
-		blueprint->Modify();
+		// Compile
 		FKismetEditorUtilities::CompileBlueprint(blueprint);
 
 		TSharedPtr<FJsonObject> InResultPtr = MakeShareable(new FJsonObject());

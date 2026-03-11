@@ -333,9 +333,10 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_BlueprintGraph::OnExecute(const FSt
 		}
 
 		// Create event node
+		UClass* ownerClass = blueprint->ParentClass ? blueprint->ParentClass : AActor::StaticClass();
 		UK2Node_Event* eventNode = NewObject<UK2Node_Event>(eventGraph);
 		eventNode->CreateNewGuid();
-		eventNode->EventReference.SetExternalMember(functionName, AActor::StaticClass());
+		eventNode->EventReference.SetExternalMember(functionName, ownerClass);
 		eventNode->bOverrideFunction = true;
 		eventNode->NodePosX = posX;
 		eventNode->NodePosY = posY;
@@ -453,6 +454,15 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_BlueprintGraph::OnExecute(const FSt
 			WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_COMMAND_FAILED, TEXT("EventGraph not found"));
 		}
 
+		// Validate variable exists in blueprint
+		FName varFName(*variableName);
+		bool bVarExists = blueprint->NewVariables.ContainsByPredicate([&varFName](const FBPVariableDescription& V){ return V.VarName == varFName; });
+		if (!bVarExists)
+		{
+			WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_INVALID_PARAMS,
+				*FString::Printf(TEXT("Variable '%s' does not exist in blueprint"), *variableName));
+		}
+
 		// Optional position
 		int32 posX = 0, posY = 0;
 		const TArray<TSharedPtr<FJsonValue>>* posArray;
@@ -510,6 +520,15 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_BlueprintGraph::OnExecute(const FSt
 		if (!eventGraph)
 		{
 			WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_COMMAND_FAILED, TEXT("EventGraph not found"));
+		}
+
+		// Validate variable exists in blueprint
+		FName varFName(*variableName);
+		bool bVarExists = blueprint->NewVariables.ContainsByPredicate([&varFName](const FBPVariableDescription& V){ return V.VarName == varFName; });
+		if (!bVarExists)
+		{
+			WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_INVALID_PARAMS,
+				*FString::Printf(TEXT("Variable '%s' does not exist in blueprint"), *variableName));
 		}
 
 		// Optional position
@@ -688,7 +707,8 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_BlueprintGraph::OnExecute(const FSt
 		}
 
 		int32 disconnectedCount = pin->LinkedTo.Num();
-		pin->BreakAllPinLinks();
+		const UEdGraphSchema_K2* schema = GetDefault<UEdGraphSchema_K2>();
+		schema->BreakPinLinks(*pin, true);
 
 		FBlueprintEditorUtils::MarkBlueprintAsModified(blueprint);
 
