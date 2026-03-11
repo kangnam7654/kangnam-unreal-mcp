@@ -1,5 +1,6 @@
 #include "WN_MCP_CommandGroup_Material.h"
 #include "WN_MCP_BlueprintUtils.h"
+#include "WN_MCP_ActorUtils.h"
 #include "WN_MCP_Module.h"
 
 #include "Dom/JsonObject.h"
@@ -9,7 +10,6 @@
 #include "Engine/SCS_Node.h"
 #include "Engine/StaticMesh.h"
 #include "GameFramework/Actor.h"
-#include "Kismet/GameplayStatics.h"
 #include "Components/StaticMeshComponent.h"
 #include "Components/PrimitiveComponent.h"
 #include "Materials/MaterialInterface.h"
@@ -79,31 +79,6 @@ static UMaterial* GetOrCreateMCPPBRMaterial()
 	UEditorAssetLibrary::SaveAsset(AssetPath, false);
 
 	return mat;
-}
-
-//-----------------------------------------------------------------------------
-// Helper: Find actor by name (with GWorld null guard)
-//-----------------------------------------------------------------------------
-
-static AActor* FindActorByName(const FString& InActorName)
-{
-	if (!GWorld)
-	{
-		return nullptr;
-	}
-
-	TArray<AActor*> allActors;
-	UGameplayStatics::GetAllActorsOfClass(GWorld, AActor::StaticClass(), allActors);
-
-	for (AActor* actor : allActors)
-	{
-		if (actor && actor->GetName() == InActorName)
-		{
-			return actor;
-		}
-	}
-
-	return nullptr;
 }
 
 //-----------------------------------------------------------------------------
@@ -225,7 +200,7 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Material::OnExecute(const FString& 
 		}
 
 		// Find actor
-		AActor* foundActor = FindActorByName(actorName);
+		AActor* foundActor = FWN_MCP_ActorUtils::FindActorByName(actorName);
 		if (!foundActor)
 		{
 			WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_INVALID_PARAMS,
@@ -359,7 +334,7 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Material::OnExecute(const FString& 
 		}
 
 		// Find actor
-		AActor* foundActor = FindActorByName(actorName);
+		AActor* foundActor = FWN_MCP_ActorUtils::FindActorByName(actorName);
 		if (!foundActor)
 		{
 			WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_INVALID_PARAMS,
