@@ -5,6 +5,7 @@ Provides execute() for sending JSON-RPC 2.0 commands to UE C++ plugin.
 
 import json
 import socket
+import threading
 from typing import Optional, Dict, Any
 
 
@@ -15,8 +16,10 @@ from typing import Optional, Dict, Any
 UE_HOST = "127.0.0.1"
 UE_PORT = 27777
 UE_TIMEOUT = 30.0
+MAX_RESPONSE_SIZE = 100 * 1024 * 1024  # 100 MB
 
 _socket: Optional[socket.socket] = None
+_lock = threading.Lock()
 
 
 # =============================================================================
@@ -27,29 +30,31 @@ _socket: Optional[socket.socket] = None
 def connect() -> bool:
     """Connect to UE TCP server if not already connected."""
     global _socket
-    if _socket is not None:
-        return True
-    try:
-        _socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        _socket.settimeout(UE_TIMEOUT)
-        _socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-        _socket.connect((UE_HOST, UE_PORT))
-        return True
-    except Exception as e:
-        _socket = None
-        raise ConnectionError(f"Cannot connect to UE at {UE_HOST}:{UE_PORT} - {e}")
+    with _lock:
+        if _socket is not None:
+            return True
+        try:
+            _socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            _socket.settimeout(UE_TIMEOUT)
+            _socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+            _socket.connect((UE_HOST, UE_PORT))
+            return True
+        except Exception as e:
+            _socket = None
+            raise ConnectionError(f"Cannot connect to UE at {UE_HOST}:{UE_PORT} - {e}")
 
 
 def disconnect():
     """Disconnect from UE TCP server."""
     global _socket
-    if _socket:
-        try:
-            _socket.shutdown(socket.SHUT_RDWR)
-        except Exception:
-            pass
-        _socket.close()
-        _socket = None
+    with _lock:
+        if _socket:
+            try:
+                _socket.shutdown(socket.SHUT_RDWR)
+            except Exception:
+                pass
+            _socket.close()
+            _socket = None
 
 
 def execute(command_name: str, params: Optional[Dict[str, Any]] = None, app_name: str = "") -> Dict[str, Any]:
@@ -68,6 +73,9 @@ def execute(command_name: str, params: Optional[Dict[str, Any]] = None, app_name
         RuntimeError: UE returned an error response
     """
     connect()
+
+    if _socket is None:
+        raise ConnectionError("Not connected to UE")
 
     full_name = f"{app_name}_{command_name}" if app_name else command_name
     request = {
@@ -92,12 +100,17 @@ def execute(command_name: str, params: Optional[Dict[str, Any]] = None, app_name
 
         # Read until we have a complete JSON response
         chunks = []
+        total_size = 0
         while True:
             chunk = _socket.recv(65536)
             if not chunk:
                 disconnect()
                 raise ConnectionError("UE closed connection")
             chunks.append(chunk)
+            total_size += len(chunk)
+            if total_size > MAX_RESPONSE_SIZE:
+                disconnect()
+                raise ConnectionError(f"Response exceeded {MAX_RESPONSE_SIZE} bytes limit")
             try:
                 response = json.loads(b"".join(chunks).decode("utf-8"))
                 break
