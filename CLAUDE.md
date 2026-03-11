@@ -37,15 +37,15 @@ Agent (Claude/Cursor) <--stdio--> Python MCP Server (Tool) <--TCP JSON-RPC 2.0--
 
 ## Work Rules
 
-1. **WN_MCP 보수적 수정**: `WN_MCP/` 코드는 수정 가능하나, 아래 원칙을 반드시 준수한다:
-   - **최소 변경**: 목적 달성에 필요한 최소한의 코드만 변경한다. 리팩터링/스타일 변경 금지.
-   - **하위 호환**: 기존 동작을 깨뜨리면 안 된다. WN_MCP_WORLD, WN_MCPTest 등 기존 확장 플러그인이 수정 없이 동작해야 한다.
-   - **변경 단위 커밋**: WN_MCP 변경은 반드시 독립 커밋으로 분리한다. 언제든 `git revert`로 원복 가능해야 한다.
-   - **사전 승인**: WN_MCP 수정 전 사용자에게 변경 범위를 설명하고 승인을 받아야 한다.
-2. **WN_MCP Python 보수적 수정**: `WN_MCP/Python/`도 위와 동일한 원칙으로 수정 가능하다.
-3. **사전 승인 필수**: 커맨드 이식 전 사용자에게 설명 없이 바로 구현하면 안 된다.
-4. **커맨드 단위 커밋**: 커맨드 이식 후 커밋하지 않고 다음 커맨드로 넘어가면 안 된다.
-5. **새 파일만 추가**: 기존 CommandGroup 파일을 수정하면 안 된다. 새 CommandGroup은 `Private/Commands/`에 새 .h/.cpp 파일로 추가한다.
+1. **WN_MCP 보수적 수정**: `WN_MCP/` 코드를 수정할 때 아래 원칙을 위반하면 안 된다:
+   - 목적과 무관한 코드를 변경하면 안 된다. 리팩터링/스타일 변경 금지.
+   - 기존 동작을 깨뜨리면 안 된다. WN_MCP_WORLD, WN_MCPTest 등 기존 확장 플러그인이 수정 없이 동작해야 한다.
+   - WN_MCP 변경을 다른 변경과 같은 커밋에 섞으면 안 된다. 언제든 `git revert`로 원복 가능해야 한다.
+   - 사용자 승인 없이 WN_MCP를 수정하면 안 된다.
+2. **WN_MCP Python 보수적 수정**: `WN_MCP/Python/`도 위와 동일한 원칙을 위반하면 안 된다.
+3. 커맨드 이식 전 사용자에게 설명 없이 바로 구현하면 안 된다.
+4. 커맨드 이식 후 커밋하지 않고 다음 커맨드로 넘어가면 안 된다.
+5. 기존 CommandGroup 파일을 수정하면 안 된다. 새 CommandGroup은 `Private/Commands/`에 새 .h/.cpp 파일로 추가한다.
 
 ---
 
@@ -121,7 +121,7 @@ WN_MCP_WORLD/Source/
 | Macros | `WN_` prefix + ALL_CAPS | `WN_RETURN_COMMAND_RESPONSE` |
 | Command names | snake_case string | `"get_actors_in_level"`, `"spawn_actor"` |
 
-### Section Dividers (MUST follow exactly)
+### Section Dividers (아래 형식 외 다른 구분선 형식을 사용하면 안 된다)
 
 ```cpp
 // Top-level sections: 80 dashes
@@ -135,15 +135,13 @@ WN_MCP_WORLD/Source/
 	//-------------------------------------------------------------------------
 ```
 
-### Documentation Comments
+### Documentation Comments (Doxygen에 `/** */` 스타일을 사용하면 안 된다 — `///` triple-slash만 사용)
 
 ```cpp
 /// Single-line doc comment.
 /// @param InName parameter description.
 /// @return return value description.
 ```
-
-Use `///` (triple-slash) for Doxygen. NOT `/** */` style.
 
 ### Header File Template
 
@@ -274,7 +272,7 @@ WN_MCP_REGISTER_SIMPLE_COMMAND(InOutList, "command_name", "Description")
 
 Each CommandGroup MUST override `GetApplicationName()` to return its plugin name (e.g. `"WN_MCP_WORLD"`). This prefix is prepended to command names during registration to prevent cross-plugin collisions. `Execute()` automatically strips the prefix before calling `OnExecute()`, so if-statements inside `OnExecute` use raw names (e.g. `"spawn_actor"`, not `"WN_MCP_WORLD_spawn_actor"`).
 
-### Response Macros (MUST use these, never hand-build response JSON)
+### Response Macros (응답 JSON을 매크로 없이 직접 구성하면 안 된다)
 
 | Macro | Usage |
 |-------|-------|
@@ -286,30 +284,30 @@ Each CommandGroup MUST override `GetApplicationName()` to return its plugin name
 
 ### Code Style Details
 
-- Tabs for indentation (UE standard), NOT spaces
-- Opening brace on next line for functions/classes
-- Opening brace on same line for `if/else/for/while`
-- Access specifiers (`public:`, `private:`) with blank line after
-- Empty constructor body: opening brace on next line, empty line, closing brace
-- Empty destructor body: opening brace on next line, closing brace (NO empty line)
-- `FString(TEXT("..."))` for command name comparisons
-- `MakeShareable(new FJsonObject())` for creating JSON objects
-- Always end `OnExecute` with `WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_METHOD_NOT_FOUND, TEXT(""));`
-- `OnExecute` 내 각 커맨드 블록 앞에 72-dash 구분선 추가 (커맨드 이름 포함)
-- 자명한 주석 금지: `// Get required parameters`, `// Return result` 등 — 코드가 이미 설명하는 내용 반복 금지
-- `InResultPtr` 앞에는 빈 줄 1개 (결과 생성부와 로직 분리)
-- Inline comments start with capital letter: `// Find actor by name` (NOT `// find actor by name`)
-- CommandGroup 내부 헬퍼는 파일 스코프 `static` 함수로 선언 (클래스 멤버 아님)
-- 여러 CommandGroup에서 공유하는 유틸리티는 `FWN_MCP_BlueprintUtils` 등 전용 유틸리티 클래스에 `static` 멤버로 선언
-- IWYU (Include What You Use): 헤더 파일은 자체 완결적이어야 한다. `FString`, `WN_MCP_WORLD_API` 등을 사용하면 `#include "CoreMinimal.h"` 필수. `FModuleManager`를 사용하면 `#include "Modules/ModuleManager.h"` 필수
+- 들여쓰기에 spaces를 사용하면 안 된다 — tabs만 사용 (UE standard)
+- 함수/클래스의 여는 중괄호를 같은 줄에 두면 안 된다 (다음 줄로)
+- `if/else/for/while`의 여는 중괄호를 다음 줄로 내리면 안 된다 (같은 줄에)
+- 접근 지정자(`public:`, `private:`) 뒤에 빈 줄 없이 코드를 쓰면 안 된다
+- 빈 생성자 본문에서 여는/닫는 중괄호 사이 빈 줄을 빠뜨리면 안 된다
+- 빈 소멸자 본문에 빈 줄을 넣으면 안 된다
+- 커맨드 이름 비교에 `FString(TEXT("..."))` 외 형식을 사용하면 안 된다
+- JSON 오브젝트 생성에 `MakeShareable(new FJsonObject())` 외 방법을 사용하면 안 된다
+- `OnExecute`를 `WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_METHOD_NOT_FOUND, TEXT(""));` 없이 끝내면 안 된다
+- `OnExecute` 내 커맨드 블록 앞에 72-dash 구분선(커맨드 이름 포함) 없이 코드를 쓰면 안 된다
+- 코드가 이미 설명하는 내용을 주석으로 반복하면 안 된다: `// Get required parameters`, `// Return result` 등 금지
+- `InResultPtr` 생성 앞에 빈 줄 없이 바로 쓰면 안 된다 (결과 생성부와 로직 분리)
+- 인라인 주석을 소문자로 시작하면 안 된다: `// Find actor by name` (NOT `// find actor by name`)
+- CommandGroup 내부 헬퍼를 클래스 멤버로 선언하면 안 된다 — 파일 스코프 `static` 함수로 선언
+- 여러 CommandGroup에서 공유하는 유틸리티를 개별 CommandGroup 안에 두면 안 된다 — 전용 유틸리티 클래스(`FWN_MCP_BlueprintUtils` 등)에 `static` 멤버로 선언
+- 헤더 파일이 사용하는 타입의 include를 빠뜨리면 안 된다 (IWYU). `FString`, `WN_MCP_WORLD_API` → `CoreMinimal.h` 필수. `FModuleManager` → `Modules/ModuleManager.h` 필수
 
 ### Extension Plugin Pattern (like WN_MCPTest)
 
-New command plugins MUST follow this pattern:
-1. Depend on `WN_MCP` module in `.build.cs`
-2. In `StartupModule()`: get `FWN_MCP_Module::Get()`, call `AddUserToolDirectories()`
-3. Create `Python/` directory with tool `.py` files
-4. C++ CommandGroups auto-register via `WN_MCP_REGISTER_COMMAND_GROUP` macro
+새 커맨드 플러그인 작성 시:
+- `.build.cs`에 `WN_MCP` 모듈 의존성 없이 만들면 안 된다
+- `StartupModule()`에서 `FWN_MCP_Module::Get()` → `AddUserToolDirectories()` 호출을 빠뜨리면 안 된다
+- Python Tool 파일을 `Python/` 디렉터리 밖에 두면 안 된다
+- `WN_MCP_REGISTER_COMMAND_GROUP` 매크로 없이 CommandGroup을 수동 등록하면 안 된다
 
 ---
 
@@ -365,7 +363,7 @@ New command plugins MUST follow this pattern:
 
 ### UE Connection
 
-Python Tool에서 C++ Command를 호출할 때는 `ue_connection.execute()`를 사용한다:
+Python Tool에서 C++ Command를 `ue_connection.execute()` 외 방법으로 호출하면 안 된다:
 
 ```python
 from tools import ue_connection
@@ -375,7 +373,7 @@ _APP = "WN_MCP_WORLD"  # 각 tool 모듈 상단에 선언
 result = ue_connection.execute("command_name", params, app_name=_APP)
 ```
 
-- `app_name` 파라미터는 C++ `GetApplicationName()`과 일치해야 한다
+- `app_name` 파라미터가 C++ `GetApplicationName()` 반환값과 불일치하면 안 된다
 - `execute()`가 내부적으로 `"{app_name}_{command_name}"` 형태로 JSON-RPC `id`를 구성한다
 
 ---
@@ -389,15 +387,15 @@ result = ue_connection.execute("command_name", params, app_name=_APP)
 
 ## CRITICAL RULES
 
-1. `WN_MCP/` 수정 시 Work Rules 1번의 4가지 원칙(최소 변경, 하위 호환, 변경 단위 커밋, 사전 승인)을 반드시 준수한다
+1. `WN_MCP/` 수정 시 Work Rules 1번의 4가지 원칙(최소 변경, 하위 호환, 변경 단위 커밋, 사전 승인)을 위반하면 안 된다
 2. 기존 CommandGroup .h/.cpp 파일에 새 커맨드를 끼워 넣으면 안 된다. 새 .h/.cpp 파일로 추가해야 한다
 3. `OnExecute`를 `WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_METHOD_NOT_FOUND, TEXT(""));` 없이 끝내면 안 된다
 4. `OnExecute` 내에서 GameThread 외 스레드에서 UE API를 호출하면 안 된다 (ServerThread가 이미 GameThread로 디스패치)
 5. 커맨드 이름이 다른 플러그인과 충돌하면 안 된다 — 등록 전 반드시 확인
-6. `WN_MCP/Python/` 수정 시 Work Rules 2번의 원칙(최소 변경, 하위 호환, 변경 단위 커밋, 사전 승인)을 반드시 준수한다
+6. `WN_MCP/Python/` 수정 시 Work Rules 2번의 원칙(최소 변경, 하위 호환, 변경 단위 커밋, 사전 승인)을 위반하면 안 된다
 7. 사용자 승인 없이 커맨드를 이식하면 안 된다
 8. 커맨드 이식 후 커밋하지 않고 다음 작업으로 넘어가면 안 된다
-9. Copyright header를 `.build.cs` 외 파일에 추가하면 안 된다: `// Copyright Kangnam Kim. All Rights Reserved.`
+9. `.build.cs` 외 파일에 Copyright header를 추가하면 안 된다: `// Copyright Kangnam Kim. All Rights Reserved.`
 10. git commit 메시지에 `Co-Authored-By` 라인을 추가하면 안 된다
 
 ---
