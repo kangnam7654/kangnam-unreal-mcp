@@ -92,9 +92,13 @@ uv run python mcp_server.py   # MCP 서버 실행 (stdio transport)
 WN_MCP_WORLD/
 ├── Source/
 │   ├── WN_MCP_WORLD/                          # Runtime 모듈
-│   │   └── Private/Commands/
-│   │       ├── WN_MCP_CommandGroup_Actor.h/.cpp           # Actor CRUD 6개
-│   │       └── WN_MCP_CommandGroup_ActorComponent.h/.cpp  # ActorComponent CRD 3개
+│   │   ├── Public/
+│   │   │   └── WN_MCP_ActorUtils.h                        # 공유 유틸리티 (FindActorByName)
+│   │   └── Private/
+│   │       ├── WN_MCP_ActorUtils.cpp                      # FindActorByName 구현
+│   │       └── Commands/
+│   │           ├── WN_MCP_CommandGroup_Actor.h/.cpp           # Actor CRUD 6개
+│   │           └── WN_MCP_CommandGroup_ActorComponent.h/.cpp  # ActorComponent CRD 3개
 │   └── WN_MCP_WORLD_Editor/                   # Editor 모듈
 │       └── Private/
 │           ├── WN_MCP_BlueprintUtils.h/.cpp               # 공유 유틸리티
@@ -159,16 +163,14 @@ uv run python -m pytest tests/test_unit_tools.py --cov=tools --cov-report=term-m
 
 | 구분 | 테스트 수 | UE 필요 | 설명 |
 |------|----------|---------|------|
-| Unit | 85개 | 아니오 | Tool 파라미터 전달 + 응답 포맷 검증 (UE Mock) |
-| Integration | 42개 | 예 | 실제 UE 에디터에서 CRUD 시나리오 검증 |
-| E2E | 8개 | 예 | MCP Client를 통한 전체 프로토콜 흐름 검증 |
-| **합계** | **135개** | | |
+| Unit | 103개 | 아니오 | Tool 파라미터 전달 + 응답 포맷 검증 (UE Mock) |
+| Integration | 111개 | 예 | 실제 UE 에디터에서 CRUD 시나리오 검증 |
+| E2E | 10개 | 예 | MCP Client를 통한 전체 프로토콜 흐름 검증 |
+| **합계** | **224개** | | |
 
 ### 커버리지
 
-- Tool 모듈 전체: **100%** (ue_connection.py 제외)
-- ue_connection.py: 20% (TCP 소켓 코드는 Integration/E2E에서 검증)
-- 전체: **87%**
+- Tool 모듈 전체 (ue_connection.py 포함): **100%**
 
 ## 사용 예시
 

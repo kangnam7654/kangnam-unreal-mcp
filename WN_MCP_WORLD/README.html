@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WN_MCP_WORLD README</title>
+<style>
+body { font-family: 'Segoe UI', Tahoma, sans-serif; max-width: 900px; margin: 40px auto; padding: 0 20px; color: #333; line-height: 1.6; }
+h1 { border-bottom: 2px solid #2c3e50; padding-bottom: 10px; color: #2c3e50; }
+h2 { border-bottom: 1px solid #bdc3c7; padding-bottom: 6px; color: #2c3e50; margin-top: 30px; }
+h3 { color: #34495e; }
+code { background: #f4f4f4; padding: 2px 6px; border-radius: 3px; font-size: 0.9em; }
+pre { background: #2d2d2d; color: #f8f8f2; padding: 16px; border-radius: 6px; overflow-x: auto; }
+pre code { background: none; color: inherit; padding: 0; }
+table { border-collapse: collapse; width: 100%; margin: 16px 0; }
+th, td { border: 1px solid #ddd; padding: 8px 12px; text-align: left; }
+th { background: #2c3e50; color: white; }
+tr:nth-child(even) { background: #f9f9f9; }
+blockquote { border-left: 4px solid #3498db; margin: 16px 0; padding: 8px 16px; background: #ecf0f1; }
+a { color: #3498db; }
+</style>
+</head>
+<body>
+<h1>WN_MCP_WORLD</h1>
+<p>Unreal Engine 5 씬 조작을 위한 MCP(Model Context Protocol) 플러그인.
+AI 에이전트(Claude Code, Cursor 등)가 UE 에디터의 액터, 블루프린트, 컴포넌트, 머티리얼을 CRUD 조작할 수 있게 해준다.</p>
+<h2>아키텍처</h2>
+<pre class="codehilite"><code>AI Agent (Claude/Cursor)
+    │ stdio
+    ▼
+Python MCP Server (FastMCP)          ← WN_MCP_WORLD/Python/
+    │ TCP JSON-RPC 2.0 (port 27777)
+    ▼
+UE C++ Plugin (CommandGroup)         ← WN_MCP_WORLD/Source/
+    │ UE Engine API
+    ▼
+Unreal Engine Editor
+</code></pre>
+
+<ul>
+<li><strong>Python Tool</strong>: <code>@mcp.tool</code> 데코레이터로 등록. AI 에이전트가 직접 호출하는 함수.</li>
+<li><strong>C++ Command</strong>: <code>FWN_MCP_CommandGroup</code> 서브클래스에 구현. UE API에 접근하는 함수.</li>
+<li>Python Tool이 TCP를 통해 C++ Command를 호출하여 UE를 조작한다.</li>
+</ul>
+<h2>설치 및 실행</h2>
+<h3>사전 요구사항</h3>
+<ul>
+<li>Unreal Engine 5 (WN_MCP 플러그인 포함)</li>
+<li>Python 3.11+ (<code>uv</code> 패키지 매니저)</li>
+</ul>
+<h3>Python MCP Server 설정</h3>
+<pre class="codehilite"><code class="language-bash">cd WN_MCP_WORLD/Python
+uv sync                    # 의존성 설치
+uv run python mcp_server.py   # MCP 서버 실행 (stdio transport)
+</code></pre>
+
+<h3>VS Code MCP 설정</h3>
+<p><code>.vscode/mcp.json</code>:</p>
+<pre class="codehilite"><code class="language-json">{
+    &quot;servers&quot;: {
+        &quot;wn-mcp-world&quot;: {
+            &quot;type&quot;: &quot;stdio&quot;,
+            &quot;command&quot;: &quot;uv&quot;,
+            &quot;args&quot;: [&quot;run&quot;, &quot;python&quot;, &quot;mcp_server.py&quot;],
+            &quot;cwd&quot;: &quot;${workspaceFolder}/WN_MCP_WORLD/Python&quot;
+        }
+    }
+}
+</code></pre>
+
+<h3>Claude Code MCP 설정</h3>
+<p><code>~/.claude/settings.json</code>:</p>
+<pre class="codehilite"><code class="language-json">{
+    &quot;mcpServers&quot;: {
+        &quot;ue-world&quot;: {
+            &quot;command&quot;: &quot;uv&quot;,
+            &quot;args&quot;: [&quot;run&quot;, &quot;python&quot;, &quot;mcp_server.py&quot;],
+            &quot;cwd&quot;: &quot;&lt;프로젝트경로&gt;/WN_MCP_WORLD/Python&quot;
+        }
+    }
+}
+</code></pre>
+
+<h2>커맨드 (38개)</h2>
+<blockquote>
+<p>상세 파라미터/응답은 <a href="docs/commands.md">docs/commands.md</a> 참조</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>그룹</th>
+<th>수</th>
+<th>CRUD</th>
+<th>커맨드</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Actor</td>
+<td>6</td>
+<td>CRUD</td>
+<td><code>get_actors_in_level</code>, <code>find_actors_by_name</code>, <code>spawn_actor</code>, <code>delete_actor</code>, <code>set_actor_transform</code>, <code>read_actor_content</code></td>
+</tr>
+<tr>
+<td>ActorComponent</td>
+<td>3</td>
+<td>CRD</td>
+<td><code>add_component_to_actor</code>, <code>read_components_from_actor</code>, <code>remove_component_from_actor</code></td>
+</tr>
+<tr>
+<td>Blueprint</td>
+<td>7</td>
+<td>CRUD</td>
+<td><code>get_blueprints</code>, <code>find_blueprints_by_name</code>, <code>create_blueprint</code>, <code>read_blueprint_content</code>, <code>compile_blueprint</code>, <code>delete_blueprint</code>, <code>spawn_blueprint_actor</code></td>
+</tr>
+<tr>
+<td>BlueprintComponent</td>
+<td>3</td>
+<td>CRD</td>
+<td><code>add_component_to_blueprint</code>, <code>read_components_from_blueprint</code>, <code>remove_component_from_blueprint</code></td>
+</tr>
+<tr>
+<td>Property</td>
+<td>2</td>
+<td>U</td>
+<td><code>set_static_mesh_properties</code>, <code>set_physics_properties</code></td>
+</tr>
+<tr>
+<td>Material</td>
+<td>6</td>
+<td>RU</td>
+<td><code>get_available_materials</code>, <code>get_actor_material_info</code>, <code>get_blueprint_material_info</code>, <code>apply_material_to_actor</code>, <code>apply_material_to_blueprint</code>, <code>set_mesh_material_color</code></td>
+</tr>
+<tr>
+<td>StaticMesh</td>
+<td>2</td>
+<td>R</td>
+<td><code>get_static_meshes</code>, <code>find_static_meshes_by_name</code></td>
+</tr>
+<tr>
+<td>BlueprintVariable</td>
+<td>2</td>
+<td>CD</td>
+<td><code>add_variable_to_blueprint</code>, <code>remove_variable_from_blueprint</code></td>
+</tr>
+<tr>
+<td>BlueprintGraph</td>
+<td>7</td>
+<td>CRUD</td>
+<td><code>read_blueprint_graph</code>, <code>add_event_node</code>, <code>add_function_call_node</code>, <code>add_variable_get_node</code>, <code>add_variable_set_node</code>, <code>connect_nodes</code>, <code>disconnect_nodes</code></td>
+</tr>
+</tbody>
+</table>
+<h2>파일 구조</h2>
+<pre class="codehilite"><code>WN_MCP_WORLD/
+├── Source/
+│   ├── WN_MCP_WORLD/                          # Runtime 모듈
+│   │   ├── Public/
+│   │   │   └── WN_MCP_ActorUtils.h                        # 공유 유틸리티 (FindActorByName)
+│   │   └── Private/
+│   │       ├── WN_MCP_ActorUtils.cpp                      # FindActorByName 구현
+│   │       └── Commands/
+│   │           ├── WN_MCP_CommandGroup_Actor.h/.cpp           # Actor CRUD 6개
+│   │           └── WN_MCP_CommandGroup_ActorComponent.h/.cpp  # ActorComponent CRD 3개
+│   └── WN_MCP_WORLD_Editor/                   # Editor 모듈
+│       └── Private/
+│           ├── WN_MCP_BlueprintUtils.h/.cpp               # 공유 유틸리티
+│           └── Commands/
+│               ├── WN_MCP_CommandGroup_Blueprint.h/.cpp          # Blueprint CRUD 7개
+│               ├── WN_MCP_CommandGroup_BlueprintComponent.h/.cpp # BlueprintComponent CRD 3개
+│               ├── WN_MCP_CommandGroup_Property.h/.cpp           # Property U 2개
+│               ├── WN_MCP_CommandGroup_Material.h/.cpp           # Material RU 6개
+│               ├── WN_MCP_CommandGroup_StaticMesh.h/.cpp         # StaticMesh R 2개
+│               ├── WN_MCP_CommandGroup_BlueprintVariable.h/.cpp  # BlueprintVariable CD 2개
+│               └── WN_MCP_CommandGroup_BlueprintGraph.h/.cpp     # BlueprintGraph CRUD 7개
+├── Python/
+│   ├── mcp_server.py                          # FastMCP 서버 진입점
+│   ├── pyproject.toml                         # Python 프로젝트 설정
+│   ├── tools/
+│   │   ├── __init__.py                        # 전체 Tool 등록
+│   │   ├── ue_connection.py                   # UE TCP 연결 유틸리티
+│   │   ├── actor_tools.py                     # Actor Tool 6개
+│   │   ├── actor_component_tools.py           # ActorComponent Tool 3개
+│   │   ├── blueprint_tools.py                 # Blueprint Tool 7개
+│   │   ├── blueprint_component_tools.py       # BlueprintComponent Tool 3개
+│   │   ├── property_tools.py                  # Property Tool 2개
+│   │   ├── material_tools.py                  # Material Tool 6개
+│   │   ├── static_mesh_tools.py               # StaticMesh Tool 2개
+│   │   ├── blueprint_variable_tools.py        # BlueprintVariable Tool 2개
+│   │   └── blueprint_graph_tools.py           # BlueprintGraph Tool 7개
+│   └── tests/
+│       ├── conftest.py                        # 공통 fixture + call_tool 헬퍼
+│       ├── test_unit_tools.py                 # Unit 테스트 (UE Mock, 85개)
+│       ├── test_integration.py                # 통합 테스트 (UE 필요, 42개)
+│       └── test_e2e.py                        # E2E 테스트 (UE 필요, 8개)
+└── docs/
+    ├── commands.md                            # 커맨드 레퍼런스 (상세)
+    └── python-tools-and-tests/
+        └── design.md                          # 설계문서
+</code></pre>
+
+<h2>테스트</h2>
+<h3>실행 방법</h3>
+<pre class="codehilite"><code class="language-bash">cd WN_MCP_WORLD/Python
+
+# Unit 테스트 (UE 불필요)
+uv run python -m pytest tests/test_unit_tools.py -v
+
+# 통합 테스트 (UE 에디터 실행 필수)
+uv run python -m pytest tests/test_integration.py -v
+
+# E2E 테스트 (UE 에디터 실행 필수)
+uv run python -m pytest tests/test_e2e.py -v
+
+# 전체
+uv run python -m pytest tests/ -v
+
+# 커버리지 확인
+uv run python -m pytest tests/test_unit_tools.py --cov=tools --cov-report=term-missing -q
+</code></pre>
+
+<h3>테스트 현황</h3>
+<table>
+<thead>
+<tr>
+<th>구분</th>
+<th>테스트 수</th>
+<th>UE 필요</th>
+<th>설명</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Unit</td>
+<td>103개</td>
+<td>아니오</td>
+<td>Tool 파라미터 전달 + 응답 포맷 검증 (UE Mock)</td>
+</tr>
+<tr>
+<td>Integration</td>
+<td>111개</td>
+<td>예</td>
+<td>실제 UE 에디터에서 CRUD 시나리오 검증</td>
+</tr>
+<tr>
+<td>E2E</td>
+<td>10개</td>
+<td>예</td>
+<td>MCP Client를 통한 전체 프로토콜 흐름 검증</td>
+</tr>
+<tr>
+<td><strong>합계</strong></td>
+<td><strong>224개</strong></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3>커버리지</h3>
+<ul>
+<li>Tool 모듈 전체 (ue_connection.py 포함): <strong>100%</strong></li>
+</ul>
+<h2>사용 예시</h2>
+<p>AI 에이전트가 UE에서 빨간 큐브를 만드는 흐름:</p>
+<pre class="codehilite"><code>1. create_blueprint(name=&quot;RedCube&quot;)
+2. add_component_to_blueprint(blueprint_name=&quot;RedCube&quot;, component_class=&quot;StaticMeshComponent&quot;, component_name=&quot;Mesh&quot;)
+3. set_static_mesh_properties(blueprint_name=&quot;RedCube&quot;, component_name=&quot;Mesh&quot;, static_mesh=&quot;/Engine/BasicShapes/Cube.Cube&quot;)
+4. set_mesh_material_color(blueprint_name=&quot;RedCube&quot;, component_name=&quot;Mesh&quot;, color=[1.0, 0.0, 0.0])
+5. compile_blueprint(blueprint_name=&quot;RedCube&quot;)
+6. spawn_blueprint_actor(blueprint_name=&quot;RedCube&quot;, name=&quot;RedCube_1&quot;, location=[0, 0, 100])
+</code></pre>
+</body>
+</html>
