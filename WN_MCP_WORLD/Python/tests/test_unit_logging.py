@@ -238,6 +238,21 @@ class TestRingBufferHandler:
 
         assert handler.get_entries(count=1, min_level=0)[0]["logger"] == "server"
 
+    def test_get_entries_with_total_atomic(self):
+        from mcp_logging.ring_buffer import RingBufferHandler
+
+        handler = RingBufferHandler(maxlen=100)
+        for i in range(5):
+            record = logging.LogRecord(
+                "wn_mcp_world", logging.INFO, "", 0, f"msg{i}", (), None,
+            )
+            handler.emit(record)
+
+        entries, total = handler.get_entries_with_total(count=3, min_level=logging.INFO)
+        assert total == 5
+        assert len(entries) == 3
+        assert entries[0]["message"] == "msg4"
+
 
 # ---------------------------------------------------------------------------
 # initialize / set_level / get_level / get_recent_entries tests
