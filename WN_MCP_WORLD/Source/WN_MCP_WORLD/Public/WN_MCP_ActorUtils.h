@@ -11,7 +11,7 @@ class AActor;
 //-----------------------------------------------------------------------------
 
 /// Shared utility functions for Actor operations.
-class FWN_MCP_ActorUtils
+class WN_MCP_WORLD_API FWN_MCP_ActorUtils
 {
 public:
 
