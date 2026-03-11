@@ -143,17 +143,31 @@ ServerThread: FTCHARToUTF8 → Send response
 
 ## Python MCP Server (PyMCP)
 
-### 이중 구조
+### 목표 아키텍처 (확정)
 
-WN_MCP는 두 가지 Python 시스템을 포함한다:
+PyMCP가 유일한 MCP Server. 각 플러그인은 `Python/` 폴더에 Tool만 제공한다.
 
-| 구분 | 위치 | 설명 | 상태 |
+```
+PyMCP (유일한 MCP Server)
+    │
+    ├── 코어 기능: 연결, 프로토콜, Tool 발견, 프롬프트
+    │
+    └── 동적 Import (AddUserToolDirectories)
+        ├── WN_MCP_WORLD/Python/tools/   ← 38개 Tool
+        ├── WN_MCP_XXX/Python/tools/     ← 향후 추가 플러그인
+        └── ...
+```
+
+### 현재 과도기 상태
+
+| 구분 | 위치 | 설명 | 향후 |
 |------|------|------|------|
-| **PyMCP (신규)** | `WN_MCP/PyMCP/src/unreal_mcp/` | 모듈화된 새 구현. FastMCP 3.x 기반 | 활성 |
-| **WN_MCP_WORLD Python** | `WN_MCP_WORLD/Python/` | WORLD 전용 Tool + 테스트 | 활성 |
+| **PyMCP** | `WN_MCP/PyMCP/src/unreal_mcp/` | 코어 서버. FastMCP 3.x | 유일한 서버로 유지 |
+| **PyMCP 내장 UE Tool** | `WN_MCP/PyMCP/src/unreal_mcp/tools/ue/` | Actor/Blueprint/Material (~15개) | **제거** (플러그인으로 이관) |
+| **WN_MCP_WORLD Python** | `WN_MCP_WORLD/Python/` | 38개 Tool + 224 테스트 | Tool 모듈만 잔존, mcp_server.py 제거 |
+| **PyMCP 레거시** | `WN_MCP/PyMCP/Tools/` | 구 구현 | **제거** |
 
-> **참고**: PyMCP에 내장된 Actor/Blueprint/Material Tool과 WN_MCP_WORLD의 Tool이 기능적으로 중복된다.
-> 현재 두 시스템이 공존하며, 향후 통합 방향 결정이 필요하다.
+> 마이그레이션 상세는 [TODO.md](TODO.md) P0 참조
 
 ### PyMCP 서버 팩토리
 
@@ -224,5 +238,5 @@ WN_MCP_WORLD/Python/
     └── actor_tools.py     # @mcp.tool 데코레이터로 등록
 ```
 
-> WN_MCP_WORLD는 PyMCP의 동적 발견 + 자체 MCP 서버 두 가지 경로로 Tool을 제공할 수 있다.
-> 현재는 자체 MCP 서버(`mcp_server.py`)를 통해 운영 중이다.
+> 현재 WN_MCP_WORLD는 자체 MCP 서버(`mcp_server.py`)로 운영 중이지만,
+> 종래에는 PyMCP의 동적 Import로 전환하고 자체 서버는 제거할 예정이다.
