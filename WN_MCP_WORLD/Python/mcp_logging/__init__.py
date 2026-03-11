@@ -42,8 +42,10 @@ def initialize():
 
     root = logging.getLogger("wn_mcp_world")
 
-    # Guard: skip if already initialized
-    if root.handlers:
+    global _ring_handler, _file_handler
+
+    # Guard: skip if already fully initialized
+    if _ring_handler is not None:
         return
 
     settings = load_settings()
@@ -55,7 +57,6 @@ def initialize():
     )
 
     # File handler (with filesystem error fallback)
-    global _file_handler
     try:
         LOG_DIR.mkdir(exist_ok=True)
         today = datetime.now().strftime("%Y-%m-%d")
@@ -74,7 +75,6 @@ def initialize():
         print(f"[WARNING] Log file creation failed, using stderr: {e}", file=sys.stderr)
 
     # Ring buffer handler
-    global _ring_handler
     _ring_handler = RingBufferHandler(maxlen=RING_BUFFER_SIZE)
     _ring_handler.setLevel(MISC)
     root.addHandler(_ring_handler)
@@ -113,13 +113,13 @@ def get_recent_entries(
         return {"total_in_buffer": 0, "returned": 0, "filter": {}, "entries": []}
 
     min_level = parse_level(level)
-    entries = _ring_handler.get_entries(
+    entries, total = _ring_handler.get_entries_with_total(
         count=max(1, min(count, 200)),
         min_level=min_level,
         keyword=keyword,
     )
     return {
-        "total_in_buffer": _ring_handler.total_count,
+        "total_in_buffer": total,
         "returned": len(entries),
         "filter": {"level": level, "keyword": keyword},
         "entries": entries,

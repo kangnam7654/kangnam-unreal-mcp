@@ -35,19 +35,14 @@ class RingBufferHandler(logging.Handler):
         finally:
             self.release()
 
-    def get_entries(
+    def _filter_entries(
         self,
-        count: int = 20,
-        min_level: int = logging.INFO,
-        keyword: str = "",
+        snapshot: list,
+        count: int,
+        min_level: int,
+        keyword: str,
     ) -> List[Dict[str, Any]]:
-        """Get filtered entries from buffer, newest first."""
-        self.acquire()
-        try:
-            snapshot = list(self._buffer)
-        finally:
-            self.release()
-
+        """Filter snapshot entries by level and keyword, newest first."""
         result = []
         keyword_lower = keyword.lower() if keyword else ""
         for entry in reversed(snapshot):
@@ -60,6 +55,35 @@ class RingBufferHandler(logging.Handler):
                 continue
             result.append(entry)
         return result
+
+    def get_entries(
+        self,
+        count: int = 20,
+        min_level: int = logging.INFO,
+        keyword: str = "",
+    ) -> List[Dict[str, Any]]:
+        """Get filtered entries from buffer, newest first."""
+        self.acquire()
+        try:
+            snapshot = list(self._buffer)
+        finally:
+            self.release()
+        return self._filter_entries(snapshot, count, min_level, keyword)
+
+    def get_entries_with_total(
+        self,
+        count: int = 20,
+        min_level: int = logging.INFO,
+        keyword: str = "",
+    ) -> tuple:
+        """Get filtered entries and total buffer count atomically."""
+        self.acquire()
+        try:
+            snapshot = list(self._buffer)
+            total = len(self._buffer)
+        finally:
+            self.release()
+        return self._filter_entries(snapshot, count, min_level, keyword), total
 
     @property
     def total_count(self) -> int:
