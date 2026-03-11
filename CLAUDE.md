@@ -4,7 +4,7 @@
 
 Unreal Engine 5 MCP (Model Context Protocol) plugin. UE C++ TCP Server + Python FastMCP Server (stdio) 2-layer architecture.
 
-- **WN_MCP**: Core plugin (TCP server, command group system, Python MCP server) — **수정 금지**
+- **WN_MCP**: Core plugin (TCP server, command group system, Python MCP server) — **보수적 수정 허용** (아래 Work Rules 참조)
 - **WN_MCP_WORLD**: 실제 커맨드 구현 플러그인 (Actor, Blueprint, Component CRUD)
 - **WN_MCPTest**: Example/test plugin (demonstrates how to extend WN_MCP)
 - Protocol: **JSON-RPC 2.0** for all UE <-> Python communication
@@ -37,8 +37,12 @@ Agent (Claude/Cursor) <--stdio--> Python MCP Server (Tool) <--TCP JSON-RPC 2.0--
 
 ## Work Rules
 
-1. **WN_MCP 수정 금지**: `WN_MCP/` 플러그인 코드를 수정하면 안 된다. `WN_MCP_WORLD/`만 수정 대상이다.
-2. **WN_MCP Python 수정 금지**: `WN_MCP/Python/`의 Python 코드를 수정하면 안 된다. `WN_MCP_WORLD/Python/`만 수정 대상이다.
+1. **WN_MCP 보수적 수정**: `WN_MCP/` 코드는 수정 가능하나, 아래 원칙을 반드시 준수한다:
+   - **최소 변경**: 목적 달성에 필요한 최소한의 코드만 변경한다. 리팩터링/스타일 변경 금지.
+   - **하위 호환**: 기존 동작을 깨뜨리면 안 된다. WN_MCP_WORLD, WN_MCPTest 등 기존 확장 플러그인이 수정 없이 동작해야 한다.
+   - **변경 단위 커밋**: WN_MCP 변경은 반드시 독립 커밋으로 분리한다. 언제든 `git revert`로 원복 가능해야 한다.
+   - **사전 승인**: WN_MCP 수정 전 사용자에게 변경 범위를 설명하고 승인을 받아야 한다.
+2. **WN_MCP Python 보수적 수정**: `WN_MCP/Python/`도 위와 동일한 원칙으로 수정 가능하다.
 3. **사전 승인 필수**: 커맨드 이식 전 사용자에게 설명 없이 바로 구현하면 안 된다.
 4. **커맨드 단위 커밋**: 커맨드 이식 후 커밋하지 않고 다음 커맨드로 넘어가면 안 된다.
 5. **새 파일만 추가**: 기존 CommandGroup 파일을 수정하면 안 된다. 새 CommandGroup은 `Private/Commands/`에 새 .h/.cpp 파일로 추가한다.
@@ -50,7 +54,7 @@ Agent (Claude/Cursor) <--stdio--> Python MCP Server (Tool) <--TCP JSON-RPC 2.0--
 ### File Structure
 
 ```
-WN_MCP/Source/WN_MCP/                          # Core plugin (수정 금지)
+WN_MCP/Source/WN_MCP/                          # Core plugin (보수적 수정 허용)
   Public/
     WN_MCP_Module.h                            # Module header (public API, WN_MCP_API exports)
     WN_MCP_CommandGroup.h                      # Base class + macros + defines
@@ -385,12 +389,12 @@ result = ue_connection.execute("command_name", params, app_name=_APP)
 
 ## CRITICAL RULES
 
-1. `WN_MCP/` 플러그인 파일(C++ 및 Python 모두)을 수정하면 안 된다. `WN_MCP_WORLD/`만 수정 대상이다
+1. `WN_MCP/` 수정 시 Work Rules 1번의 4가지 원칙(최소 변경, 하위 호환, 변경 단위 커밋, 사전 승인)을 반드시 준수한다
 2. 기존 CommandGroup .h/.cpp 파일에 새 커맨드를 끼워 넣으면 안 된다. 새 .h/.cpp 파일로 추가해야 한다
 3. `OnExecute`를 `WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_METHOD_NOT_FOUND, TEXT(""));` 없이 끝내면 안 된다
 4. `OnExecute` 내에서 GameThread 외 스레드에서 UE API를 호출하면 안 된다 (ServerThread가 이미 GameThread로 디스패치)
 5. 커맨드 이름이 다른 플러그인과 충돌하면 안 된다 — 등록 전 반드시 확인
-6. `WN_MCP/Python/`의 Python Tool을 수정하면 안 된다. `WN_MCP_WORLD/Python/`의 Tool만 작업 대상이다
+6. `WN_MCP/Python/` 수정 시 Work Rules 2번의 원칙(최소 변경, 하위 호환, 변경 단위 커밋, 사전 승인)을 반드시 준수한다
 7. 사용자 승인 없이 커맨드를 이식하면 안 된다
 8. 커맨드 이식 후 커밋하지 않고 다음 작업으로 넘어가면 안 된다
 9. Copyright header를 `.build.cs` 외 파일에 추가하면 안 된다: `// Copyright WemadeNext, Inc. All Rights Reserved.`
