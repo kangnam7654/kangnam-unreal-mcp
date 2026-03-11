@@ -432,3 +432,129 @@ async def test_static_mesh_e2e(mcp_client):
         assert result["count"] >= 1
         names = [m["name"] for m in result["static_meshes"]]
         assert any("Cube" in n for n in names)
+
+
+# =============================================================================
+# Blueprint Variable E2E
+# =============================================================================
+
+
+@pytest.mark.asyncio
+async def test_blueprint_variable_e2e(mcp_client):
+    """BlueprintVariable lifecycle: create BP -> add variable -> verify -> remove -> cleanup."""
+    bp_name = "_E2E_VarBP"
+    var_name = "_E2E_HP"
+
+    async with mcp_client:
+        await safe_delete_blueprint(mcp_client, bp_name)
+
+        try:
+            # Create blueprint
+            await call_tool(mcp_client, "create_blueprint", {"name": bp_name})
+
+            # Add variable
+            result = await call_tool(mcp_client, "add_variable_to_blueprint", {
+                "blueprint_name": bp_name,
+                "variable_name": var_name,
+                "variable_type": "Float",
+                "default_value": "100.0",
+                "is_instance_editable": True,
+            })
+            assert result["status"] == "success"
+            assert result["variable_name"] == var_name
+
+            # Verify variable exists via read_blueprint_content
+            result = await call_tool(mcp_client, "read_blueprint_content", {
+                "blueprint_name": bp_name,
+            })
+            assert result["blueprint_name"] == bp_name
+
+            # Remove variable
+            result = await call_tool(mcp_client, "remove_variable_from_blueprint", {
+                "blueprint_name": bp_name,
+                "variable_name": var_name,
+            })
+            assert result["status"] == "success"
+        finally:
+            await safe_delete_blueprint(mcp_client, bp_name)
+
+
+# =============================================================================
+# Blueprint Graph E2E
+# =============================================================================
+
+
+@pytest.mark.asyncio
+async def test_blueprint_graph_e2e(mcp_client):
+    """BlueprintGraph lifecycle: nodes -> connect -> read -> disconnect -> cleanup."""
+    bp_name = "_E2E_GraphBP"
+    var_name = "_E2E_GraphVar"
+
+    async with mcp_client:
+        await safe_delete_blueprint(mcp_client, bp_name)
+
+        try:
+            # Setup: create blueprint with a variable
+            await call_tool(mcp_client, "create_blueprint", {"name": bp_name})
+            await call_tool(mcp_client, "add_variable_to_blueprint", {
+                "blueprint_name": bp_name,
+                "variable_name": var_name,
+                "variable_type": "Float",
+            })
+
+            # Add event node
+            result = await call_tool(mcp_client, "add_event_node", {
+                "blueprint_name": bp_name,
+                "event_type": "BeginPlay",
+            })
+            assert result["status"] == "success"
+            event_node_id = result["node_id"]
+
+            # Add function call node
+            result = await call_tool(mcp_client, "add_function_call_node", {
+                "blueprint_name": bp_name,
+                "function_name": "PrintString",
+                "target_class": "KismetSystemLibrary",
+            })
+            assert result["status"] == "success"
+            func_node_id = result["node_id"]
+
+            # Add variable get/set nodes
+            result = await call_tool(mcp_client, "add_variable_get_node", {
+                "blueprint_name": bp_name,
+                "variable_name": var_name,
+            })
+            assert result["status"] == "success"
+
+            result = await call_tool(mcp_client, "add_variable_set_node", {
+                "blueprint_name": bp_name,
+                "variable_name": var_name,
+            })
+            assert result["status"] == "success"
+
+            # Connect event -> function call
+            result = await call_tool(mcp_client, "connect_nodes", {
+                "blueprint_name": bp_name,
+                "source_node_id": event_node_id,
+                "source_pin_name": "then",
+                "target_node_id": func_node_id,
+                "target_pin_name": "execute",
+            })
+            assert result["status"] == "success"
+
+            # Read graph — verify nodes exist
+            result = await call_tool(mcp_client, "read_blueprint_graph", {
+                "blueprint_name": bp_name,
+            })
+            assert result["blueprint_name"] == bp_name
+            assert len(result["nodes"]) >= 4
+
+            # Disconnect
+            result = await call_tool(mcp_client, "disconnect_nodes", {
+                "blueprint_name": bp_name,
+                "node_id": event_node_id,
+                "pin_name": "then",
+            })
+            assert result["status"] == "success"
+        finally:
+            await safe_delete_blueprint(mcp_client, bp_name)

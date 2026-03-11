@@ -22,6 +22,22 @@ def call(tool_name: str, **kwargs) -> dict:
     return json.loads(call_tool(tool_name, **kwargs))
 
 
+def safe_delete_actor(name: str):
+    """Delete actor, ignoring errors if it doesn't exist."""
+    try:
+        call("delete_actor", name=name)
+    except Exception:
+        pass
+
+
+def safe_delete_blueprint(bp_name: str):
+    """Delete blueprint, ignoring errors if it doesn't exist."""
+    try:
+        call("delete_blueprint", blueprint_name=bp_name, force=True)
+    except Exception:
+        pass
+
+
 # =============================================================================
 # Actor CRUD
 # =============================================================================
@@ -33,6 +49,7 @@ class TestActorCRUD:
     ACTOR_NAME = "_IntTest_Actor"
 
     def test_01_spawn_actor(self):
+        safe_delete_actor(self.ACTOR_NAME)
         result = call("spawn_actor",
             type="StaticMeshActor", name=self.ACTOR_NAME,
             location=[100.0, 200.0, 300.0],
@@ -83,6 +100,7 @@ class TestActorComponentCRD:
     COMP_NAME = "_IntTest_Light"
 
     def test_01_spawn_actor(self):
+        safe_delete_actor(self.ACTOR_NAME)
         result = call("spawn_actor",
             type="StaticMeshActor", name=self.ACTOR_NAME,
         )
@@ -114,7 +132,7 @@ class TestActorComponentCRD:
         assert self.COMP_NAME not in names
 
     def test_05_cleanup_actor(self):
-        call("delete_actor", name=self.ACTOR_NAME)
+        safe_delete_actor(self.ACTOR_NAME)
 
 
 # =============================================================================
@@ -126,9 +144,9 @@ class TestBlueprintCRUD:
     """Test blueprint create -> read -> compile -> delete lifecycle."""
 
     BP_NAME = "_IntTest_Blueprint"
-    BP_PATH = f"/Game/Blueprints/{BP_NAME}"
 
     def test_01_create_blueprint(self):
+        safe_delete_blueprint(self.BP_NAME)
         result = call("create_blueprint", name=self.BP_NAME)
         assert result["name"] == self.BP_NAME
 
@@ -159,10 +177,10 @@ class TestBlueprintComponentCRD:
     """Test blueprint component add -> read -> remove."""
 
     BP_NAME = "_IntTest_CompBP"
-    BP_PATH = f"/Game/Blueprints/{BP_NAME}"
     COMP_NAME = "_IntTest_Mesh"
 
     def test_01_create_blueprint(self):
+        safe_delete_blueprint(self.BP_NAME)
         result = call("create_blueprint", name=self.BP_NAME)
         assert result["name"] == self.BP_NAME
 
@@ -191,7 +209,7 @@ class TestBlueprintComponentCRD:
         assert result["status"] == "success"
 
     def test_06_cleanup_blueprint(self):
-        call("delete_blueprint", blueprint_name=self.BP_NAME, force=True)
+        safe_delete_blueprint(self.BP_NAME)
 
 
 # =============================================================================
@@ -203,10 +221,10 @@ class TestPropertyCommands:
     """Test set_static_mesh_properties and set_physics_properties on a Blueprint."""
 
     BP_NAME = "_IntTest_PropBP"
-    BP_PATH = f"/Game/Blueprints/{BP_NAME}"
     COMP_NAME = "_IntTest_PropMesh"
 
     def test_01_create_blueprint(self):
+        safe_delete_blueprint(self.BP_NAME)
         result = call("create_blueprint", name=self.BP_NAME)
         assert result["name"] == self.BP_NAME
 
@@ -237,7 +255,7 @@ class TestPropertyCommands:
         assert result["status"] == "success"
 
     def test_05_cleanup_blueprint(self):
-        call("delete_blueprint", blueprint_name=self.BP_NAME, force=True)
+        safe_delete_blueprint(self.BP_NAME)
 
 
 # =============================================================================
@@ -249,10 +267,11 @@ class TestBlueprintSpawn:
     """Test spawn_blueprint_actor: create BP -> compile -> spawn -> verify -> cleanup."""
 
     BP_NAME = "_IntTest_SpawnBP"
-    BP_PATH = f"/Game/Blueprints/{BP_NAME}"
     ACTOR_NAME = "_IntTest_SpawnedActor"
 
     def test_01_create_blueprint(self):
+        safe_delete_actor(self.ACTOR_NAME)
+        safe_delete_blueprint(self.BP_NAME)
         result = call("create_blueprint", name=self.BP_NAME)
         assert result["name"] == self.BP_NAME
 
@@ -274,10 +293,10 @@ class TestBlueprintSpawn:
         assert self.ACTOR_NAME in names
 
     def test_05_cleanup_actor(self):
-        call("delete_actor", name=self.ACTOR_NAME)
+        safe_delete_actor(self.ACTOR_NAME)
 
     def test_06_cleanup_blueprint(self):
-        call("delete_blueprint", blueprint_name=self.BP_NAME, force=True)
+        safe_delete_blueprint(self.BP_NAME)
 
 
 # =============================================================================
@@ -290,10 +309,11 @@ class TestMaterialCommands:
 
     ACTOR_NAME = "_IntTest_MatActor"
     BP_NAME = "_IntTest_MatBP"
-    BP_PATH = f"/Game/Blueprints/{BP_NAME}"
     COMP_NAME = "_IntTest_MatMesh"
 
     def test_01_get_available_materials(self):
+        safe_delete_actor(self.ACTOR_NAME)
+        safe_delete_blueprint(self.BP_NAME)
         result = call("get_available_materials")
         assert result["count"] > 0
         assert len(result["materials"]) > 0
@@ -354,10 +374,10 @@ class TestMaterialCommands:
         assert result["status"] == "success"
 
     def test_09_cleanup_actor(self):
-        call("delete_actor", name=self.ACTOR_NAME)
+        safe_delete_actor(self.ACTOR_NAME)
 
     def test_10_cleanup_blueprint(self):
-        call("delete_blueprint", blueprint_name=self.BP_NAME, force=True)
+        safe_delete_blueprint(self.BP_NAME)
 
 
 # =============================================================================
@@ -382,6 +402,7 @@ class TestSCSNodeSearchErrors:
     MISSING_COMP = "_IntTest_NoSuchComponent"
 
     def test_01_setup(self):
+        safe_delete_blueprint(self.BP_NAME)
         call("create_blueprint", name=self.BP_NAME)
         result = call("add_component_to_blueprint",
             blueprint_name=self.BP_NAME,
@@ -463,7 +484,7 @@ class TestSCSNodeSearchErrors:
             )
 
     def test_11_cleanup(self):
-        call("delete_blueprint", blueprint_name=self.BP_NAME, force=True)
+        safe_delete_blueprint(self.BP_NAME)
 
 
 # =============================================================================
@@ -476,7 +497,8 @@ class TestStaticMeshCommands:
 
     def test_01_get_static_meshes(self):
         result = call("get_static_meshes")
-        assert result["count"] >= 0
+        assert "count" in result
+        assert "static_meshes" in result
         assert len(result["static_meshes"]) == result["count"]
 
     def test_02_get_static_meshes_with_engine(self):
@@ -508,6 +530,7 @@ class TestBlueprintVariableCommands:
     VAR_NAME = "_IntTest_HP"
 
     def test_01_create_blueprint(self):
+        safe_delete_blueprint(self.BP_NAME)
         result = call("create_blueprint", name=self.BP_NAME)
         assert result["name"] == self.BP_NAME
 
@@ -544,7 +567,7 @@ class TestBlueprintVariableCommands:
             )
 
     def test_06_cleanup(self):
-        call("delete_blueprint", blueprint_name=self.BP_NAME, force=True)
+        safe_delete_blueprint(self.BP_NAME)
 
 
 # =============================================================================
@@ -557,8 +580,11 @@ class TestBlueprintGraphCommands:
 
     BP_NAME = "_IntTest_GraphBP"
     VAR_NAME = "_IntTest_GraphVar"
+    event_node_id = None
+    func_node_id = None
 
     def test_01_create_blueprint(self):
+        safe_delete_blueprint(self.BP_NAME)
         result = call("create_blueprint", name=self.BP_NAME)
         assert result["name"] == self.BP_NAME
 
@@ -611,6 +637,8 @@ class TestBlueprintGraphCommands:
         assert "node_id" in result
 
     def test_08_connect_nodes(self):
+        if not self.__class__.event_node_id or not self.__class__.func_node_id:
+            pytest.skip("Requires event_node_id and func_node_id from test_04/test_05")
         result = call("connect_nodes",
             blueprint_name=self.BP_NAME,
             source_node_id=self.__class__.event_node_id,
@@ -625,6 +653,8 @@ class TestBlueprintGraphCommands:
         assert len(result["nodes"]) >= 2
 
     def test_10_disconnect_nodes(self):
+        if not self.__class__.event_node_id:
+            pytest.skip("Requires event_node_id from test_04")
         result = call("disconnect_nodes",
             blueprint_name=self.BP_NAME,
             node_id=self.__class__.event_node_id,
@@ -633,4 +663,311 @@ class TestBlueprintGraphCommands:
         assert result["status"] == "success"
 
     def test_11_cleanup(self):
-        call("delete_blueprint", blueprint_name=self.BP_NAME, force=True)
+        safe_delete_blueprint(self.BP_NAME)
+
+
+# =============================================================================
+# Actor List (get_actors_in_level direct coverage)
+# =============================================================================
+
+
+class TestActorListCommand:
+    """Test get_actors_in_level returns valid actor data."""
+
+    ACTOR_NAME = "_IntTest_ListActor"
+
+    def test_01_spawn_actor(self):
+        safe_delete_actor(self.ACTOR_NAME)
+        result = call("spawn_actor",
+            type="StaticMeshActor", name=self.ACTOR_NAME,
+        )
+        assert result["status"] == "success"
+
+    def test_02_get_actors_in_level(self):
+        result = call("get_actors_in_level")
+        assert result["count"] > 0
+        names = [a["name"] for a in result["actors"]]
+        assert self.ACTOR_NAME in names
+
+    def test_03_cleanup(self):
+        safe_delete_actor(self.ACTOR_NAME)
+
+
+# =============================================================================
+# Actor Transform Full (rotation + scale coverage)
+# =============================================================================
+
+
+class TestActorTransformFull:
+    """Test set_actor_transform with all transform components."""
+
+    ACTOR_NAME = "_IntTest_TransformActor"
+
+    def test_01_spawn_with_full_transform(self):
+        safe_delete_actor(self.ACTOR_NAME)
+        result = call("spawn_actor",
+            type="StaticMeshActor", name=self.ACTOR_NAME,
+            location=[0, 0, 0], rotation=[0, 0, 0], scale=[1, 1, 1],
+        )
+        assert result["status"] == "success"
+
+    def test_02_set_full_transform(self):
+        result = call("set_actor_transform",
+            name=self.ACTOR_NAME,
+            location=[100, 200, 300],
+            rotation=[45.0, 90.0, 0.0],
+            scale=[2.0, 2.0, 2.0],
+        )
+        assert result["status"] == "success"
+
+    def test_03_verify_full_transform(self):
+        result = call("read_actor_content", name=self.ACTOR_NAME)
+        actor = result["actor"]
+        assert abs(actor["location"][0] - 100.0) < 1.0
+        assert abs(actor["rotation"][1] - 90.0) < 1.0
+        assert abs(actor["scale"][0] - 2.0) < 0.1
+
+    def test_04_set_rotation_only(self):
+        result = call("set_actor_transform",
+            name=self.ACTOR_NAME,
+            rotation=[0.0, 180.0, 0.0],
+        )
+        assert result["status"] == "success"
+        read = call("read_actor_content", name=self.ACTOR_NAME)
+        actor = read["actor"]
+        assert abs(actor["location"][0] - 100.0) < 1.0
+        assert abs(actor["scale"][0] - 2.0) < 0.1
+
+    def test_05_set_scale_only(self):
+        result = call("set_actor_transform",
+            name=self.ACTOR_NAME,
+            scale=[3.0, 3.0, 3.0],
+        )
+        assert result["status"] == "success"
+        read = call("read_actor_content", name=self.ACTOR_NAME)
+        assert abs(read["actor"]["scale"][0] - 3.0) < 0.1
+
+    def test_06_cleanup(self):
+        safe_delete_actor(self.ACTOR_NAME)
+
+
+# =============================================================================
+# Actor Not Found Errors
+# =============================================================================
+
+
+class TestActorNotFoundErrors:
+    """Test error handling when actor does not exist."""
+
+    MISSING = "_IntTest_NoSuchActor_XYZ"
+
+    def test_01_read_actor_not_found(self):
+        with pytest.raises(RuntimeError):
+            call("read_actor_content", name=self.MISSING)
+
+    def test_02_delete_actor_not_found(self):
+        with pytest.raises(RuntimeError):
+            call("delete_actor", name=self.MISSING)
+
+    def test_03_set_transform_not_found(self):
+        with pytest.raises(RuntimeError):
+            call("set_actor_transform", name=self.MISSING, location=[0, 0, 0])
+
+    def test_04_add_component_not_found(self):
+        with pytest.raises(RuntimeError):
+            call("add_component_to_actor",
+                name=self.MISSING, component_class="PointLightComponent",
+            )
+
+    def test_05_read_components_not_found(self):
+        with pytest.raises(RuntimeError):
+            call("read_components_from_actor", name=self.MISSING)
+
+    def test_06_apply_material_not_found(self):
+        with pytest.raises(RuntimeError):
+            call("apply_material_to_actor",
+                actor_name=self.MISSING,
+                material_path="/Engine/BasicShapes/BasicShapeMaterial",
+            )
+
+    def test_07_get_material_info_not_found(self):
+        with pytest.raises(RuntimeError):
+            call("get_actor_material_info", actor_name=self.MISSING)
+
+
+# =============================================================================
+# Blueprint List (get_blueprints direct coverage)
+# =============================================================================
+
+
+class TestBlueprintListCommand:
+    """Test get_blueprints returns valid blueprint data."""
+
+    BP_NAME = "_IntTest_ListBP"
+
+    def test_01_create_blueprint(self):
+        safe_delete_blueprint(self.BP_NAME)
+        result = call("create_blueprint", name=self.BP_NAME)
+        assert result["name"] == self.BP_NAME
+
+    def test_02_get_blueprints(self):
+        result = call("get_blueprints")
+        assert result["count"] > 0
+        names = [b["name"] for b in result["blueprints"]]
+        assert self.BP_NAME in names
+
+    def test_03_get_blueprints_with_search_path(self):
+        result = call("get_blueprints", search_path="/Game/Blueprints/")
+        names = [b["name"] for b in result["blueprints"]]
+        assert self.BP_NAME in names
+
+    def test_04_cleanup(self):
+        safe_delete_blueprint(self.BP_NAME)
+
+
+# =============================================================================
+# Blueprint Content Filters
+# =============================================================================
+
+
+class TestBlueprintContentFilters:
+    """Test read_blueprint_content with include_* filter flags."""
+
+    BP_NAME = "_IntTest_FilterBP"
+    VAR_NAME = "_IntTest_FilterVar"
+
+    def test_01_setup(self):
+        safe_delete_blueprint(self.BP_NAME)
+        call("create_blueprint", name=self.BP_NAME)
+        call("add_variable_to_blueprint",
+            blueprint_name=self.BP_NAME,
+            variable_name=self.VAR_NAME,
+            variable_type="Float",
+        )
+
+    def test_02_read_all_defaults(self):
+        result = call("read_blueprint_content", blueprint_name=self.BP_NAME)
+        assert result["blueprint_name"] == self.BP_NAME
+        assert "parent_class" in result
+
+    def test_03_read_variables_only(self):
+        result = call("read_blueprint_content",
+            blueprint_name=self.BP_NAME,
+            include_event_graph=False,
+            include_functions=False,
+            include_variables=True,
+            include_interfaces=False,
+        )
+        assert result["blueprint_name"] == self.BP_NAME
+
+    def test_04_read_all_disabled(self):
+        result = call("read_blueprint_content",
+            blueprint_name=self.BP_NAME,
+            include_event_graph=False,
+            include_functions=False,
+            include_variables=False,
+            include_interfaces=False,
+        )
+        assert result["blueprint_name"] == self.BP_NAME
+
+    def test_05_cleanup(self):
+        safe_delete_blueprint(self.BP_NAME)
+
+
+# =============================================================================
+# Blueprint Not Found Errors
+# =============================================================================
+
+
+class TestBlueprintNotFoundErrors:
+    """Test error handling when blueprint does not exist.
+
+    Tests one representative command from each CommandGroup that uses
+    FindBlueprintByName.
+    """
+
+    MISSING = "_IntTest_NoSuchBlueprint_XYZ"
+
+    def test_01_read_blueprint_not_found(self):
+        with pytest.raises(RuntimeError):
+            call("read_blueprint_content", blueprint_name=self.MISSING)
+
+    def test_02_compile_blueprint_not_found(self):
+        with pytest.raises(RuntimeError):
+            call("compile_blueprint", blueprint_name=self.MISSING)
+
+    def test_03_spawn_blueprint_actor_not_found(self):
+        with pytest.raises(RuntimeError):
+            call("spawn_blueprint_actor",
+                blueprint_name=self.MISSING, name="_IntTest_NoSpawn",
+            )
+
+    def test_04_add_component_not_found(self):
+        with pytest.raises(RuntimeError):
+            call("add_component_to_blueprint",
+                blueprint_name=self.MISSING,
+                component_class="StaticMeshComponent",
+            )
+
+    def test_05_read_components_not_found(self):
+        with pytest.raises(RuntimeError):
+            call("read_components_from_blueprint",
+                blueprint_name=self.MISSING,
+            )
+
+    def test_06_add_variable_not_found(self):
+        with pytest.raises(RuntimeError):
+            call("add_variable_to_blueprint",
+                blueprint_name=self.MISSING,
+                variable_name="HP", variable_type="Float",
+            )
+
+    def test_07_read_graph_not_found(self):
+        with pytest.raises(RuntimeError):
+            call("read_blueprint_graph", blueprint_name=self.MISSING)
+
+
+# =============================================================================
+# Blueprint Component Parenting
+# =============================================================================
+
+
+class TestBlueprintComponentParenting:
+    """Test add_component_to_blueprint with parent_component success path."""
+
+    BP_NAME = "_IntTest_ParentBP"
+    ROOT_COMP = "_IntTest_RootMesh"
+    CHILD_COMP = "_IntTest_ChildLight"
+
+    def test_01_setup(self):
+        safe_delete_blueprint(self.BP_NAME)
+        result = call("create_blueprint", name=self.BP_NAME)
+        assert result["name"] == self.BP_NAME
+
+    def test_02_add_root_component(self):
+        result = call("add_component_to_blueprint",
+            blueprint_name=self.BP_NAME,
+            component_class="StaticMeshComponent",
+            component_name=self.ROOT_COMP,
+        )
+        assert result["status"] == "success"
+
+    def test_03_add_child_with_parent(self):
+        result = call("add_component_to_blueprint",
+            blueprint_name=self.BP_NAME,
+            component_class="PointLightComponent",
+            component_name=self.CHILD_COMP,
+            parent_component=self.ROOT_COMP,
+        )
+        assert result["status"] == "success"
+
+    def test_04_verify_hierarchy(self):
+        result = call("read_components_from_blueprint",
+            blueprint_name=self.BP_NAME,
+        )
+        names = [c["name"] for c in result["components"]]
+        assert self.ROOT_COMP in names
+        assert self.CHILD_COMP in names
+
+    def test_05_cleanup(self):
+        safe_delete_blueprint(self.BP_NAME)

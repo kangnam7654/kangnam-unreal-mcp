@@ -1,6 +1,6 @@
-"""Unit tests for MCP tools.
+"""Unit tests for MCP tools and UE connection.
 
-Tests tool parameter passing and response formatting.
+Tests tool parameter passing, response formatting, and connection logic.
 UE connection is mocked — no running editor required.
 
 Each tool module's register_tools() creates closures over ue_connection.execute().
@@ -12,8 +12,10 @@ import json
 import asyncio
 import inspect
 import pytest
+from unittest.mock import MagicMock, patch
 
 from conftest import call_tool, mcp
+from tools import ue_connection
 
 
 # =============================================================================
@@ -944,3 +946,148 @@ class TestToolRegistration:
         registered = {t.name for t in tools}
         missing = expected_tools - registered
         assert not missing, f"Missing tools: {missing}"
+
+
+# =============================================================================
+# UE Connection
+# =============================================================================
+
+
+class TestUeConnectionConnect:
+    """Test connect() socket creation and error handling."""
+
+    @pytest.fixture(autouse=True)
+    def reset_socket(self):
+        original = ue_connection._socket
+        yield
+        ue_connection._socket = original
+
+    def test_returns_true_if_already_connected(self):
+        ue_connection._socket = MagicMock()
+        assert ue_connection.connect() is True
+
+    def test_creates_socket_on_new_connection(self):
+        ue_connection._socket = None
+        with patch("tools.ue_connection.socket") as mock_socket_mod:
+            mock_sock = mock_socket_mod.socket.return_value
+            assert ue_connection.connect() is True
+            mock_sock.connect.assert_called_once_with(("127.0.0.1", 27777))
+
+    def test_raises_on_connection_failure(self):
+        ue_connection._socket = None
+        with patch("tools.ue_connection.socket") as mock_socket_mod:
+            mock_socket_mod.socket.return_value.connect.side_effect = OSError("refused")
+            with pytest.raises(ConnectionError, match="Cannot connect to UE"):
+                ue_connection.connect()
+            assert ue_connection._socket is None
+
+
+class TestUeConnectionDisconnect:
+    """Test disconnect() socket cleanup."""
+
+    @pytest.fixture(autouse=True)
+    def reset_socket(self):
+        original = ue_connection._socket
+        yield
+        ue_connection._socket = original
+
+    def test_closes_socket(self):
+        mock_sock = MagicMock()
+        ue_connection._socket = mock_sock
+        ue_connection.disconnect()
+        mock_sock.close.assert_called_once()
+        assert ue_connection._socket is None
+
+    def test_noop_if_not_connected(self):
+        ue_connection._socket = None
+        ue_connection.disconnect()
+        assert ue_connection._socket is None
+
+    def test_handles_shutdown_error(self):
+        mock_sock = MagicMock()
+        mock_sock.shutdown.side_effect = OSError("not connected")
+        ue_connection._socket = mock_sock
+        ue_connection.disconnect()
+        mock_sock.close.assert_called_once()
+        assert ue_connection._socket is None
+
+
+class TestUeConnectionExecute:
+    """Test execute() request building, response parsing, and error handling."""
+
+    @pytest.fixture(autouse=True)
+    def mock_connection(self):
+        self.mock_sock = MagicMock()
+        with patch("tools.ue_connection.connect"), \
+             patch.object(ue_connection, "_socket", self.mock_sock):
+            yield
+
+    def _setup_response(self, response_dict):
+        """Configure mock: flush raises BlockingIOError, then returns response."""
+        response_bytes = json.dumps(response_dict).encode("utf-8")
+        self.mock_sock.recv.side_effect = [BlockingIOError(), response_bytes]
+
+    def test_request_with_app_name(self):
+        self._setup_response({"jsonrpc": "2.0", "result": {"ok": True}, "id": "x"})
+        ue_connection.execute("test_cmd", {"key": "val"}, app_name="WN_MCP_WORLD")
+        sent = json.loads(self.mock_sock.send.call_args[0][0].decode("utf-8"))
+        assert sent["id"] == "WN_MCP_WORLD_test_cmd"
+        assert sent["method"] == "command"
+        assert sent["params"] == {"key": "val"}
+
+    def test_request_without_app_name(self):
+        self._setup_response({"jsonrpc": "2.0", "result": {}, "id": "x"})
+        ue_connection.execute("test_cmd")
+        sent = json.loads(self.mock_sock.send.call_args[0][0].decode("utf-8"))
+        assert sent["id"] == "test_cmd"
+        assert sent["params"] == {}
+
+    def test_returns_result(self):
+        self._setup_response({"jsonrpc": "2.0", "result": {"count": 5}, "id": "x"})
+        result = ue_connection.execute("cmd")
+        assert result == {"count": 5}
+
+    def test_error_dict_response(self):
+        self._setup_response({
+            "jsonrpc": "2.0",
+            "error": {"code": -32001, "message": "Failed"},
+            "id": "x",
+        })
+        with pytest.raises(RuntimeError, match=r"UE error \[-32001\]: Failed"):
+            ue_connection.execute("cmd")
+
+    def test_error_string_response(self):
+        self._setup_response({"jsonrpc": "2.0", "error": "Something broke", "id": "x"})
+        with pytest.raises(RuntimeError, match="UE error: Something broke"):
+            ue_connection.execute("cmd")
+
+    def test_connection_closed(self):
+        self.mock_sock.recv.side_effect = [BlockingIOError(), b""]
+        with pytest.raises(ConnectionError):
+            ue_connection.execute("cmd")
+
+    def test_empty_result_returns_empty_dict(self):
+        self._setup_response({"jsonrpc": "2.0", "id": "x"})
+        result = ue_connection.execute("cmd")
+        assert result == {}
+
+    def test_flushes_leftover_buffer_data(self):
+        response_bytes = json.dumps({"jsonrpc": "2.0", "result": {"ok": True}, "id": "x"}).encode("utf-8")
+        self.mock_sock.recv.side_effect = [
+            b"leftover data",
+            BlockingIOError(),
+            response_bytes,
+        ]
+        result = ue_connection.execute("cmd")
+        assert result == {"ok": True}
+
+    def test_chunked_response(self):
+        response_str = json.dumps({"jsonrpc": "2.0", "result": {"data": "value"}, "id": "x"})
+        half = len(response_str) // 2
+        self.mock_sock.recv.side_effect = [
+            BlockingIOError(),
+            response_str[:half].encode("utf-8"),
+            response_str[half:].encode("utf-8"),
+        ]
+        result = ue_connection.execute("cmd")
+        assert result == {"data": "value"}
