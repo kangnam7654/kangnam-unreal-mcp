@@ -23,12 +23,17 @@ class RingBufferHandler(logging.Handler):
         elif name == "wn_mcp_world":
             name = "server"
 
-        self._buffer.append({
+        entry = {
             "timestamp": datetime.fromtimestamp(record.created).strftime("%Y-%m-%d %H:%M:%S"),
             "level": record.levelname,
             "logger": name,
             "message": record.getMessage(),
-        })
+        }
+        self.acquire()
+        try:
+            self._buffer.append(entry)
+        finally:
+            self.release()
 
     def get_entries(
         self,
@@ -37,9 +42,15 @@ class RingBufferHandler(logging.Handler):
         keyword: str = "",
     ) -> List[Dict[str, Any]]:
         """Get filtered entries from buffer, newest first."""
+        self.acquire()
+        try:
+            snapshot = list(self._buffer)
+        finally:
+            self.release()
+
         result = []
         keyword_lower = keyword.lower() if keyword else ""
-        for entry in reversed(self._buffer):
+        for entry in reversed(snapshot):
             if len(result) >= count:
                 break
             entry_level = logging.getLevelName(entry["level"])
