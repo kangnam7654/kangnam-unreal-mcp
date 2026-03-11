@@ -333,7 +333,7 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_BlueprintGraph::OnExecute(const FSt
 		}
 
 		// Create event node
-		UClass* ownerClass = blueprint->ParentClass ? blueprint->ParentClass : AActor::StaticClass();
+		UClass* ownerClass = blueprint->ParentClass ? blueprint->ParentClass.Get() : AActor::StaticClass();
 		UK2Node_Event* eventNode = NewObject<UK2Node_Event>(eventGraph);
 		eventNode->CreateNewGuid();
 		eventNode->EventReference.SetExternalMember(functionName, ownerClass);
