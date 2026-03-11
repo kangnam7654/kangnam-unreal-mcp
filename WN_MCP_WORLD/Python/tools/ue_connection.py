@@ -4,9 +4,14 @@ Provides execute() for sending JSON-RPC 2.0 commands to UE C++ plugin.
 """
 
 import json
+import logging
 import socket
 import threading
 from typing import Optional, Dict, Any
+
+from mcp_logging.config import MISC
+
+logger = logging.getLogger("wn_mcp_world.ue_connection")
 
 
 # =============================================================================
@@ -38,9 +43,11 @@ def connect() -> bool:
             _socket.settimeout(UE_TIMEOUT)
             _socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
             _socket.connect((UE_HOST, UE_PORT))
+            logger.info("Connected to UE at %s:%d", UE_HOST, UE_PORT)
             return True
         except Exception as e:
             _socket = None
+            logger.error("Cannot connect to UE at %s:%d - %s", UE_HOST, UE_PORT, e)
             raise ConnectionError(f"Cannot connect to UE at {UE_HOST}:{UE_PORT} - {e}")
 
 
@@ -55,6 +62,7 @@ def disconnect():
                 pass
             _socket.close()
             _socket = None
+            logger.info("Disconnected from UE")
 
 
 def execute(command_name: str, params: Optional[Dict[str, Any]] = None, app_name: str = "") -> Dict[str, Any]:
@@ -84,6 +92,9 @@ def execute(command_name: str, params: Optional[Dict[str, Any]] = None, app_name
         "id": full_name,
         "params": params if params is not None else {}
     }
+
+    logger.info(">> %s", full_name)
+    logger.log(MISC, ">> %s", json.dumps(request, ensure_ascii=False))
 
     try:
         # Flush any leftover data in receive buffer before sending
@@ -117,6 +128,8 @@ def execute(command_name: str, params: Optional[Dict[str, Any]] = None, app_name
             except json.JSONDecodeError:
                 continue
 
+        logger.log(MISC, "<< %s", json.dumps(response, ensure_ascii=False))
+
         if "error" in response:
             error = response["error"]
             if isinstance(error, str):
@@ -130,5 +143,6 @@ def execute(command_name: str, params: Optional[Dict[str, Any]] = None, app_name
         return response.get("result", {})
 
     except (socket.timeout, ConnectionError, BrokenPipeError, OSError) as e:
+        logger.error("UE communication failed: %s", e)
         disconnect()
         raise ConnectionError(f"UE communication failed: {e}")

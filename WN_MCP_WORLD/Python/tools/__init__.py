@@ -14,6 +14,7 @@ from . import material_tools
 from . import static_mesh_tools
 from . import blueprint_variable_tools
 from . import blueprint_graph_tools
+from . import log_tools
 
 
 def register_all_tools(mcp: FastMCP):
@@ -27,3 +28,4 @@ def register_all_tools(mcp: FastMCP):
     static_mesh_tools.register_tools(mcp)
     blueprint_variable_tools.register_tools(mcp)
     blueprint_graph_tools.register_tools(mcp)
+    log_tools.register_tools(mcp)

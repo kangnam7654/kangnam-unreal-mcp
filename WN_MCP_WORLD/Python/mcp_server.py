@@ -22,12 +22,15 @@ Usage:
 """
 
 from fastmcp import FastMCP
+from mcp_logging import initialize as init_logging
 from tools import register_all_tools
 
 
 # =============================================================================
 # MCP Server
 # =============================================================================
+
+init_logging()
 
 mcp = FastMCP("WN_MCP_WORLD")
 register_all_tools(mcp)
