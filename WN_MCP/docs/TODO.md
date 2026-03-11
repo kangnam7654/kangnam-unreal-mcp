@@ -6,35 +6,36 @@
 
 ## P0 — 즉시
 
-### Python 이중 시스템 통합 방향 결정
+### Python 이중 시스템 통합 (방향 확정)
 
-**현황**: PyMCP(`WN_MCP/PyMCP/`)와 WN_MCP_WORLD Python(`WN_MCP_WORLD/Python/`) 두 시스템이 공존.
+**결정**: PyMCP(`WN_MCP/PyMCP/`)가 유일한 MCP Server. 각 플러그인은 `Python/` 폴더에 Tool만 제공하고, PyMCP가 `AddUserToolDirectories()`로 동적 Import한다.
 
-| 구분 | PyMCP (WN_MCP) | WN_MCP_WORLD Python |
-|------|---------------|---------------------|
-| 위치 | `WN_MCP/PyMCP/` | `WN_MCP_WORLD/Python/` |
-| 프레임워크 | FastMCP 3.x | FastMCP 2.x |
-| Tool 수 | ~15개 (actor, blueprint, material) | 38개 (전체 CRUD) |
-| 테스트 | 없음 | 224개 (Unit+Integration+E2E, 100% 커버리지) |
-| 구조 | `src/unreal_mcp/` 모듈화 | `tools/` 플랫 구조 |
-| 헬퍼 | actor_name_manager, blueprint_graph 등 | ue_connection.py |
+```
+WN_MCP/PyMCP/          ← 유일한 MCP Server (FastMCP, stdio)
+    │
+    │ get_user_tool_directories → 플러그인 Tool 디렉토리 수집
+    │
+    ├── WN_MCP_WORLD/Python/tools/    ← 동적 Import (38개 Tool)
+    ├── WN_MCP_XXX/Python/tools/      ← 향후 추가 플러그인
+    └── ...
+```
 
-**문제점**:
-- 기능 중복 (Actor, Blueprint, Material Tool이 양쪽에 존재)
-- 버전 관리 이중화 (pyproject.toml 2개)
-- 사용자 혼란 (어떤 서버를 실행해야 하는지)
+**현황 vs 목표**:
 
-**선택지**:
-1. **PyMCP 중심 통합**: WN_MCP_WORLD Tool을 PyMCP의 사용자 Tool로 편입. PyMCP가 유일한 진입점
-2. **WN_MCP_WORLD 중심 유지**: PyMCP는 코어 기능만 제공, WN_MCP_WORLD가 실제 Tool 서빙
-3. **완전 분리**: PyMCP 내장 Tool 제거, 코어 연결 기능만 유지. 모든 도메인 Tool은 확장 플러그인에서 제공
+| 구분 | 현재 | 목표 |
+|------|------|------|
+| MCP Server | PyMCP + WN_MCP_WORLD/mcp_server.py (2개) | PyMCP만 (1개) |
+| Tool 등록 | 각자 별도 서버에서 등록 | PyMCP가 동적 발견/등록 |
+| WN_MCP_WORLD/mcp_server.py | 독립 실행 | 제거 (Tool 모듈만 잔존) |
+| PyMCP 내장 UE Tool | actors, blueprints, materials (~15개) | 제거 (코어 기능만 유지) |
 
-**권장**: 선택지 3 — PyMCP는 연결/발견/프로토콜만 담당, 도메인 로직은 확장 플러그인에 위임
+**마이그레이션 단계**:
 
-### PyMCP 레거시 정리
-
-- [ ] `WN_MCP/PyMCP/Tools/` 디렉토리 제거 (레거시, 미사용)
-- [ ] 내장 UE Tool(`tools/ue/actors.py`, `blueprints.py`, `materials.py`)과 WN_MCP_WORLD Tool 중복 해소
+1. [ ] PyMCP 내장 UE Tool 제거 (`tools/ue/actors.py`, `blueprints.py`, `materials.py`, `blueprints_graph.py`)
+2. [ ] PyMCP가 WN_MCP_WORLD Tool을 동적 Import하도록 연동 검증
+3. [ ] WN_MCP_WORLD Tool이 PyMCP의 `get_connection()` 패턴과 호환되도록 어댑터 작성
+4. [ ] WN_MCP_WORLD/mcp_server.py 제거
+5. [ ] `WN_MCP/PyMCP/Tools/` 레거시 디렉토리 제거
 
 ---
 
