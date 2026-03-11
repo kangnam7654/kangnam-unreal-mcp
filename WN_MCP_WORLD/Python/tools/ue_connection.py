@@ -108,7 +108,11 @@ def execute(command_name: str, params: Optional[Dict[str, Any]] = None, app_name
             error = response["error"]
             if isinstance(error, str):
                 raise RuntimeError(f"UE error: {error}")
-            raise RuntimeError(f"UE error [{error.get('code', '?')}]: {error.get('message', 'Unknown')}")
+            msg = error.get('message', 'Unknown')
+            data = error.get('data')
+            if data:
+                msg = f"{msg}: {data}"
+            raise RuntimeError(f"UE error [{error.get('code', '?')}]: {msg}")
 
         return response.get("result", {})
 

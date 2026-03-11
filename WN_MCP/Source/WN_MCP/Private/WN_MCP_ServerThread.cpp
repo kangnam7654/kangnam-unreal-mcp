@@ -73,9 +73,10 @@ uint32 FWN_MCP_ServerThread::Run()
 							FString response = ExecuteCommand(commandName, jsonObject->GetObjectField(TEXT("params")));
 							UE_LOG(LogMCP, Log, TEXT("Executed command '%s' with response: %s"), *commandName, *response);
 
-							// send response back to client.
+							// Send response back to client (UTF-8 byte count, not TCHAR character count)
+							FTCHARToUTF8 utf8Response(*response);
 							int32 bytesSend;
-							if (ClientSocketPtr->Send((uint8*)TCHAR_TO_UTF8(*response), response.Len(), bytesSend))
+							if (ClientSocketPtr->Send((uint8*)utf8Response.Get(), utf8Response.Length(), bytesSend))
 							{
 								UE_LOG(LogMCP, Log, TEXT("Sent response to client for command '%s': %s"), *commandName, *response);
 							}
