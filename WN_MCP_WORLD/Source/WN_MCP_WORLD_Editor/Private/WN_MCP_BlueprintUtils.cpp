@@ -4,6 +4,8 @@
 #include "Engine/SCS_Node.h"
 #include "Engine/SimpleConstructionScript.h"
 #include "AssetRegistry/AssetRegistryModule.h"
+#include "Misc/Paths.h"
+#include "Modules/ModuleManager.h"
 
 //-----------------------------------------------------------------------------
 // FWN_MCP_BlueprintUtils

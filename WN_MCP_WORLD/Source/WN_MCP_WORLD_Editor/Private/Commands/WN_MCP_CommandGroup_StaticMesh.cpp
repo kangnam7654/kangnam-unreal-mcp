@@ -5,6 +5,7 @@
 #include "Dom/JsonValue.h"
 #include "Engine/StaticMesh.h"
 #include "AssetRegistry/AssetRegistryModule.h"
+#include "Modules/ModuleManager.h"
 
 //-----------------------------------------------------------------------------
 // FWN_MCP_CommandGroup_StaticMesh

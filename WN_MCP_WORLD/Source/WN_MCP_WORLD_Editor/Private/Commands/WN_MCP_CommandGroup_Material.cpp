@@ -21,6 +21,7 @@
 #include "Materials/MaterialExpressionVectorParameter.h"
 #include "Materials/MaterialExpressionScalarParameter.h"
 #include "Kismet2/BlueprintEditorUtils.h"
+#include "Modules/ModuleManager.h"
 
 //-----------------------------------------------------------------------------
 // Helper Functions
