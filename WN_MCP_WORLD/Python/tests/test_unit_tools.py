@@ -1091,3 +1091,28 @@ class TestUeConnectionExecute:
         ]
         result = ue_connection.execute("cmd")
         assert result == {"data": "value"}
+
+    def test_error_with_data_field(self):
+        self._setup_response({
+            "jsonrpc": "2.0",
+            "error": {"code": -32001, "message": "Command failed", "data": "Actor not found"},
+            "id": "x",
+        })
+        with pytest.raises(RuntimeError, match="Command failed: Actor not found"):
+            ue_connection.execute("cmd")
+
+    def test_max_response_size_exceeded(self):
+        original_max = ue_connection.MAX_RESPONSE_SIZE
+        ue_connection.MAX_RESPONSE_SIZE = 100
+        try:
+            self.mock_sock.recv.side_effect = [BlockingIOError(), b"x" * 200]
+            with pytest.raises(ConnectionError, match="exceeded"):
+                ue_connection.execute("cmd")
+        finally:
+            ue_connection.MAX_RESPONSE_SIZE = original_max
+
+    def test_socket_none_after_connect_raises(self):
+        with patch("tools.ue_connection.connect"):
+            with patch.object(ue_connection, "_socket", None):
+                with pytest.raises(ConnectionError, match="Not connected"):
+                    ue_connection.execute("cmd")
