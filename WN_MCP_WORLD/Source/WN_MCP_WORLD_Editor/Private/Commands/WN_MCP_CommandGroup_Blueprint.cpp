@@ -16,6 +16,8 @@
 #include "EdGraph/EdGraph.h"
 #include "EdGraph/EdGraphNode.h"
 #include "Kismet2/KismetEditorUtilities.h"
+#include "Misc/PackageName.h"
+#include "Modules/ModuleManager.h"
 
 //-----------------------------------------------------------------------------
 // FWN_MCP_CommandGroup_Blueprint
