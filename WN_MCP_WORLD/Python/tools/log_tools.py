@@ -19,9 +19,9 @@ def register_tools(mcp: FastMCP):
             level: Log level - ERROR, WARNING, INFO, DEBUG, MISC.
                 ERROR: Only errors.
                 WARNING: Errors and warnings.
-                INFO: General info (default).
+                INFO: General info.
                 DEBUG: All messages.
-                MISC: JSON request/response payloads (most verbose).
+                MISC: JSON request/response payloads (most verbose, default).
 
         Returns current log level after change.
         """
