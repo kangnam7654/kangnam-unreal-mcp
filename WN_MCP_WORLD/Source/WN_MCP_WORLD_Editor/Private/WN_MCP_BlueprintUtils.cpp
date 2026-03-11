@@ -44,9 +44,9 @@ UBlueprint* FWN_MCP_BlueprintUtils::FindBlueprintByName(const FString& InBluepri
 		}
 	}
 
-	// Fallback: in-memory search
-	FString packagePath = TEXT("/Game/Blueprints/") + InBlueprintName;
-	blueprint = FindObject<UBlueprint>(nullptr, *packagePath);
+	// Fallback: in-memory search (object path = package.assetname)
+	FString fallbackPath = FString::Printf(TEXT("/Game/Blueprints/%s.%s"), *InBlueprintName, *InBlueprintName);
+	blueprint = FindObject<UBlueprint>(nullptr, *fallbackPath);
 
 	return blueprint;
 }
