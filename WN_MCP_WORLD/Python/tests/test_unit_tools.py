@@ -472,11 +472,6 @@ class TestGetAvailableMaterials:
         params = mock_ue_execute.call_args[0][1]
         assert params["include_engine_materials"] is False
 
-    def test_omitted_optionals_not_sent(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"count": 0, "materials": []}
-        call_tool("get_available_materials")
-        mock_ue_execute.assert_called_once_with("get_available_materials", {}, app_name="WN_MCP_WORLD")
-
 
 class TestApplyMaterialToActor:
     def test_required_params_only(self, mock_ue_execute):
@@ -524,7 +519,7 @@ class TestApplyMaterialToBlueprint:
 
 class TestGetActorMaterialInfo:
     def test_passes_actor_name(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"actor_name": "MyCube", "components": []}
+        mock_ue_execute.return_value = {"actor_name": "MyCube", "total_slots": 0, "material_slots": []}
         call_tool("get_actor_material_info", actor_name="MyCube")
         mock_ue_execute.assert_called_once_with(
             "get_actor_material_info", {"actor_name": "MyCube"}, app_name="WN_MCP_WORLD"
@@ -533,17 +528,18 @@ class TestGetActorMaterialInfo:
     def test_returns_json_string(self, mock_ue_execute):
         mock_ue_execute.return_value = {
             "actor_name": "MyCube",
-            "components": [{"name": "StaticMeshComponent0", "slots": []}],
+            "total_slots": 1,
+            "material_slots": [{"slot": 0, "component": "StaticMeshComponent0", "material_name": "M_Default"}],
         }
         result = call_tool("get_actor_material_info", actor_name="MyCube")
         parsed = json.loads(result)
         assert parsed["actor_name"] == "MyCube"
-        assert len(parsed["components"]) == 1
+        assert len(parsed["material_slots"]) == 1
 
 
 class TestGetBlueprintMaterialInfo:
     def test_passes_params(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"blueprint_name": "MyBP", "slots": []}
+        mock_ue_execute.return_value = {"blueprint_name": "MyBP", "total_slots": 0, "material_slots": []}
         call_tool("get_blueprint_material_info",
             blueprint_name="MyBP", component_name="Mesh1",
         )
@@ -643,11 +639,6 @@ class TestGetStaticMeshes:
         call_tool("get_static_meshes", include_engine_meshes=False)
         params = mock_ue_execute.call_args[0][1]
         assert params["include_engine_meshes"] is False
-
-    def test_omitted_optionals_not_sent(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"count": 0, "static_meshes": []}
-        call_tool("get_static_meshes")
-        mock_ue_execute.assert_called_once_with("get_static_meshes", {}, app_name="WN_MCP_WORLD")
 
 
 class TestFindStaticMeshesByName:

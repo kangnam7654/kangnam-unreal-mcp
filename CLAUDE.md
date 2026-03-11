@@ -30,7 +30,7 @@ Agent (Claude/Cursor) <--stdio--> Python MCP Server (Tool) <--TCP JSON-RPC 2.0--
 1. **C++ Command** - UE API 접근이 필요한 기능
    - `FWN_MCP_CommandGroup` 서브클래스에 커맨드 구현
    - `WN_MCP_REGISTER_COMMAND_GROUP` 매크로로 자동 등록
-   - Python Tool에서 `ue_execute_simple_command()` 또는 `ue_send_command()` + `ue_receive_response()`로 호출
+   - Python Tool에서 `ue_connection.execute(command_name, params, app_name=_APP)`로 호출
 
 2. **Python Tool only** - UE 접근 불필요하거나 복잡한 오케스트레이션
    - `@mcp.tool` 데코레이터로 등록
@@ -66,7 +66,7 @@ WN_MCP_WORLD/Source/
       WN_MCP_CommandGroup_ActorComponent.h/.cpp # Actor component CRD
   WN_MCP_WORLD_Editor/                         # Editor module (UnrealEd 의존)
     Private/
-      WN_MCP_BlueprintUtils.h/.cpp             # 공유 유틸리티 (FindBlueprintByName)
+      WN_MCP_BlueprintUtils.h/.cpp             # 공유 유틸리티 (FindBlueprintByName, FindSCSNodeByName)
       Commands/
         WN_MCP_CommandGroup_Blueprint.h/.cpp    # Blueprint CRUD + Spawn
         WN_MCP_CommandGroup_BlueprintComponent.h/.cpp # Blueprint component CRD
@@ -105,7 +105,7 @@ WN_MCP_WORLD/Source/
 | Classes (non-UObject) | `F` prefix + `WN_MCP_` | `FWN_MCP_CommandGroup_Actor` |
 | Classes (UObject) | `U` prefix + `WN_MCP_` | `UWN_MCP_Subsystem` |
 | Input params | `In` prefix | `InCommandName`, `InParamsPtr` |
-| Output params | `InOut` prefix | `InOutCommandNames` |
+| Output params | `InOut` prefix | `InOutCommandInfos` |
 | Local result objects | `InResultPtr` | WN_MCP 매크로가 이 변수명에 의존 |
 | Smart pointers | `Ptr` suffix | `ListenerSocketPtr`, `InClientSocketPtr` |
 | Booleans | `b` prefix | `bIsRunning` |
@@ -164,8 +164,11 @@ public:
 	/// Get command group name.
 	FString GetName() const override;
 
+	/// Get application name prefix for command registration.
+	FString GetApplicationName() const override;
+
 	/// Register commands.
-	void OnRegisterCommands(TArray<FString>& InOutCommandNames) const override;
+	void OnRegisterCommands(TArray<FWN_MCP_CommandInfo>& InOutCommandInfos) const override;
 
 	/// Execute command.
 	TSharedPtr<FJsonObject> OnExecute(const FString& InCommandName, const TSharedPtr<FJsonObject>& InParamsPtr, TSharedPtr<FSocket> InClientSocketPtr) const override;
@@ -212,9 +215,14 @@ FString FWN_MCP_CommandGroup_XXX::GetName() const
 	return FString("XXX");
 }
 
-void FWN_MCP_CommandGroup_XXX::OnRegisterCommands(TArray<FString>& InOutCommandNames) const
+FString FWN_MCP_CommandGroup_XXX::GetApplicationName() const
 {
-	InOutCommandNames.Add(FString(TEXT("command_name_here")));
+	return FString("WN_MCP_WORLD");
+}
+
+void FWN_MCP_CommandGroup_XXX::OnRegisterCommands(TArray<FWN_MCP_CommandInfo>& InOutCommandInfos) const
+{
+	WN_MCP_REGISTER_COMMAND(InOutCommandInfos, "command_name_here", "Description of the command");
 }
 
 TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_XXX::OnExecute(const FString& InCommandName, const TSharedPtr<FJsonObject>& InParamsPtr, TSharedPtr<FSocket> InClientSocketPtr) const
@@ -235,6 +243,28 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_XXX::OnExecute(const FString& InCom
 	WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_METHOD_NOT_FOUND, TEXT(""));
 }
 ```
+
+### Command Registration
+
+Commands are registered via `FWN_MCP_CommandInfo` struct and helper macros:
+
+```cpp
+/// Struct holding command metadata for registration.
+struct FWN_MCP_CommandInfo
+{
+    FString Name;
+    FString Description;
+    bool bIsSimple;
+};
+
+/// Register a standard command (requires manual JSON response building).
+WN_MCP_REGISTER_COMMAND(InOutList, "command_name", "Description")
+
+/// Register a simple command (auto-wrapped by the framework).
+WN_MCP_REGISTER_SIMPLE_COMMAND(InOutList, "command_name", "Description")
+```
+
+Each CommandGroup MUST override `GetApplicationName()` to return its plugin name (e.g. `"WN_MCP_WORLD"`). This prefix is prepended to command names during registration to prevent cross-plugin collisions. `Execute()` automatically strips the prefix before calling `OnExecute()`, so if-statements inside `OnExecute` use raw names (e.g. `"spawn_actor"`, not `"WN_MCP_WORLD_spawn_actor"`).
 
 ### Response Macros (MUST use these, never hand-build response JSON)
 
@@ -261,7 +291,8 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_XXX::OnExecute(const FString& InCom
 - 자명한 주석 금지: `// Get required parameters`, `// Return result` 등 — 코드가 이미 설명하는 내용 반복 금지
 - `InResultPtr` 앞에는 빈 줄 1개 (결과 생성부와 로직 분리)
 - Inline comments start with capital letter: `// Find actor by name` (NOT `// find actor by name`)
-- 공유 헬퍼는 파일 스코프 `static` 함수로 선언 (클래스 멤버 아님)
+- CommandGroup 내부 헬퍼는 파일 스코프 `static` 함수로 선언 (클래스 멤버 아님)
+- 여러 CommandGroup에서 공유하는 유틸리티는 `FWN_MCP_BlueprintUtils` 등 전용 유틸리티 클래스에 `static` 멤버로 선언
 
 ### Extension Plugin Pattern (like WN_MCPTest)
 
@@ -280,7 +311,7 @@ New command plugins MUST follow this pattern:
 {
     "jsonrpc": "2.0",
     "method": "command",
-    "id": "command_name",
+    "id": "WN_MCP_WORLD_command_name",
     "params": { ... }
 }
 ```
@@ -318,6 +349,25 @@ New command plugins MUST follow this pattern:
 | -32603 | Internal error | Server-side error |
 | -32001 | Command failed | Command execution failed |
 | -32002 | Invalid arguments | Invalid command arguments |
+
+---
+
+## Python Tool Conventions
+
+### UE Connection
+
+Python Tool에서 C++ Command를 호출할 때는 `ue_connection.execute()`를 사용한다:
+
+```python
+from tools import ue_connection
+
+_APP = "WN_MCP_WORLD"  # 각 tool 모듈 상단에 선언
+
+result = ue_connection.execute("command_name", params, app_name=_APP)
+```
+
+- `app_name` 파라미터는 C++ `GetApplicationName()`과 일치해야 한다
+- `execute()`가 내부적으로 `"{app_name}_{command_name}"` 형태로 JSON-RPC `id`를 구성한다
 
 ---
 
@@ -414,6 +464,7 @@ New command plugins MUST follow this pattern:
 | Utility | File | Used By |
 |---------|------|---------|
 | `FWN_MCP_BlueprintUtils::FindBlueprintByName` | `WN_MCP_BlueprintUtils.h/.cpp` | Blueprint, BlueprintComponent, Property, Material, BlueprintVariable, BlueprintGraph |
+| `FWN_MCP_BlueprintUtils::FindSCSNodeByName` | `WN_MCP_BlueprintUtils.h/.cpp` | BlueprintComponent, Property, Material |
 
 ### Blueprint Variable Commands — `WN_MCP_WORLD_Editor` (Editor)
 

@@ -5,6 +5,7 @@
 //-----------------------------------------------------------------------------
 
 class UBlueprint;
+class USCS_Node;
 
 //-----------------------------------------------------------------------------
 // FWN_MCP_BlueprintUtils
@@ -20,4 +21,10 @@ public:
 	/// @param InBlueprintName Blueprint name (e.g. "MyBP") or full path (e.g. "/Game/Blueprints/MyBP").
 	/// @return Blueprint object, or nullptr if not found.
 	static UBlueprint* FindBlueprintByName(const FString& InBlueprintName);
+
+	/// Find an SCS (Simple Construction Script) node by component variable name.
+	/// @param InBlueprint Blueprint to search in.
+	/// @param InComponentName Component variable name (e.g. "Mesh1").
+	/// @return SCS node, or nullptr if not found.
+	static USCS_Node* FindSCSNodeByName(UBlueprint* InBlueprint, const FString& InComponentName);
 };
