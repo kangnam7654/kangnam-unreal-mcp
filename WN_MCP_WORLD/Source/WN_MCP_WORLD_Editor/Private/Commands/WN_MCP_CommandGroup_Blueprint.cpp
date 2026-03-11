@@ -37,15 +37,20 @@ FString FWN_MCP_CommandGroup_Blueprint::GetName() const
 	return FString("Blueprint");
 }
 
-void FWN_MCP_CommandGroup_Blueprint::OnRegisterCommands(TArray<FString>& InOutCommandNames) const
+FString FWN_MCP_CommandGroup_Blueprint::GetApplicationName() const
 {
-	InOutCommandNames.Add(FString(TEXT("create_blueprint")));
-	InOutCommandNames.Add(FString(TEXT("read_blueprint_content")));
-	InOutCommandNames.Add(FString(TEXT("compile_blueprint")));
-	InOutCommandNames.Add(FString(TEXT("delete_blueprint")));
-	InOutCommandNames.Add(FString(TEXT("get_blueprints")));
-	InOutCommandNames.Add(FString(TEXT("find_blueprints_by_name")));
-	InOutCommandNames.Add(FString(TEXT("spawn_blueprint_actor")));
+	return FString("WN_MCP_WORLD");
+}
+
+void FWN_MCP_CommandGroup_Blueprint::OnRegisterCommands(TArray<FWN_MCP_CommandInfo>& InOutCommandInfos) const
+{
+	WN_MCP_REGISTER_COMMAND(InOutCommandInfos, "create_blueprint", "Create a new Blueprint asset");
+	WN_MCP_REGISTER_COMMAND(InOutCommandInfos, "read_blueprint_content", "Read Blueprint content and properties");
+	WN_MCP_REGISTER_COMMAND(InOutCommandInfos, "compile_blueprint", "Compile a Blueprint");
+	WN_MCP_REGISTER_COMMAND(InOutCommandInfos, "delete_blueprint", "Delete a Blueprint asset");
+	WN_MCP_REGISTER_COMMAND(InOutCommandInfos, "get_blueprints", "Get all Blueprint assets");
+	WN_MCP_REGISTER_COMMAND(InOutCommandInfos, "find_blueprints_by_name", "Find Blueprints by name pattern");
+	WN_MCP_REGISTER_COMMAND(InOutCommandInfos, "spawn_blueprint_actor", "Spawn an actor from a Blueprint");
 }
 
 TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Blueprint::OnExecute(const FString& InCommandName, const TSharedPtr<FJsonObject>& InParamsPtr, TSharedPtr<FSocket> InClientSocketPtr) const

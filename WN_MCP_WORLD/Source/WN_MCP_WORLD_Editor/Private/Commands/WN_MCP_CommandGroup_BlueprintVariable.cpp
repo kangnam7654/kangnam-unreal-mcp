@@ -27,10 +27,15 @@ FString FWN_MCP_CommandGroup_BlueprintVariable::GetName() const
 	return FString("BlueprintVariable");
 }
 
-void FWN_MCP_CommandGroup_BlueprintVariable::OnRegisterCommands(TArray<FString>& InOutCommandNames) const
+FString FWN_MCP_CommandGroup_BlueprintVariable::GetApplicationName() const
 {
-	InOutCommandNames.Add(FString(TEXT("add_variable_to_blueprint")));
-	InOutCommandNames.Add(FString(TEXT("remove_variable_from_blueprint")));
+	return FString("WN_MCP_WORLD");
+}
+
+void FWN_MCP_CommandGroup_BlueprintVariable::OnRegisterCommands(TArray<FWN_MCP_CommandInfo>& InOutCommandInfos) const
+{
+	WN_MCP_REGISTER_COMMAND(InOutCommandInfos, "add_variable_to_blueprint", "Add a variable to a Blueprint");
+	WN_MCP_REGISTER_COMMAND(InOutCommandInfos, "remove_variable_from_blueprint", "Remove a variable from a Blueprint");
 }
 
 TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_BlueprintVariable::OnExecute(const FString& InCommandName, const TSharedPtr<FJsonObject>& InParamsPtr, TSharedPtr<FSocket> InClientSocketPtr) const

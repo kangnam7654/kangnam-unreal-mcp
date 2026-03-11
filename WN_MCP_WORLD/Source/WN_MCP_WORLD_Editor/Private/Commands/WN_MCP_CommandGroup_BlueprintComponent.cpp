@@ -32,11 +32,16 @@ FString FWN_MCP_CommandGroup_BlueprintComponent::GetName() const
 	return FString("BlueprintComponent");
 }
 
-void FWN_MCP_CommandGroup_BlueprintComponent::OnRegisterCommands(TArray<FString>& InOutCommandNames) const
+FString FWN_MCP_CommandGroup_BlueprintComponent::GetApplicationName() const
 {
-	InOutCommandNames.Add(FString(TEXT("add_component_to_blueprint")));
-	InOutCommandNames.Add(FString(TEXT("remove_component_from_blueprint")));
-	InOutCommandNames.Add(FString(TEXT("read_components_from_blueprint")));
+	return FString("WN_MCP_WORLD");
+}
+
+void FWN_MCP_CommandGroup_BlueprintComponent::OnRegisterCommands(TArray<FWN_MCP_CommandInfo>& InOutCommandInfos) const
+{
+	WN_MCP_REGISTER_COMMAND(InOutCommandInfos, "add_component_to_blueprint", "Add a component to a Blueprint");
+	WN_MCP_REGISTER_COMMAND(InOutCommandInfos, "remove_component_from_blueprint", "Remove a component from a Blueprint");
+	WN_MCP_REGISTER_COMMAND(InOutCommandInfos, "read_components_from_blueprint", "Read all components from a Blueprint");
 }
 
 TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_BlueprintComponent::OnExecute(const FString& InCommandName, const TSharedPtr<FJsonObject>& InParamsPtr, TSharedPtr<FSocket> InClientSocketPtr) const

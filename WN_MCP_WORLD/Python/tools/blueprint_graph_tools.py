@@ -9,6 +9,8 @@ from typing import Optional, Dict, Any, List
 from fastmcp import FastMCP
 from . import ue_connection
 
+_APP = "WN_MCP_WORLD"
+
 
 def register_tools(mcp: FastMCP):
     """Register BlueprintGraph tools with the MCP server."""
@@ -25,7 +27,7 @@ def register_tools(mcp: FastMCP):
         """
         result = ue_connection.execute("read_blueprint_graph", {
             "blueprint_name": blueprint_name,
-        })
+        }, app_name=_APP)
         return json.dumps(result, indent=2, ensure_ascii=False)
 
     @mcp.tool
@@ -51,7 +53,7 @@ def register_tools(mcp: FastMCP):
         if node_position is not None:
             params["node_position"] = node_position
 
-        result = ue_connection.execute("add_event_node", params)
+        result = ue_connection.execute("add_event_node", params, app_name=_APP)
         return json.dumps(result, indent=2, ensure_ascii=False)
 
     @mcp.tool
@@ -81,7 +83,7 @@ def register_tools(mcp: FastMCP):
         if node_position is not None:
             params["node_position"] = node_position
 
-        result = ue_connection.execute("add_function_call_node", params)
+        result = ue_connection.execute("add_function_call_node", params, app_name=_APP)
         return json.dumps(result, indent=2, ensure_ascii=False)
 
     @mcp.tool
@@ -106,7 +108,7 @@ def register_tools(mcp: FastMCP):
         if node_position is not None:
             params["node_position"] = node_position
 
-        result = ue_connection.execute("add_variable_get_node", params)
+        result = ue_connection.execute("add_variable_get_node", params, app_name=_APP)
         return json.dumps(result, indent=2, ensure_ascii=False)
 
     @mcp.tool
@@ -131,7 +133,7 @@ def register_tools(mcp: FastMCP):
         if node_position is not None:
             params["node_position"] = node_position
 
-        result = ue_connection.execute("add_variable_set_node", params)
+        result = ue_connection.execute("add_variable_set_node", params, app_name=_APP)
         return json.dumps(result, indent=2, ensure_ascii=False)
 
     @mcp.tool
@@ -159,7 +161,7 @@ def register_tools(mcp: FastMCP):
             "source_pin_name": source_pin_name,
             "target_node_id": target_node_id,
             "target_pin_name": target_pin_name,
-        })
+        }, app_name=_APP)
         return json.dumps(result, indent=2, ensure_ascii=False)
 
     @mcp.tool
@@ -181,5 +183,5 @@ def register_tools(mcp: FastMCP):
             "blueprint_name": blueprint_name,
             "node_id": node_id,
             "pin_name": pin_name,
-        })
+        }, app_name=_APP)
         return json.dumps(result, indent=2, ensure_ascii=False)

@@ -70,14 +70,19 @@ FString FWN_MCP_CommandGroup_Actor::GetName() const
 	return FString("Actor");
 }
 
-void FWN_MCP_CommandGroup_Actor::OnRegisterCommands(TArray<FString>& InOutCommandNames) const
+FString FWN_MCP_CommandGroup_Actor::GetApplicationName() const
 {
-	InOutCommandNames.Add(FString(TEXT("get_actors_in_level")));
-	InOutCommandNames.Add(FString(TEXT("find_actors_by_name")));
-	InOutCommandNames.Add(FString(TEXT("spawn_actor")));
-	InOutCommandNames.Add(FString(TEXT("delete_actor")));
-	InOutCommandNames.Add(FString(TEXT("set_actor_transform")));
-	InOutCommandNames.Add(FString(TEXT("read_actor_content")));
+	return FString("WN_MCP_WORLD");
+}
+
+void FWN_MCP_CommandGroup_Actor::OnRegisterCommands(TArray<FWN_MCP_CommandInfo>& InOutCommandInfos) const
+{
+	WN_MCP_REGISTER_COMMAND(InOutCommandInfos, "get_actors_in_level", "Get all actors in the current level");
+	WN_MCP_REGISTER_COMMAND(InOutCommandInfos, "find_actors_by_name", "Find actors by name pattern");
+	WN_MCP_REGISTER_COMMAND(InOutCommandInfos, "spawn_actor", "Spawn a new actor");
+	WN_MCP_REGISTER_COMMAND(InOutCommandInfos, "delete_actor", "Delete an actor");
+	WN_MCP_REGISTER_COMMAND(InOutCommandInfos, "set_actor_transform", "Set actor transform");
+	WN_MCP_REGISTER_COMMAND(InOutCommandInfos, "read_actor_content", "Read actor content and properties");
 }
 
 TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Actor::OnExecute(const FString& InCommandName, const TSharedPtr<FJsonObject>& InParamsPtr, TSharedPtr<FSocket> InClientSocketPtr) const

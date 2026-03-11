@@ -9,6 +9,8 @@ from typing import Optional, Dict, Any, List
 from fastmcp import FastMCP
 from . import ue_connection
 
+_APP = "WN_MCP_WORLD"
+
 
 def register_tools(mcp: FastMCP):
     """Register Material tools with the MCP server."""
@@ -32,7 +34,7 @@ def register_tools(mcp: FastMCP):
         if include_engine_materials is not None:
             params["include_engine_materials"] = include_engine_materials
 
-        result = ue_connection.execute("get_available_materials", params)
+        result = ue_connection.execute("get_available_materials", params, app_name=_APP)
         return json.dumps(result, indent=2, ensure_ascii=False)
 
     @mcp.tool
@@ -57,7 +59,7 @@ def register_tools(mcp: FastMCP):
         if material_slot is not None:
             params["material_slot"] = material_slot
 
-        result = ue_connection.execute("apply_material_to_actor", params)
+        result = ue_connection.execute("apply_material_to_actor", params, app_name=_APP)
         return json.dumps(result, indent=2, ensure_ascii=False)
 
     @mcp.tool
@@ -85,7 +87,7 @@ def register_tools(mcp: FastMCP):
         if material_slot is not None:
             params["material_slot"] = material_slot
 
-        result = ue_connection.execute("apply_material_to_blueprint", params)
+        result = ue_connection.execute("apply_material_to_blueprint", params, app_name=_APP)
         return json.dumps(result, indent=2, ensure_ascii=False)
 
     @mcp.tool
@@ -97,7 +99,7 @@ def register_tools(mcp: FastMCP):
 
         Returns material slot info (name, path, class) for all StaticMeshComponents.
         """
-        result = ue_connection.execute("get_actor_material_info", {"actor_name": actor_name})
+        result = ue_connection.execute("get_actor_material_info", {"actor_name": actor_name}, app_name=_APP)
         return json.dumps(result, indent=2, ensure_ascii=False)
 
     @mcp.tool
@@ -116,7 +118,7 @@ def register_tools(mcp: FastMCP):
         result = ue_connection.execute("get_blueprint_material_info", {
             "blueprint_name": blueprint_name,
             "component_name": component_name,
-        })
+        }, app_name=_APP)
         return json.dumps(result, indent=2, ensure_ascii=False)
 
     @mcp.tool
@@ -163,5 +165,5 @@ def register_tools(mcp: FastMCP):
         if roughness is not None:
             params["roughness"] = roughness
 
-        result = ue_connection.execute("set_mesh_material_color", params)
+        result = ue_connection.execute("set_mesh_material_color", params, app_name=_APP)
         return json.dumps(result, indent=2, ensure_ascii=False)

@@ -8,6 +8,8 @@ from typing import Optional, Dict, Any
 from fastmcp import FastMCP
 from . import ue_connection
 
+_APP = "WN_MCP_WORLD"
+
 
 def register_tools(mcp: FastMCP):
     """Register Actor Component CRD tools with the MCP server."""
@@ -31,7 +33,7 @@ def register_tools(mcp: FastMCP):
         if component_name is not None:
             params["component_name"] = component_name
 
-        result = ue_connection.execute("add_component_to_actor", params)
+        result = ue_connection.execute("add_component_to_actor", params, app_name=_APP)
         return json.dumps(result, indent=2, ensure_ascii=False)
 
     @mcp.tool
@@ -47,7 +49,7 @@ def register_tools(mcp: FastMCP):
         result = ue_connection.execute("remove_component_from_actor", {
             "name": name,
             "component_name": component_name,
-        })
+        }, app_name=_APP)
         return json.dumps(result, indent=2, ensure_ascii=False)
 
     @mcp.tool
@@ -60,5 +62,5 @@ def register_tools(mcp: FastMCP):
         Returns a list of components with name, class, is_root flag,
         and transform info (relative_location/rotation/scale) for SceneComponents.
         """
-        result = ue_connection.execute("read_components_from_actor", {"name": name})
+        result = ue_connection.execute("read_components_from_actor", {"name": name}, app_name=_APP)
         return json.dumps(result, indent=2, ensure_ascii=False)

@@ -23,10 +23,15 @@ FString FWN_MCP_CommandGroup_Test::GetName() const
 	return FString("Test");
 }
 
-void FWN_MCP_CommandGroup_Test::OnRegisterCommands(TArray<FString>& InOutCommandNames) const
+FString FWN_MCP_CommandGroup_Test::GetApplicationName() const
 {
-	InOutCommandNames.Add("get_hello_message");
-	InOutCommandNames.Add("get_hello_message_array");
+	return FString("WN_MCPTest");
+}
+
+void FWN_MCP_CommandGroup_Test::OnRegisterCommands(TArray<FWN_MCP_CommandInfo>& InOutCommandInfos) const
+{
+	WN_MCP_REGISTER_COMMAND(InOutCommandInfos, "get_hello_message", "Get hello message from UE");
+	WN_MCP_REGISTER_COMMAND(InOutCommandInfos, "get_hello_message_array", "Get hello message array from UE");
 }
 
 TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Test::OnExecute(const FString& InCommandName, const TSharedPtr<FJsonObject>& InParamsPtr, TSharedPtr<FSocket> InClientSocketPtr) const

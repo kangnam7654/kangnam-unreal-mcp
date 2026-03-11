@@ -183,15 +183,20 @@ FString FWN_MCP_CommandGroup_BlueprintGraph::GetName() const
 	return FString("BlueprintGraph");
 }
 
-void FWN_MCP_CommandGroup_BlueprintGraph::OnRegisterCommands(TArray<FString>& InOutCommandNames) const
+FString FWN_MCP_CommandGroup_BlueprintGraph::GetApplicationName() const
 {
-	InOutCommandNames.Add(FString(TEXT("read_blueprint_graph")));
-	InOutCommandNames.Add(FString(TEXT("add_event_node")));
-	InOutCommandNames.Add(FString(TEXT("add_function_call_node")));
-	InOutCommandNames.Add(FString(TEXT("add_variable_get_node")));
-	InOutCommandNames.Add(FString(TEXT("add_variable_set_node")));
-	InOutCommandNames.Add(FString(TEXT("connect_nodes")));
-	InOutCommandNames.Add(FString(TEXT("disconnect_nodes")));
+	return FString("WN_MCP_WORLD");
+}
+
+void FWN_MCP_CommandGroup_BlueprintGraph::OnRegisterCommands(TArray<FWN_MCP_CommandInfo>& InOutCommandInfos) const
+{
+	WN_MCP_REGISTER_COMMAND(InOutCommandInfos, "read_blueprint_graph", "Read Blueprint graph nodes and connections");
+	WN_MCP_REGISTER_COMMAND(InOutCommandInfos, "add_event_node", "Add an event node to Blueprint graph");
+	WN_MCP_REGISTER_COMMAND(InOutCommandInfos, "add_function_call_node", "Add a function call node to Blueprint graph");
+	WN_MCP_REGISTER_COMMAND(InOutCommandInfos, "add_variable_get_node", "Add a variable getter node to Blueprint graph");
+	WN_MCP_REGISTER_COMMAND(InOutCommandInfos, "add_variable_set_node", "Add a variable setter node to Blueprint graph");
+	WN_MCP_REGISTER_COMMAND(InOutCommandInfos, "connect_nodes", "Connect two nodes in Blueprint graph");
+	WN_MCP_REGISTER_COMMAND(InOutCommandInfos, "disconnect_nodes", "Disconnect two nodes in Blueprint graph");
 }
 
 TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_BlueprintGraph::OnExecute(const FString& InCommandName, const TSharedPtr<FJsonObject>& InParamsPtr, TSharedPtr<FSocket> InClientSocketPtr) const

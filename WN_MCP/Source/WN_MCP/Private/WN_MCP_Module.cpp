@@ -128,17 +128,21 @@ void FWN_MCP_Module::ShutdownModule()
 
 void FWN_MCP_Module::RegisterCommandGroup(TSharedPtr<FWN_MCP_CommandGroup> InGroupPtr)
 {
-	TArray<FString> commandNames;
-	InGroupPtr->OnRegisterCommands(commandNames);
-	for (const FString& name : commandNames)
+	TArray<FWN_MCP_CommandInfo> commandInfos;
+	InGroupPtr->OnRegisterCommands(commandInfos);
+
+	FString appName = InGroupPtr->GetApplicationName();
+	for (const FWN_MCP_CommandInfo& info : commandInfos)
 	{
-		TSharedPtr<FWN_MCP_CommandGroup>* addrPrevGroupPtr = CommandGroupPtrMap.Find(name);
+		FString fullName = appName.IsEmpty() ? info.Name : FString::Printf(TEXT("%s_%s"), *appName, *info.Name);
+
+		TSharedPtr<FWN_MCP_CommandGroup>* addrPrevGroupPtr = CommandGroupPtrMap.Find(fullName);
 		if (addrPrevGroupPtr != nullptr)
 		{
-			UE_LOG(LogMCP, Warning, TEXT("%s command is already registered by %s"), *name, *(*addrPrevGroupPtr)->GetName());
+			UE_LOG(LogMCP, Warning, TEXT("%s command is already registered by %s"), *fullName, *(*addrPrevGroupPtr)->GetName());
 			continue;
 		}
-		CommandGroupPtrMap.Add(name, InGroupPtr);
+		CommandGroupPtrMap.Add(fullName, InGroupPtr);
 	}
 
 	CommandGroupPtrs.Add(InGroupPtr);

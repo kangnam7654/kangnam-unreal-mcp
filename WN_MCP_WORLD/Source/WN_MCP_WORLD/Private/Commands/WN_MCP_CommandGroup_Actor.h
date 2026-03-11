@@ -18,8 +18,11 @@ public:
 	/// Get command group name.
 	FString GetName() const override;
 
+	/// Get application name used as command name prefix.
+	FString GetApplicationName() const override;
+
 	/// Register commands.
-	void OnRegisterCommands(TArray<FString>& InOutCommandNames) const override;
+	void OnRegisterCommands(TArray<FWN_MCP_CommandInfo>& InOutCommandInfos) const override;
 
 	/// Execute command.
 	TSharedPtr<FJsonObject> OnExecute(const FString& InCommandName, const TSharedPtr<FJsonObject>& InParamsPtr, TSharedPtr<FSocket> InClientSocketPtr) const override;

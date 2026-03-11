@@ -101,14 +101,19 @@ FString FWN_MCP_CommandGroup_Material::GetName() const
 	return FString("Material");
 }
 
-void FWN_MCP_CommandGroup_Material::OnRegisterCommands(TArray<FString>& InOutCommandNames) const
+FString FWN_MCP_CommandGroup_Material::GetApplicationName() const
 {
-	InOutCommandNames.Add(FString(TEXT("get_available_materials")));
-	InOutCommandNames.Add(FString(TEXT("apply_material_to_actor")));
-	InOutCommandNames.Add(FString(TEXT("apply_material_to_blueprint")));
-	InOutCommandNames.Add(FString(TEXT("get_actor_material_info")));
-	InOutCommandNames.Add(FString(TEXT("get_blueprint_material_info")));
-	InOutCommandNames.Add(FString(TEXT("set_mesh_material_color")));
+	return FString("WN_MCP_WORLD");
+}
+
+void FWN_MCP_CommandGroup_Material::OnRegisterCommands(TArray<FWN_MCP_CommandInfo>& InOutCommandInfos) const
+{
+	WN_MCP_REGISTER_COMMAND(InOutCommandInfos, "get_available_materials", "Get all available materials");
+	WN_MCP_REGISTER_COMMAND(InOutCommandInfos, "apply_material_to_actor", "Apply a material to an actor");
+	WN_MCP_REGISTER_COMMAND(InOutCommandInfos, "apply_material_to_blueprint", "Apply a material to a Blueprint");
+	WN_MCP_REGISTER_COMMAND(InOutCommandInfos, "get_actor_material_info", "Get material info from an actor");
+	WN_MCP_REGISTER_COMMAND(InOutCommandInfos, "get_blueprint_material_info", "Get material info from a Blueprint");
+	WN_MCP_REGISTER_COMMAND(InOutCommandInfos, "set_mesh_material_color", "Set mesh material color");
 }
 
 TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Material::OnExecute(const FString& InCommandName, const TSharedPtr<FJsonObject>& InParamsPtr, TSharedPtr<FSocket> InClientSocketPtr) const
