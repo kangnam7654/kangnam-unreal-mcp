@@ -910,8 +910,8 @@ class TestErrorHandling:
 
 
 class TestToolRegistration:
-    def test_all_38_tools_registered(self):
-        """Verify all 38 tools are registered in the MCP server."""
+    def test_all_40_tools_registered(self):
+        """Verify all 40 tools are registered in the MCP server."""
         expected_tools = {
             # Actor (6)
             "get_actors_in_level", "find_actors_by_name", "spawn_actor",
@@ -940,6 +940,8 @@ class TestToolRegistration:
             "read_blueprint_graph", "add_event_node", "add_function_call_node",
             "add_variable_get_node", "add_variable_set_node",
             "connect_nodes", "disconnect_nodes",
+            # Log (2)
+            "set_log_level", "get_recent_logs",
         }
 
         tools = asyncio.run(mcp.list_tools())
