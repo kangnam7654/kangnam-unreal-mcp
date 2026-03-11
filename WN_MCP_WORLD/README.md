@@ -127,9 +127,9 @@ WN_MCP_WORLD/
 │   │   └── blueprint_graph_tools.py           # BlueprintGraph Tool 7개
 │   └── tests/
 │       ├── conftest.py                        # 공통 fixture + call_tool 헬퍼
-│       ├── test_unit_tools.py                 # Unit 테스트 (UE Mock, 85개)
-│       ├── test_integration.py                # 통합 테스트 (UE 필요, 42개)
-│       └── test_e2e.py                        # E2E 테스트 (UE 필요, 8개)
+│       ├── test_unit_tools.py                 # Unit 테스트 (UE Mock, 103개)
+│       ├── test_integration.py                # 통합 테스트 (UE 필요, 111개)
+│       └── test_e2e.py                        # E2E 테스트 (UE 필요, 10개)
 └── docs/
     ├── commands.md                            # 커맨드 레퍼런스 (상세)
     └── python-tools-and-tests/

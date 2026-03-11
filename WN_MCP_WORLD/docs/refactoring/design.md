@@ -52,6 +52,8 @@ WN_MCP_WORLD/Source/WN_MCP_WORLD_Editor/Private/
 // WN_MCP_ActorUtils.h
 #pragma once
 
+#include "CoreMinimal.h"
+
 class AActor;
 
 //-----------------------------------------------------------------------------
@@ -192,7 +194,7 @@ TSharedPtr<FJsonObject> OnExecute(...) const
 ## 검증 기준
 
 1. UE 에디터에서 C++ 빌드 성공
-2. `uv run python -m pytest tests/test_unit_tools.py -v` — 85개 전부 통과
+2. `uv run python -m pytest tests/test_unit_tools.py -v` — 103개 전부 통과
 3. 기능 변경 없음 (리팩터링 only)
 4. 모든 9개 .cpp 파일에서:
    - Destructor에 빈 줄 없음
