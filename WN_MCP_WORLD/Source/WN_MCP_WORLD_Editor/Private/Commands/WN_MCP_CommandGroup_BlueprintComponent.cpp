@@ -109,16 +109,10 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_BlueprintComponent::OnExecute(const
 		}
 
 		// Check for duplicate component name
-		if (!componentName.IsEmpty())
+		if (!componentName.IsEmpty() && FWN_MCP_BlueprintUtils::FindSCSNodeByName(blueprint, componentName))
 		{
-			for (USCS_Node* existingNode : blueprint->SimpleConstructionScript->GetAllNodes())
-			{
-				if (existingNode && existingNode->GetVariableName().ToString() == componentName)
-				{
-					WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_INVALID_PARAMS,
-						*FString::Printf(TEXT("Component with name '%s' already exists in this Blueprint"), *componentName));
-				}
-			}
+			WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_INVALID_PARAMS,
+				*FString::Printf(TEXT("Component with name '%s' already exists in this Blueprint"), *componentName));
 		}
 
 		// Create SCS node
@@ -132,16 +126,7 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_BlueprintComponent::OnExecute(const
 		// Attach to parent or add as root
 		if (!parentComponentName.IsEmpty())
 		{
-			USCS_Node* parentNode = nullptr;
-			for (USCS_Node* node : blueprint->SimpleConstructionScript->GetAllNodes())
-			{
-				if (node && node->GetVariableName().ToString() == parentComponentName)
-				{
-					parentNode = node;
-					break;
-				}
-			}
-
+			USCS_Node* parentNode = FWN_MCP_BlueprintUtils::FindSCSNodeByName(blueprint, parentComponentName);
 			if (!parentNode)
 			{
 				WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_INVALID_PARAMS,
@@ -203,17 +188,7 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_BlueprintComponent::OnExecute(const
 				TEXT("Blueprint has no SimpleConstructionScript"));
 		}
 
-		// Find the target node
-		USCS_Node* targetNode = nullptr;
-		for (USCS_Node* node : blueprint->SimpleConstructionScript->GetAllNodes())
-		{
-			if (node && node->GetVariableName().ToString() == componentName)
-			{
-				targetNode = node;
-				break;
-			}
-		}
-
+		USCS_Node* targetNode = FWN_MCP_BlueprintUtils::FindSCSNodeByName(blueprint, componentName);
 		if (!targetNode)
 		{
 			WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_INVALID_PARAMS,

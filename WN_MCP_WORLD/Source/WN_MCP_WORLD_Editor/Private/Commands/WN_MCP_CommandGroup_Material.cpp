@@ -297,17 +297,7 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Material::OnExecute(const FString& 
 				TEXT("Blueprint has no SimpleConstructionScript"));
 		}
 
-		// Find the target SCS node
-		USCS_Node* targetNode = nullptr;
-		for (USCS_Node* node : blueprint->SimpleConstructionScript->GetAllNodes())
-		{
-			if (node && node->GetVariableName().ToString() == componentName)
-			{
-				targetNode = node;
-				break;
-			}
-		}
-
+		USCS_Node* targetNode = FWN_MCP_BlueprintUtils::FindSCSNodeByName(blueprint, componentName);
 		if (!targetNode)
 		{
 			WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_INVALID_PARAMS,
@@ -446,17 +436,7 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Material::OnExecute(const FString& 
 				TEXT("Blueprint has no SimpleConstructionScript"));
 		}
 
-		// Find the target SCS node
-		USCS_Node* targetNode = nullptr;
-		for (USCS_Node* node : blueprint->SimpleConstructionScript->GetAllNodes())
-		{
-			if (node && node->GetVariableName().ToString() == componentName)
-			{
-				targetNode = node;
-				break;
-			}
-		}
-
+		USCS_Node* targetNode = FWN_MCP_BlueprintUtils::FindSCSNodeByName(blueprint, componentName);
 		if (!targetNode)
 		{
 			WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_INVALID_PARAMS,
@@ -574,17 +554,7 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Material::OnExecute(const FString& 
 				TEXT("Blueprint has no SimpleConstructionScript"));
 		}
 
-		// Find the target SCS node
-		USCS_Node* targetNode = nullptr;
-		for (USCS_Node* node : blueprint->SimpleConstructionScript->GetAllNodes())
-		{
-			if (node && node->GetVariableName().ToString() == componentName)
-			{
-				targetNode = node;
-				break;
-			}
-		}
-
+		USCS_Node* targetNode = FWN_MCP_BlueprintUtils::FindSCSNodeByName(blueprint, componentName);
 		if (!targetNode)
 		{
 			WN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(WN_JSON_RPC_ERROR_INVALID_PARAMS,

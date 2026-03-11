@@ -1,6 +1,8 @@
 #include "WN_MCP_BlueprintUtils.h"
 
 #include "Engine/Blueprint.h"
+#include "Engine/SCS_Node.h"
+#include "Engine/SimpleConstructionScript.h"
 #include "AssetRegistry/AssetRegistryModule.h"
 
 //-----------------------------------------------------------------------------
@@ -47,4 +49,22 @@ UBlueprint* FWN_MCP_BlueprintUtils::FindBlueprintByName(const FString& InBluepri
 	blueprint = FindObject<UBlueprint>(nullptr, *packagePath);
 
 	return blueprint;
+}
+
+USCS_Node* FWN_MCP_BlueprintUtils::FindSCSNodeByName(UBlueprint* InBlueprint, const FString& InComponentName)
+{
+	if (!InBlueprint || !InBlueprint->SimpleConstructionScript)
+	{
+		return nullptr;
+	}
+
+	for (USCS_Node* node : InBlueprint->SimpleConstructionScript->GetAllNodes())
+	{
+		if (node && node->GetVariableName().ToString() == InComponentName)
+		{
+			return node;
+		}
+	}
+
+	return nullptr;
 }
