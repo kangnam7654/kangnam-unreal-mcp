@@ -22,6 +22,11 @@ DEFINE_LOG_CATEGORY(LogMCPWorld);
 void FWN_MCP_WORLD_Module::StartupModule()
 {
 	UE_LOG(LogMCPWorld, Display, TEXT("WemadeNext MCP World Module has started"));
+
+	FWN_MCP_Module& mcpModule = FWN_MCP_Module::Get();
+	FString pythonDir = FPaths::ProjectPluginsDir() + TEXT("WN_MCP_WORLD/Python/tools");
+	FPaths::MakePlatformFilename(pythonDir);
+	mcpModule.AddUserToolDirectories({ pythonDir });
 }
 
 void FWN_MCP_WORLD_Module::ShutdownModule()
