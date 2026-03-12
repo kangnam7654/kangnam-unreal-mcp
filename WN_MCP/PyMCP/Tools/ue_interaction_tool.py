@@ -1041,9 +1041,119 @@ def register_user_tool_directories(mcp: Any) -> None:
         else:
             mcp_log(f'ℹ️  No user tool functions found to register')
         mcp_log(f'{"="*80}')
-    
+
+        # Auto-register simple commands from C++
+        _register_simple_commands_from_ue(mcp, registered_count)
+
     except Exception as e:
         mcp_log(f'❌ Error registering user tool directories: {e}')
+        mcp_log('='*80)
+
+
+def _register_simple_commands_from_ue(mcp: Any, already_registered: int) -> None:
+    """Auto-register simple commands from C++ using get_simple_commands.
+
+    Fetches bIsSimple=true commands from UE and creates Tool wrappers automatically.
+    Skips commands whose names are already registered (duplicate check).
+
+    Args:
+        mcp: FastMCP server instance
+        already_registered: count of already registered tools (for logging)
+    """
+    global REGISTERED_SIMPLE_COMMANDS
+
+    mcp_log('='*80)
+    mcp_log('🔄 Auto-registering simple commands from C++...')
+
+    try:
+        success = ue_send_command('Application_get_simple_commands')
+        if not success:
+            mcp_log('❌ Failed to send get_simple_commands to UE')
+            mcp_log('='*80)
+            return
+
+        response_data = ue_receive_response()
+        if not response_data or 'error' in response_data:
+            error_msg = response_data.get('error', {}).get('message', 'Unknown') if response_data else 'No response'
+            mcp_log(f'❌ get_simple_commands failed: {error_msg}')
+            mcp_log('='*80)
+            return
+
+        commands = response_data.get('result', {}).get('commands', [])
+        if not commands:
+            mcp_log('ℹ️  No simple commands found from C++')
+            mcp_log('='*80)
+            return
+
+        mcp_log(f'Found {len(commands)} simple command(s) from C++')
+
+        registered_count = 0
+        skipped_count = 0
+
+        for cmd in commands:
+            cmd_name = cmd.get('name', '')
+            cmd_desc = cmd.get('description', '')
+
+            if not cmd_name:
+                continue
+
+            # Duplicate check
+            if cmd_name in REGISTERED_SIMPLE_COMMANDS:
+                mcp_log(f'  ⏭️  Skipped (already registered): {cmd_name}')
+                skipped_count += 1
+                continue
+
+            # Check if tool name already exists in MCP server
+            existing_tools = {t.name for t in mcp._tool_manager.list_tools()} if hasattr(mcp, '_tool_manager') else set()
+            if cmd_name in existing_tools:
+                mcp_log(f'  ⏭️  Skipped (tool already exists): {cmd_name}')
+                skipped_count += 1
+                continue
+
+            try:
+                def create_simple_wrapper(command: str, description: str):
+                    def command_wrapper(options: Optional[dict] = None) -> Dict[str, Any]:
+                        """Execute a simple command from C++."""
+                        try:
+                            params = get_mcp_params() or {}
+                            result = ue_execute_simple_command(command, params)
+                            mcp_log(f'Tool: Executed simple command: {command}')
+                            return {
+                                'jsonrpc': '2.0',
+                                'result': {
+                                    'command': command,
+                                    'params': params,
+                                    'success': True,
+                                    'response': result
+                                }
+                            }
+                        except Exception as e:
+                            mcp_log(f'Tool: Error executing simple command {command}: {e}')
+                            return {
+                                'jsonrpc': '2.0',
+                                'error': {
+                                    'code': -32603,
+                                    'message': f'Failed to execute command {command}: {str(e)}'
+                                }
+                            }
+
+                    command_wrapper.__name__ = command
+                    command_wrapper.__doc__ = description
+                    return mcp.tool(command_wrapper)
+
+                create_simple_wrapper(cmd_name, cmd_desc)
+                REGISTERED_SIMPLE_COMMANDS[cmd_name] = 'auto'
+                mcp_log(f'  ✅ Auto-registered: {cmd_name}')
+                registered_count += 1
+            except Exception as e:
+                mcp_log(f'  ⚠️  Error registering {cmd_name}: {e}')
+
+        mcp_log(f'{"="*80}')
+        mcp_log(f'✅ Auto-registered {registered_count} simple command(s), skipped {skipped_count}')
+        mcp_log(f'{"="*80}')
+
+    except Exception as e:
+        mcp_log(f'❌ Error auto-registering simple commands: {e}')
         mcp_log('='*80)
 
 
