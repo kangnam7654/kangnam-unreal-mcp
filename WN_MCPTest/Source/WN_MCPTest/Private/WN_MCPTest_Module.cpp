@@ -1,4 +1,4 @@
-﻿#include "WN_MCPTest_Module.h"
+#include "WN_MCPTest_Module.h"
 #include "WN_MCP_Module.h"
 
 #include "Modules/ModuleManager.h"
@@ -24,7 +24,7 @@ void FWN_MCPTest_Module::StartupModule()
 	UE_LOG(LogMCPTest, Display, TEXT("WemadeNext MCPTest Module has started"));
 
 	FWN_MCP_Module& mcpModule = FWN_MCP_Module::Get();
-	FString pythonDir = FPaths::ProjectPluginsDir() + TEXT("WN_MCPTest/Python");
+	FString pythonDir = FPaths::ConvertRelativePathToFull(FPaths::ProjectPluginsDir() + TEXT("WN_MCPTest/Python"));
 	FPaths::MakePlatformFilename(pythonDir);
 	mcpModule.AddUserToolDirectories({ pythonDir });
 }
