@@ -146,6 +146,7 @@ static RegisterCommandGroup_ ##CommandGroupClass RegisterCommandGroupInstance_ #
 		jsonResponse->SetObjectField(TEXT("result"), MakeShareable(new FJsonObject));\
 	}\
 	jsonResponse->SetStringField(TEXT("id"), InCommandName);\
+	jsonResponse->SetStringField(TEXT("method"), InCommandName);\
 	return jsonResponse
 
 /// Return command response with given array result following JSON-RPC 2.0 success format.
@@ -172,6 +173,7 @@ static RegisterCommandGroup_ ##CommandGroupClass RegisterCommandGroupInstance_ #
 	jsonResponse->SetStringField(TEXT("jsonrpc"), TEXT("2.0"));\
 	jsonResponse->SetArrayField(TEXT("result"), InJsonResultValuePtrArray);\
 	jsonResponse->SetStringField(TEXT("id"), InCommandName);\
+	jsonResponse->SetStringField(TEXT("method"), InCommandName);\
 	return jsonResponse
 
 /// Return command response with given text result following JSON-RPC 2.0 success format.
@@ -194,6 +196,7 @@ static RegisterCommandGroup_ ##CommandGroupClass RegisterCommandGroupInstance_ #
 	jsonResponse->SetStringField(TEXT("jsonrpc"), TEXT("2.0"));\
 	jsonResponse->SetStringField(TEXT("result"), InResultMessage);\
 	jsonResponse->SetStringField(TEXT("id"), InCommandName);\
+	jsonResponse->SetStringField(TEXT("method"), InCommandName);\
 	return jsonResponse
 
 /// Return command response with given error code and object data following JSON-RPC 2.0 error format.
@@ -228,6 +231,7 @@ static RegisterCommandGroup_ ##CommandGroupClass RegisterCommandGroupInstance_ #
 	jsonErrorResponse->SetStringField(TEXT("jsonrpc"), TEXT("2.0"));\
 	jsonErrorResponse->SetObjectField(TEXT("error"), errorObj);\
 	jsonErrorResponse->SetStringField(TEXT("id"), InCommandName);\
+	jsonErrorResponse->SetStringField(TEXT("method"), InCommandName);\
 	return jsonErrorResponse
 
 /// Return command response with given error code and text message following JSON-RPC 2.0 error format.
@@ -259,6 +263,7 @@ static RegisterCommandGroup_ ##CommandGroupClass RegisterCommandGroupInstance_ #
 	jsonErrorResponse->SetStringField(TEXT("jsonrpc"), TEXT("2.0"));\
 	jsonErrorResponse->SetObjectField(TEXT("error"), errorObj);\
 	jsonErrorResponse->SetStringField(TEXT("id"), InCommandName);\
+	jsonErrorResponse->SetStringField(TEXT("method"), InCommandName);\
 	return jsonErrorResponse
 
 /// Return command response with given error code and array data following JSON-RPC 2.0 error format.
@@ -290,6 +295,7 @@ static RegisterCommandGroup_ ##CommandGroupClass RegisterCommandGroupInstance_ #
 	jsonErrorResponse->SetStringField(TEXT("jsonrpc"), TEXT("2.0"));\
 	jsonErrorResponse->SetObjectField(TEXT("error"), errorObj);\
 	jsonErrorResponse->SetStringField(TEXT("id"), InCommandName);\
+	jsonErrorResponse->SetStringField(TEXT("method"), InCommandName);\
 	return jsonErrorResponse
 
 //-----------------------------------------------------------------------------
