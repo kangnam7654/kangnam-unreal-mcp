@@ -9,7 +9,7 @@ import socket
 import threading
 from typing import Optional, Dict, Any
 
-from mcp_logging.config import MISC
+MISC = 5
 
 logger = logging.getLogger("wn_mcp_world.ue_connection")
 
