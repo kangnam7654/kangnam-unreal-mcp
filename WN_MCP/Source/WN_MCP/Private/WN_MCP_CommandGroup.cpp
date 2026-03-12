@@ -41,8 +41,8 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup::OnExecute(const FString& InCommand
 
 TSharedPtr<FJsonObject> FWN_MCP_CommandGroup::Execute(const FString& InCommandName, const TSharedPtr<FJsonObject>& InParamsPtr, TSharedPtr<FSocket> InClientSocketPtr) const
 {
-	// Strip application name prefix before passing to OnExecute
-	FString appName = GetApplicationName();
+	// Strip GetName() prefix before passing to OnExecute
+	FString appName = GetName();
 	FString rawCommandName = InCommandName;
 	if (!appName.IsEmpty())
 	{

@@ -67,12 +67,14 @@ public:\
 static RegisterCommandGroup_ ##CommandGroupClass RegisterCommandGroupInstance_ ##CommandGroupClass
 
 /// Register a command (requires custom Python Tool).
+/// GetName() prefix is prepended automatically (e.g. "Actor" + "_" + "spawn_actor" = "Actor_spawn_actor").
 #define WN_MCP_REGISTER_COMMAND(InOutList, CommandName, CommandDesc) \
-	InOutList.Add({ FString(TEXT(CommandName)), FString(TEXT(CommandDesc)), false })
+	InOutList.Add({ GetName() + TEXT("_") + FString(TEXT(CommandName)), FString(TEXT(CommandDesc)), false })
 
 /// Register a simple command (Python Tool auto-generated).
+/// GetName() prefix is prepended automatically (e.g. "Actor" + "_" + "spawn_actor" = "Actor_spawn_actor").
 #define WN_MCP_REGISTER_SIMPLE_COMMAND(InOutList, CommandName, CommandDesc) \
-	InOutList.Add({ FString(TEXT(CommandName)), FString(TEXT(CommandDesc)), true })
+	InOutList.Add({ GetName() + TEXT("_") + FString(TEXT(CommandName)), FString(TEXT(CommandDesc)), true })
 
 /// Parse error - Invalid JSON was received by the server.
 #define WN_JSON_RPC_ERROR_PARSE_ERROR -32700
