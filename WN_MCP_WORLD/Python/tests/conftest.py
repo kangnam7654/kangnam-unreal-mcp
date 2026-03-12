@@ -6,10 +6,14 @@ import asyncio
 import pytest
 from unittest.mock import patch
 
-# Add parent dir to path so test files can import mcp_server and tools
+# Add parent dir to path so test files can import tools package
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from mcp_server import mcp
+from fastmcp import FastMCP
+from tools import register_all_tools
+
+mcp = FastMCP("WN_MCP_WORLD_Test")
+register_all_tools(mcp)
 
 
 # =============================================================================
@@ -45,7 +49,7 @@ def mock_ue_execute():
     Patches the single source in ue_connection module.
     All tool modules import from there, so this covers everything.
     """
-    with patch("tools.ue_connection.execute") as mock:
+    with patch("ue_connection.execute") as mock:
         mock.return_value = {}
         yield mock
 
@@ -53,7 +57,7 @@ def mock_ue_execute():
 @pytest.fixture
 def mock_ue_connection_error():
     """Mock execute() to raise ConnectionError."""
-    with patch("tools.ue_connection.execute") as mock:
+    with patch("ue_connection.execute") as mock:
         mock.side_effect = ConnectionError("Cannot connect to UE at 127.0.0.1:27777")
         yield mock
 
@@ -61,6 +65,6 @@ def mock_ue_connection_error():
 @pytest.fixture
 def mock_ue_runtime_error():
     """Mock execute() to raise RuntimeError (UE error response)."""
-    with patch("tools.ue_connection.execute") as mock:
+    with patch("ue_connection.execute") as mock:
         mock.side_effect = RuntimeError("UE error [-32001]: Command execution failed")
         yield mock

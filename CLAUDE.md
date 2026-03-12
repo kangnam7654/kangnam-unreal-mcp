@@ -83,8 +83,7 @@ WN_MCP_WORLD/Source/
         WN_MCP_CommandGroup_StaticMesh.h/.cpp  # StaticMesh 조회
         WN_MCP_CommandGroup_BlueprintVariable.h/.cpp # Blueprint 변수 추가/제거
         WN_MCP_CommandGroup_BlueprintGraph.h/.cpp    # Blueprint 그래프 노드/연결
-  WN_MCP_WORLD/Python/                         # Python MCP Server
-    mcp_server.py                              # FastMCP server (stdio transport)
+  WN_MCP_WORLD/Python/                         # Python Tool 패키지 (자체 MCP Server 없음, PyMCP가 동적 Import)
     pyproject.toml
     tools/                                     # Tool 모듈 (용도별 분리)
       __init__.py                              # register_all_tools()

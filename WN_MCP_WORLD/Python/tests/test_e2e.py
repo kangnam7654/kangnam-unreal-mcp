@@ -19,7 +19,7 @@ pytestmark = pytest.mark.e2e
 @pytest.fixture(scope="module")
 def mcp_client():
     """Create an in-process MCP client using FastMCP's test utilities."""
-    from mcp_server import mcp
+    from conftest import mcp
     from fastmcp import Client
 
     client = Client(mcp)

@@ -9,10 +9,14 @@ AI 에이전트(Claude Code, Cursor 등)가 UE 에디터의 액터, 블루프린
 AI Agent (Claude/Cursor)
     │ stdio
     ▼
-Python MCP Server (FastMCP)          ← WN_MCP_WORLD/Python/
-    │ TCP JSON-RPC 2.0 (port 27777)
+PyMCP Server (FastMCP)              ← WN_MCP/PyMCP/
+    │ 동적 Import (AddUserToolDirectories)
     ▼
-UE C++ Plugin (CommandGroup)         ← WN_MCP_WORLD/Source/
+WORLD Python Tools                  ← WN_MCP_WORLD/Python/tools/
+    │ ue_connection (자체 TCP 소켓)
+    │ TCP JSON-RPC 2.0 (port 27777~27787)
+    ▼
+UE C++ Plugin (CommandGroup)        ← WN_MCP_WORLD/Source/
     │ UE Engine API
     ▼
 Unreal Engine Editor
@@ -20,55 +24,9 @@ Unreal Engine Editor
 
 - **Python Tool**: `@mcp.tool` 데코레이터로 등록. AI 에이전트가 직접 호출하는 함수.
 - **C++ Command**: `FWN_MCP_CommandGroup` 서브클래스에 구현. UE API에 접근하는 함수.
-- Python Tool이 TCP를 통해 C++ Command를 호출하여 UE를 조작한다.
-
-## 설치 및 실행
-
-### 사전 요구사항
-
-- Unreal Engine 5 (WN_MCP 플러그인 포함)
-- Python 3.11+ (`uv` 패키지 매니저)
-
-### Python MCP Server 설정
-
-```bash
-cd WN_MCP_WORLD/Python
-uv sync                    # 의존성 설치
-uv run python mcp_server.py   # MCP 서버 실행 (stdio transport)
-```
-
-### VS Code MCP 설정
-
-`.vscode/mcp.json`:
-
-```json
-{
-    "servers": {
-        "wn-mcp-world": {
-            "type": "stdio",
-            "command": "uv",
-            "args": ["run", "python", "mcp_server.py"],
-            "cwd": "${workspaceFolder}/WN_MCP_WORLD/Python"
-        }
-    }
-}
-```
-
-### Claude Code MCP 설정
-
-`~/.claude/settings.json`:
-
-```json
-{
-    "mcpServers": {
-        "ue-world": {
-            "command": "uv",
-            "args": ["run", "python", "mcp_server.py"],
-            "cwd": "<프로젝트경로>/WN_MCP_WORLD/Python"
-        }
-    }
-}
-```
+- Python Tool이 `ue_connection.execute()` → 자체 TCP 소켓 → JSON-RPC 2.0을 통해 C++ Command를 호출하여 UE를 조작한다.
+- PyMCP는 서버 시작(lifespan) 시 UE 연결 + Tool 등록을 `yield` 전에 완료하여, MCP 클라이언트가 즉시 전체 Tool 목록을 받을 수 있다.
+- UE 재연결 시에는 `refresh_tools` Tool로 `tools/list_changed` 알림을 보내 클라이언트 목록을 갱신한다.
 
 ## 커맨드 (38개)
 
@@ -111,7 +69,6 @@ WN_MCP_WORLD/
 │               ├── WN_MCP_CommandGroup_BlueprintVariable.h/.cpp  # BlueprintVariable CD 2개
 │               └── WN_MCP_CommandGroup_BlueprintGraph.h/.cpp     # BlueprintGraph CRUD 7개
 ├── Python/
-│   ├── mcp_server.py                          # FastMCP 서버 진입점
 │   ├── pyproject.toml                         # Python 프로젝트 설정
 │   ├── tools/
 │   │   ├── __init__.py                        # 전체 Tool 등록
@@ -163,14 +120,10 @@ uv run python -m pytest tests/test_unit_tools.py --cov=tools --cov-report=term-m
 
 | 구분 | 테스트 수 | UE 필요 | 설명 |
 |------|----------|---------|------|
-| Unit | 103개 | 아니오 | Tool 파라미터 전달 + 응답 포맷 검증 (UE Mock) |
+| Unit | 85개 | 아니오 | Tool 파라미터 전달 + 응답 포맷 검증 (UE Mock) |
 | Integration | 111개 | 예 | 실제 UE 에디터에서 CRUD 시나리오 검증 |
 | E2E | 10개 | 예 | MCP Client를 통한 전체 프로토콜 흐름 검증 |
-| **합계** | **224개** | | |
-
-### 커버리지
-
-- Tool 모듈 전체 (ue_connection.py 포함): **100%**
+| **합계** | **206개** | | |
 
 ## 사용 예시
 

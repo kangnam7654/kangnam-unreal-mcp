@@ -31,7 +31,7 @@
 │  ┌────────────────────────────────┐   │
 │  │ FWN_MCP_ServerThread           │   │
 │  │ • recv JSON-RPC request        │   │
-│  │ • extract command name         │   │
+│  │ • extract "id" as command name │   │
 │  │ • AsyncTask → GameThread       │   │
 │  └────────────┬───────────────────┘   │
 │               │                       │
@@ -62,9 +62,12 @@ FWN_MCP_Module::Get()
     │   └── 등록된 모든 커맨드 그룹 (순서 보장)
     │
     ├── CommandGroupPtrMap: TMap<FString, TSharedPtr<FWN_MCP_CommandGroup>>
-    │   └── "WN_MCP_WORLD_spawn_actor" → FWN_MCP_CommandGroup_Actor
-    │   └── "WN_MCP_WORLD_get_blueprints" → FWN_MCP_CommandGroup_Blueprint
+    │   └── "Actor_spawn_actor" → FWN_MCP_CommandGroup_Actor
+    │   └── "Blueprint_get_blueprints" → FWN_MCP_CommandGroup_Blueprint
     │   └── ...
+    │
+    ├── AllCommandInfos: TArray<FWN_MCP_CommandInfo>
+    │   └── 등록된 모든 커맨드의 메타데이터 (Name, Description, bIsSimple)
     │
     ├── ListenerSocketPtr: TSharedPtr<FSocket>
     │   └── TCP 리스닝 소켓 (127.0.0.1:27777~27787)
@@ -80,6 +83,7 @@ FWN_MCP_Module::Get()
         ├── ExecuteCommand(name, params)   // 커맨드 실행
         ├── GetListenerPort()              // 현재 포트 조회
         ├── IsRunningServer()              // 서버 상태
+        ├── GetAllCommandInfos()           // 등록된 커맨드 메타데이터
         └── AddUserToolDirectories(dirs)   // Tool 디렉토리 추가
 ```
 
@@ -100,32 +104,41 @@ FWN_MCP_Module::Get()
            └── FWN_MCP_ServerThread 생성 및 시작
 5. 확장 플러그인 로드 (WN_MCP_WORLD 등)
    └── StartupModule()에서 AddUserToolDirectories() 호출
-6. Python MCP Server 시작
-   └── lifespan → UnrealConnection.connect()
-       └── get_user_tool_directories 호출
-           └── 확장 플러그인 Tool 동적 발견/등록
+6. Python MCP Server 시작 (wn_mcp_server.py lifespan)
+   ├── _register_tools()          — 정적 Tool 등록 (UE 연결/해제, 로그 등)
+   ├── ue_connect()               — UE TCP 연결 (listening 중이면)
+   ├── register_user_tool_dirs()  — 확장 플러그인 Tool 동적 발견/등록 (yield 전)
+   ├── register callback          — 재연결 시 Tool 재등록용 콜백 등록
+   └── yield                      — MCP 클라이언트 요청 수신 시작
 ```
+
+> **주의**: Tool 등록은 반드시 `yield` 전에 완료해야 한다.
+> MCP 클라이언트(Claude Code 등)는 `yield` 직후 `tools/list`를 요청하고 결과를 캐시하기 때문에,
+> `yield` 이후에 등록된 Tool은 클라이언트에 보이지 않는다.
+> 재연결 시에는 `refresh_tools` Tool을 호출하여 `tools/list_changed` 알림을 보낼 수 있다.
 
 ### 커맨드 디스패치 흐름
 
 ```
-Python: send_command("spawn_actor", {name: "Cube", ...}, app_name="WN_MCP_WORLD")
+Python: ue_connection.execute("spawn_actor", params, category_name="Actor")
     │
-    │ TCP JSON-RPC: {"method":"command", "id":"WN_MCP_WORLD_spawn_actor", "params":{...}}
+    │ → UnrealConnection.send_command("Actor_spawn_actor", params)
+    │
+    │ TCP JSON-RPC: {"jsonrpc":"2.0", "method":"Actor_spawn_actor", "id":"Actor_spawn_actor", "params":{...}}
     │
     ▼
-ServerThread: recv → parse JSON → extract id="WN_MCP_WORLD_spawn_actor"
+ServerThread: recv → parse JSON → extract id="Actor_spawn_actor"
     │
     │ AsyncTask(GameThread)
     ▼
-FWN_MCP_Module::ExecuteCommand("WN_MCP_WORLD_spawn_actor", params)
+FWN_MCP_Module::ExecuteCommand("Actor_spawn_actor", params)
     │
-    │ CommandGroupPtrMap["WN_MCP_WORLD_spawn_actor"] → FWN_MCP_CommandGroup_Actor
+    │ CommandGroupPtrMap["Actor_spawn_actor"] → FWN_MCP_CommandGroup_Actor
     │
     ▼
-FWN_MCP_CommandGroup::Execute("WN_MCP_WORLD_spawn_actor", params)
+FWN_MCP_CommandGroup::Execute("Actor_spawn_actor", params)
     │
-    │ Strip prefix: "WN_MCP_WORLD_spawn_actor" → "spawn_actor"
+    │ Strip prefix: "Actor_spawn_actor" → "spawn_actor"
     │
     ▼
 FWN_MCP_CommandGroup_Actor::OnExecute("spawn_actor", params)
@@ -135,7 +148,12 @@ FWN_MCP_CommandGroup_Actor::OnExecute("spawn_actor", params)
     ▼
 WN_RETURN_COMMAND_RESPONSE(result)
     │
-    │ JSON-RPC 2.0 응답 구성
+    │ JSON-RPC 2.0 응답 구성 (id, method = "spawn_actor")
+    │
+    ▼
+Execute(): 응답의 id/method를 원래 이름으로 복원
+    │
+    │ id, method = "Actor_spawn_actor" (요청과 일치)
     │
     ▼
 ServerThread: FTCHARToUTF8 → Send response
@@ -143,14 +161,20 @@ ServerThread: FTCHARToUTF8 → Send response
 
 ## Python MCP Server (PyMCP)
 
-### 목표 아키텍처 (확정)
-
-PyMCP가 유일한 MCP Server. 각 플러그인은 `Python/` 폴더에 Tool만 제공한다.
+PyMCP(`WN_MCP/PyMCP/`)가 유일한 MCP Server.
+각 플러그인은 `Python/tools/` 폴더에 Tool만 제공하고, PyMCP가 `AddUserToolDirectories()`로 동적 Import한다.
 
 ```
 PyMCP (유일한 MCP Server)
     │
-    ├── 코어 기능: 연결, 프로토콜, Tool 발견, 프롬프트
+    ├── wn_mcp_server.py          — FastMCP 앱 + lifespan (서버 진입점)
+    │
+    ├── Tool 엔진: Tools/ (ue_interaction_tool.py)
+    │   ├── UE 연결/해제/재연결 (auto-reconnect 스레드)
+    │   ├── 동적 Tool 발견 (AddUserToolDirectories → @mcp.tool 자동 등록)
+    │   ├── Simple Command 자동 래핑
+    │   ├── refresh_tools — tools/list_changed 알림 전송 (재연결 대응)
+    │   └── UE 종료 시 Tool 해제 (MCP_SERVER.remove_tool)
     │
     └── 동적 Import (AddUserToolDirectories)
         ├── WN_MCP_WORLD/Python/tools/   ← 38개 Tool
@@ -158,49 +182,24 @@ PyMCP (유일한 MCP Server)
         └── ...
 ```
 
-### 현재 과도기 상태
+### WORLD Tool 연결
 
-| 구분 | 위치 | 설명 | 향후 |
-|------|------|------|------|
-| **PyMCP** | `WN_MCP/PyMCP/src/unreal_mcp/` | 코어 서버. FastMCP 3.x | 유일한 서버로 유지 |
-| **PyMCP 내장 UE Tool** | `WN_MCP/PyMCP/src/unreal_mcp/tools/ue/` | Actor/Blueprint/Material (~15개) | **제거** (플러그인으로 이관) |
-| **WN_MCP_WORLD Python** | `WN_MCP_WORLD/Python/` | 38개 Tool + 224 테스트 | Tool 모듈만 잔존, mcp_server.py 제거 |
-| **PyMCP 레거시** | `WN_MCP/PyMCP/Tools/` | 구 구현 | **제거** |
-
-> 마이그레이션 상세는 [TODO.md](TODO.md) P0 참조
-
-### PyMCP 서버 팩토리
+WORLD Tool은 `ue_connection.execute()` 호출 → 자체 TCP 소켓으로 UE에 JSON-RPC 2.0 커맨드를 전송한다.
 
 ```python
-# server.py
-def create_app(settings) -> FastMCP:
-    mcp = FastMCP("unreal-mcp-server")
+# WN_MCP_WORLD/Python/tools/ue_connection.py (자체 TCP 연결)
+def execute(command_name, params=None, category_name=""):
+    connect()  # 127.0.0.1:27777 자체 소켓
+    full_name = f"{category_name}_{command_name}" if category_name else command_name
+    # JSON-RPC 2.0 요청 전송 → 응답 수신 → 결과 반환
+    return result
 
-    @mcp.lifespan
-    async def _lifespan(app):
-        connection = UnrealConnection(settings)
-        connection.connect()
-        yield {"connection": connection}
-        connection.disconnect()
-
-    # Tool 등록 (조건부)
-    general.register_tools(mcp, get_connection)
-    agent.register_tools(mcp, get_connection)
-    actors.register_tools(mcp, get_connection)      # Actor CRUD
-    blueprints.register_tools(mcp, get_connection)   # Blueprint CRUD
-    materials.register_tools(mcp, get_connection)    # Material ops
-    # ...
-
-    return mcp
-```
-
-### 사용자 Tool 동적 발견
-
-```python
-# user_tools.py
-# 서버 시작 시 get_user_tool_directories → 디렉토리 목록 수신
-# 각 디렉토리의 .py 파일을 importlib로 동적 로드
-# register_tools(mcp, get_connection) 패턴으로 등록
+# WN_MCP_WORLD/Python/tools/actor_tools.py (Tool)
+_CATEGORY = "Actor"
+@mcp.tool
+def spawn_actor(type, name, ...):
+    result = ue_connection.execute("spawn_actor", params, category_name=_CATEGORY)
+    return json.dumps(result, ...)
 ```
 
 ## 확장 플러그인 패턴
@@ -231,12 +230,12 @@ WN_MCP_WORLD/
 
 ```
 WN_MCP_WORLD/Python/
-├── mcp_server.py          # 별도 FastMCP 서버 (독립 실행)
 └── tools/
-    ├── __init__.py        # register_all_tools()
-    ├── ue_connection.py   # TCP 연결 유틸리티
-    └── actor_tools.py     # @mcp.tool 데코레이터로 등록
+    ├── __init__.py            # register_all_tools()
+    ├── ue_connection.py       # 자체 TCP 연결 유틸리티
+    ├── actor_tools.py         # @mcp.tool (6개, _CATEGORY = "Actor")
+    ├── blueprint_tools.py     # @mcp.tool (7개, _CATEGORY = "Blueprint")
+    └── ...                    # 9개 모듈, 38개 Tool
 ```
 
-> 현재 WN_MCP_WORLD는 자체 MCP 서버(`mcp_server.py`)로 운영 중이지만,
-> 종래에는 PyMCP의 동적 Import로 전환하고 자체 서버는 제거할 예정이다.
+WORLD Tool은 PyMCP 프로세스 내에서 실행되며, `ue_connection.py`의 자체 TCP 소켓으로 UE와 통신한다. (PyMCP의 `UnrealConnection`은 커맨드마다 소켓을 열고 닫으므로 충돌하지 않는다.)
