@@ -1192,14 +1192,28 @@ def unregister_user_tool_directories() -> Dict[str, Any]:
         
         mcp_log(f'Found {count} registered user tool(s) and {len(unregistered_commands)} simple command(s) to unregister:')
         
-        # Clear all registered tools
-        for tool_key in unregistered_tools:
-            mcp_log(f'  ✓ Unregistering tool: {tool_key}')
-        
-        # Clear all registered simple commands
-        for cmd_name in unregistered_commands:
-            mcp_log(f'  ✓ Unregistering command: {cmd_name}')
-        
+        # Remove tools from FastMCP server
+        removed_count = 0
+        if MCP_SERVER:
+            for tool_key in unregistered_tools:
+                func_name = tool_key.rsplit('/', 1)[-1]
+                try:
+                    MCP_SERVER.remove_tool(func_name)
+                    mcp_log(f'  ✓ Removed tool from MCP: {func_name}')
+                    removed_count += 1
+                except Exception as e:
+                    mcp_log(f'  ⚠️  Failed to remove tool {func_name}: {e}')
+
+            for cmd_name in unregistered_commands:
+                try:
+                    MCP_SERVER.remove_tool(cmd_name)
+                    mcp_log(f'  ✓ Removed simple command from MCP: {cmd_name}')
+                    removed_count += 1
+                except Exception as e:
+                    mcp_log(f'  ⚠️  Failed to remove command {cmd_name}: {e}')
+        else:
+            mcp_log('  ⚠️  MCP_SERVER not available, clearing tracking only')
+
         REGISTERED_USER_TOOLS.clear()
         REGISTERED_SIMPLE_COMMANDS.clear()
         
