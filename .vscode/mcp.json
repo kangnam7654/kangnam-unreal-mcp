@@ -5,18 +5,6 @@
             "command": "C:\\Users\\WN-ND000289\\.local\\bin\\uv.exe",
             "args": ["run", "python", "wn_mcp_server.py"],
             "cwd": "${workspaceFolder}/WN_MCP/PyMCP"
-        },
-        "wn-mcp-world": {
-            "type": "stdio",
-            "command": "C:\\Users\\WN-ND000289\\.local\\bin\\uv.exe",
-            "args": ["run", "python", "mcp_server.py"],
-            "cwd": "${workspaceFolder}/WN_MCP_WORLD/Python"
-        },
-        "wn-mcp-world-test": {
-            "type": "stdio",
-            "command": "C:\\Users\\WN-ND000289\\.local\\bin\\uv.exe",
-            "args": ["run", "python", "test_actor_commands.py"],
-            "cwd": "${workspaceFolder}/WN_MCP_WORLD/python_tool_4_tests"
         }
     }
 }

@@ -1,6 +1,6 @@
-"""Unit tests for MCP tools and UE connection.
+"""Unit tests for MCP tools.
 
-Tests tool parameter passing, response formatting, and connection logic.
+Tests tool parameter passing and response formatting.
 UE connection is mocked — no running editor required.
 
 Each tool module's register_tools() creates closures over ue_connection.execute().
@@ -12,10 +12,7 @@ import json
 import asyncio
 import inspect
 import pytest
-from unittest.mock import MagicMock, patch
-
 from conftest import call_tool, mcp
-from tools import ue_connection
 
 
 # =============================================================================
@@ -27,7 +24,7 @@ class TestGetActorsInLevel:
     def test_calls_correct_command(self, mock_ue_execute):
         mock_ue_execute.return_value = {"count": 0, "actors": []}
         call_tool("get_actors_in_level")
-        mock_ue_execute.assert_called_once_with("get_actors_in_level", app_name="WN_MCP_WORLD")
+        mock_ue_execute.assert_called_once_with("get_actors_in_level", category_name="Actor")
 
     def test_returns_json_string(self, mock_ue_execute):
         mock_ue_execute.return_value = {"count": 1, "actors": [{"name": "Cube"}]}
@@ -41,7 +38,7 @@ class TestFindActorsByName:
         mock_ue_execute.return_value = {"count": 0, "actors": []}
         call_tool("find_actors_by_name", search_text="Cube")
         mock_ue_execute.assert_called_once_with(
-            "find_actors_by_name", {"search_text": "Cube"}, app_name="WN_MCP_WORLD"
+            "find_actors_by_name", {"search_text": "Cube"}, category_name="Actor"
         )
 
 
@@ -50,7 +47,7 @@ class TestSpawnActor:
         mock_ue_execute.return_value = {"status": "success"}
         call_tool("spawn_actor", type="StaticMeshActor", name="MyCube")
         mock_ue_execute.assert_called_once_with(
-            "spawn_actor", {"type": "StaticMeshActor", "name": "MyCube"}, app_name="WN_MCP_WORLD"
+            "spawn_actor", {"type": "StaticMeshActor", "name": "MyCube"}, category_name="Actor"
         )
 
     def test_with_all_optional_params(self, mock_ue_execute):
@@ -79,7 +76,7 @@ class TestDeleteActor:
     def test_passes_name(self, mock_ue_execute):
         mock_ue_execute.return_value = {"status": "success"}
         call_tool("delete_actor", name="MyCube")
-        mock_ue_execute.assert_called_once_with("delete_actor", {"name": "MyCube"}, app_name="WN_MCP_WORLD")
+        mock_ue_execute.assert_called_once_with("delete_actor", {"name": "MyCube"}, category_name="Actor")
 
 
 class TestSetActorTransform:
@@ -113,7 +110,7 @@ class TestReadActorContent:
     def test_passes_name(self, mock_ue_execute):
         mock_ue_execute.return_value = {"name": "Cube", "class": "StaticMeshActor"}
         call_tool("read_actor_content", name="Cube")
-        mock_ue_execute.assert_called_once_with("read_actor_content", {"name": "Cube"}, app_name="WN_MCP_WORLD")
+        mock_ue_execute.assert_called_once_with("read_actor_content", {"name": "Cube"}, category_name="Actor")
 
 
 # =============================================================================
@@ -151,7 +148,7 @@ class TestRemoveComponentFromActor:
         mock_ue_execute.assert_called_once_with(
             "remove_component_from_actor",
             {"name": "MyCube", "component_name": "MyLight"},
-            app_name="WN_MCP_WORLD",
+            category_name="ActorComponent",
         )
 
 
@@ -160,7 +157,7 @@ class TestReadComponentsFromActor:
         mock_ue_execute.return_value = {"actor_name": "Cube", "count": 0, "components": []}
         call_tool("read_components_from_actor", name="Cube")
         mock_ue_execute.assert_called_once_with(
-            "read_components_from_actor", {"name": "Cube"}, app_name="WN_MCP_WORLD"
+            "read_components_from_actor", {"name": "Cube"}, category_name="ActorComponent"
         )
 
 
@@ -173,13 +170,13 @@ class TestGetBlueprints:
     def test_default_no_params(self, mock_ue_execute):
         mock_ue_execute.return_value = {"count": 0, "blueprints": []}
         call_tool("get_blueprints")
-        mock_ue_execute.assert_called_once_with("get_blueprints", {}, app_name="WN_MCP_WORLD")
+        mock_ue_execute.assert_called_once_with("get_blueprints", {}, category_name="Blueprint")
 
     def test_with_search_path(self, mock_ue_execute):
         mock_ue_execute.return_value = {"count": 0, "blueprints": []}
         call_tool("get_blueprints", search_path="/Game/Maps/")
         mock_ue_execute.assert_called_once_with(
-            "get_blueprints", {"search_path": "/Game/Maps/"}, app_name="WN_MCP_WORLD"
+            "get_blueprints", {"search_path": "/Game/Maps/"}, category_name="Blueprint"
         )
 
 
@@ -188,7 +185,7 @@ class TestFindBlueprintsByName:
         mock_ue_execute.return_value = {"count": 0, "blueprints": []}
         call_tool("find_blueprints_by_name", search_text="Player")
         mock_ue_execute.assert_called_once_with(
-            "find_blueprints_by_name", {"search_text": "Player"}, app_name="WN_MCP_WORLD"
+            "find_blueprints_by_name", {"search_text": "Player"}, category_name="Blueprint"
         )
 
 
@@ -196,7 +193,7 @@ class TestCreateBlueprint:
     def test_required_params_only(self, mock_ue_execute):
         mock_ue_execute.return_value = {"name": "MyBP", "path": "/Game/Blueprints/MyBP"}
         call_tool("create_blueprint", name="MyBP")
-        mock_ue_execute.assert_called_once_with("create_blueprint", {"name": "MyBP"}, app_name="WN_MCP_WORLD")
+        mock_ue_execute.assert_called_once_with("create_blueprint", {"name": "MyBP"}, category_name="Blueprint")
 
     def test_with_parent_class(self, mock_ue_execute):
         mock_ue_execute.return_value = {"name": "MyBP"}
@@ -239,7 +236,7 @@ class TestCompileBlueprint:
         mock_ue_execute.return_value = {"name": "MyBP", "compiled": True}
         call_tool("compile_blueprint", blueprint_name="MyBP")
         mock_ue_execute.assert_called_once_with(
-            "compile_blueprint", {"blueprint_name": "MyBP"}, app_name="WN_MCP_WORLD"
+            "compile_blueprint", {"blueprint_name": "MyBP"}, category_name="Blueprint"
         )
 
 
@@ -335,7 +332,7 @@ class TestRemoveComponentFromBlueprint:
         mock_ue_execute.assert_called_once_with(
             "remove_component_from_blueprint",
             {"blueprint_name": "MyBP", "component_name": "Mesh1"},
-            app_name="WN_MCP_WORLD",
+            category_name="BlueprintComponent",
         )
 
 
@@ -344,7 +341,7 @@ class TestReadComponentsFromBlueprint:
         mock_ue_execute.return_value = {"blueprint_name": "MyBP", "count": 0, "components": []}
         call_tool("read_components_from_blueprint", blueprint_name="MyBP")
         mock_ue_execute.assert_called_once_with(
-            "read_components_from_blueprint", {"blueprint_name": "MyBP"}, app_name="WN_MCP_WORLD"
+            "read_components_from_blueprint", {"blueprint_name": "MyBP"}, category_name="BlueprintComponent"
         )
 
 
@@ -460,7 +457,7 @@ class TestGetAvailableMaterials:
     def test_default_no_params(self, mock_ue_execute):
         mock_ue_execute.return_value = {"count": 0, "materials": []}
         call_tool("get_available_materials")
-        mock_ue_execute.assert_called_once_with("get_available_materials", {}, app_name="WN_MCP_WORLD")
+        mock_ue_execute.assert_called_once_with("get_available_materials", {}, category_name="Material")
 
     def test_with_search_path(self, mock_ue_execute):
         mock_ue_execute.return_value = {"count": 0, "materials": []}
@@ -524,7 +521,7 @@ class TestGetActorMaterialInfo:
         mock_ue_execute.return_value = {"actor_name": "MyCube", "total_slots": 0, "material_slots": []}
         call_tool("get_actor_material_info", actor_name="MyCube")
         mock_ue_execute.assert_called_once_with(
-            "get_actor_material_info", {"actor_name": "MyCube"}, app_name="WN_MCP_WORLD"
+            "get_actor_material_info", {"actor_name": "MyCube"}, category_name="Material"
         )
 
     def test_returns_json_string(self, mock_ue_execute):
@@ -548,7 +545,7 @@ class TestGetBlueprintMaterialInfo:
         mock_ue_execute.assert_called_once_with(
             "get_blueprint_material_info",
             {"blueprint_name": "MyBP", "component_name": "Mesh1"},
-            app_name="WN_MCP_WORLD",
+            category_name="Material",
         )
 
 
@@ -628,7 +625,7 @@ class TestGetStaticMeshes:
     def test_default_no_params(self, mock_ue_execute):
         mock_ue_execute.return_value = {"count": 0, "static_meshes": []}
         call_tool("get_static_meshes")
-        mock_ue_execute.assert_called_once_with("get_static_meshes", {}, app_name="WN_MCP_WORLD")
+        mock_ue_execute.assert_called_once_with("get_static_meshes", {}, category_name="StaticMesh")
 
     def test_with_search_path(self, mock_ue_execute):
         mock_ue_execute.return_value = {"count": 0, "static_meshes": []}
@@ -648,7 +645,7 @@ class TestFindStaticMeshesByName:
         mock_ue_execute.return_value = {"count": 0, "static_meshes": []}
         call_tool("find_static_meshes_by_name", search_text="Cube")
         mock_ue_execute.assert_called_once_with(
-            "find_static_meshes_by_name", {"search_text": "Cube"}, app_name="WN_MCP_WORLD"
+            "find_static_meshes_by_name", {"search_text": "Cube"}, category_name="StaticMesh"
         )
 
     def test_with_include_engine(self, mock_ue_execute):
@@ -733,7 +730,7 @@ class TestRemoveVariableFromBlueprint:
         mock_ue_execute.assert_called_once_with(
             "remove_variable_from_blueprint",
             {"blueprint_name": "MyBP", "variable_name": "HP"},
-            app_name="WN_MCP_WORLD",
+            category_name="BlueprintVariable",
         )
 
 
@@ -747,7 +744,7 @@ class TestReadBlueprintGraph:
         mock_ue_execute.return_value = {"blueprint_name": "MyBP", "nodes": []}
         call_tool("read_blueprint_graph", blueprint_name="MyBP")
         mock_ue_execute.assert_called_once_with(
-            "read_blueprint_graph", {"blueprint_name": "MyBP"}, app_name="WN_MCP_WORLD"
+            "read_blueprint_graph", {"blueprint_name": "MyBP"}, category_name="BlueprintGraph"
         )
 
 
@@ -872,7 +869,7 @@ class TestConnectNodes:
                 "target_node_id": "BBB",
                 "target_pin_name": "execute",
             },
-            app_name="WN_MCP_WORLD",
+            category_name="BlueprintGraph",
         )
 
 
@@ -885,7 +882,7 @@ class TestDisconnectNodes:
         mock_ue_execute.assert_called_once_with(
             "disconnect_nodes",
             {"blueprint_name": "MyBP", "node_id": "AAA", "pin_name": "then"},
-            app_name="WN_MCP_WORLD",
+            category_name="BlueprintGraph",
         )
 
 
@@ -910,8 +907,8 @@ class TestErrorHandling:
 
 
 class TestToolRegistration:
-    def test_all_40_tools_registered(self):
-        """Verify all 40 tools are registered in the MCP server."""
+    def test_all_38_tools_registered(self):
+        """Verify all 38 tools are registered in the MCP server."""
         expected_tools = {
             # Actor (6)
             "get_actors_in_level", "find_actors_by_name", "spawn_actor",
@@ -940,181 +937,9 @@ class TestToolRegistration:
             "read_blueprint_graph", "add_event_node", "add_function_call_node",
             "add_variable_get_node", "add_variable_set_node",
             "connect_nodes", "disconnect_nodes",
-            # Log (2)
-            "set_log_level", "get_recent_logs",
         }
 
         tools = asyncio.run(mcp.list_tools())
         registered = {t.name for t in tools}
         missing = expected_tools - registered
         assert not missing, f"Missing tools: {missing}"
-
-
-# =============================================================================
-# UE Connection
-# =============================================================================
-
-
-class TestUeConnectionConnect:
-    """Test connect() socket creation and error handling."""
-
-    @pytest.fixture(autouse=True)
-    def reset_socket(self):
-        original = ue_connection._socket
-        yield
-        ue_connection._socket = original
-
-    def test_returns_true_if_already_connected(self):
-        ue_connection._socket = MagicMock()
-        assert ue_connection.connect() is True
-
-    def test_creates_socket_on_new_connection(self):
-        ue_connection._socket = None
-        with patch("tools.ue_connection.socket") as mock_socket_mod:
-            mock_sock = mock_socket_mod.socket.return_value
-            assert ue_connection.connect() is True
-            mock_sock.connect.assert_called_once_with(("127.0.0.1", 27777))
-
-    def test_raises_on_connection_failure(self):
-        ue_connection._socket = None
-        with patch("tools.ue_connection.socket") as mock_socket_mod:
-            mock_socket_mod.socket.return_value.connect.side_effect = OSError("refused")
-            with pytest.raises(ConnectionError, match="Cannot connect to UE"):
-                ue_connection.connect()
-            assert ue_connection._socket is None
-
-
-class TestUeConnectionDisconnect:
-    """Test disconnect() socket cleanup."""
-
-    @pytest.fixture(autouse=True)
-    def reset_socket(self):
-        original = ue_connection._socket
-        yield
-        ue_connection._socket = original
-
-    def test_closes_socket(self):
-        mock_sock = MagicMock()
-        ue_connection._socket = mock_sock
-        ue_connection.disconnect()
-        mock_sock.close.assert_called_once()
-        assert ue_connection._socket is None
-
-    def test_noop_if_not_connected(self):
-        ue_connection._socket = None
-        ue_connection.disconnect()
-        assert ue_connection._socket is None
-
-    def test_handles_shutdown_error(self):
-        mock_sock = MagicMock()
-        mock_sock.shutdown.side_effect = OSError("not connected")
-        ue_connection._socket = mock_sock
-        ue_connection.disconnect()
-        mock_sock.close.assert_called_once()
-        assert ue_connection._socket is None
-
-
-class TestUeConnectionExecute:
-    """Test execute() request building, response parsing, and error handling."""
-
-    @pytest.fixture(autouse=True)
-    def mock_connection(self):
-        self.mock_sock = MagicMock()
-        with patch("tools.ue_connection.connect"), \
-             patch.object(ue_connection, "_socket", self.mock_sock):
-            yield
-
-    def _setup_response(self, response_dict):
-        """Configure mock: flush raises BlockingIOError, then returns response."""
-        response_bytes = json.dumps(response_dict).encode("utf-8")
-        self.mock_sock.recv.side_effect = [BlockingIOError(), response_bytes]
-
-    def test_request_with_app_name(self):
-        self._setup_response({"jsonrpc": "2.0", "result": {"ok": True}, "id": "x"})
-        ue_connection.execute("test_cmd", {"key": "val"}, app_name="WN_MCP_WORLD")
-        sent = json.loads(self.mock_sock.send.call_args[0][0].decode("utf-8"))
-        assert sent["id"] == "WN_MCP_WORLD_test_cmd"
-        assert sent["method"] == "command"
-        assert sent["params"] == {"key": "val"}
-
-    def test_request_without_app_name(self):
-        self._setup_response({"jsonrpc": "2.0", "result": {}, "id": "x"})
-        ue_connection.execute("test_cmd")
-        sent = json.loads(self.mock_sock.send.call_args[0][0].decode("utf-8"))
-        assert sent["id"] == "test_cmd"
-        assert sent["params"] == {}
-
-    def test_returns_result(self):
-        self._setup_response({"jsonrpc": "2.0", "result": {"count": 5}, "id": "x"})
-        result = ue_connection.execute("cmd")
-        assert result == {"count": 5}
-
-    def test_error_dict_response(self):
-        self._setup_response({
-            "jsonrpc": "2.0",
-            "error": {"code": -32001, "message": "Failed"},
-            "id": "x",
-        })
-        with pytest.raises(RuntimeError, match=r"UE error \[-32001\]: Failed"):
-            ue_connection.execute("cmd")
-
-    def test_error_string_response(self):
-        self._setup_response({"jsonrpc": "2.0", "error": "Something broke", "id": "x"})
-        with pytest.raises(RuntimeError, match="UE error: Something broke"):
-            ue_connection.execute("cmd")
-
-    def test_connection_closed(self):
-        self.mock_sock.recv.side_effect = [BlockingIOError(), b""]
-        with pytest.raises(ConnectionError):
-            ue_connection.execute("cmd")
-
-    def test_empty_result_returns_empty_dict(self):
-        self._setup_response({"jsonrpc": "2.0", "id": "x"})
-        result = ue_connection.execute("cmd")
-        assert result == {}
-
-    def test_flushes_leftover_buffer_data(self):
-        response_bytes = json.dumps({"jsonrpc": "2.0", "result": {"ok": True}, "id": "x"}).encode("utf-8")
-        self.mock_sock.recv.side_effect = [
-            b"leftover data",
-            BlockingIOError(),
-            response_bytes,
-        ]
-        result = ue_connection.execute("cmd")
-        assert result == {"ok": True}
-
-    def test_chunked_response(self):
-        response_str = json.dumps({"jsonrpc": "2.0", "result": {"data": "value"}, "id": "x"})
-        half = len(response_str) // 2
-        self.mock_sock.recv.side_effect = [
-            BlockingIOError(),
-            response_str[:half].encode("utf-8"),
-            response_str[half:].encode("utf-8"),
-        ]
-        result = ue_connection.execute("cmd")
-        assert result == {"data": "value"}
-
-    def test_error_with_data_field(self):
-        self._setup_response({
-            "jsonrpc": "2.0",
-            "error": {"code": -32001, "message": "Command failed", "data": "Actor not found"},
-            "id": "x",
-        })
-        with pytest.raises(RuntimeError, match="Command failed: Actor not found"):
-            ue_connection.execute("cmd")
-
-    def test_max_response_size_exceeded(self):
-        original_max = ue_connection.MAX_RESPONSE_SIZE
-        ue_connection.MAX_RESPONSE_SIZE = 100
-        try:
-            self.mock_sock.recv.side_effect = [BlockingIOError(), b"x" * 200]
-            with pytest.raises(ConnectionError, match="exceeded"):
-                ue_connection.execute("cmd")
-        finally:
-            ue_connection.MAX_RESPONSE_SIZE = original_max
-
-    def test_socket_none_after_connect_raises(self):
-        with patch("tools.ue_connection.connect"):
-            with patch.object(ue_connection, "_socket", None):
-                with pytest.raises(ConnectionError, match="Not connected"):
-                    ue_connection.execute("cmd")

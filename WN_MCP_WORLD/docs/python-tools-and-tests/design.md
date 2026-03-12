@@ -21,13 +21,13 @@ WN_MCP_WORLD의 38개 C++ 커맨드에 대응하는 Python MCP Tool을 구현하
 | BlueprintVariable | 2 | `blueprint_variable_tools.py` | Done |
 | BlueprintGraph | 7 | `blueprint_graph_tools.py` | Done |
 
-### 테스트 (135개)
+### 테스트 (206개)
 
 | 구분 | 수 | UE 필요 | 상태 |
 |------|---|---------|------|
 | Unit | 85 | 아니오 | Done |
-| Integration | 42 | 예 | Done |
-| E2E | 8 | 예 | Done |
+| Integration | 111 | 예 | Done |
+| E2E | 10 | 예 | Done |
 
 ### 커버리지
 
@@ -59,20 +59,22 @@ tools/
 
 ### Tool 등록 패턴
 
-각 모듈은 `register_tools(mcp: FastMCP)` 함수를 노출한다.
-`__init__.py`의 `register_all_tools()`에서 순서대로 호출한다.
+각 Tool 모듈은 모듈 레벨에서 `@mcp.tool` 데코레이터로 함수를 등록한다.
+`mcp` 객체는 PyMCP가 동적 Import 시 모듈 namespace에 주입한다.
+`__init__.py`의 `register_all_tools(mcp)`는 테스트용이며, 프로덕션에서는 PyMCP의 `register_user_tool_directories()`가 동적 발견/등록을 수행한다.
 
 ```python
 # tools/some_tools.py
-def register_tools(mcp: FastMCP):
-    @mcp.tool
-    def some_command(param1: str, param2: Optional[str] = None) -> str:
-        """Tool docstring (AI가 읽는 설명)."""
-        params: Dict[str, Any] = {"param1": param1}
-        if param2 is not None:
-            params["param2"] = param2
-        result = ue_connection.execute("some_command", params)
-        return json.dumps(result, indent=2, ensure_ascii=False)
+_CATEGORY = "SomeGroup"
+
+@mcp.tool
+def some_command(param1: str, param2: Optional[str] = None) -> str:
+    """Tool docstring (AI가 읽는 설명)."""
+    params: Dict[str, Any] = {"param1": param1}
+    if param2 is not None:
+        params["param2"] = param2
+    result = ue_connection.execute("some_command", params, category_name=_CATEGORY)
+    return json.dumps(result, indent=2, ensure_ascii=False)
 ```
 
 ### UE 통신

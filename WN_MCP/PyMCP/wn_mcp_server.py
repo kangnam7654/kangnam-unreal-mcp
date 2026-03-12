@@ -6,8 +6,9 @@ import signal
 import atexit
 from datetime import datetime
 from typing import AsyncIterator, Dict, Any
-from fastmcp import FastMCP
+from fastmcp import FastMCP, Context
 from fastmcp.server.lifespan import lifespan
+from mcp.types import ToolListChangedNotification
 from pathlib import Path
 
 # Configure the Tools package in sys.path (BEFORE any Tools imports)
@@ -19,7 +20,7 @@ if str(_project_root) not in sys.path:
 from Tools.log_tool import log_info as _log, initialize_logging, close_logging
 from Tools.params import get_mcp_params, _set_mcp_params, enable_mcp_params_capture
 from Tools.ue_interaction_tool import (
-    ue_disconnect, is_ue_connected, is_ue_listening,
+    ue_connect, ue_disconnect, is_ue_connected, is_ue_listening,
     start_auto_reconnect, stop_auto_reconnect,
     register_connection_callback, register_notification_callback, register_ue_connected_callback,
     register_ue_disconnected_callback, register_user_tool_directories, register_tools as register_ue_tools,
@@ -39,37 +40,48 @@ async def server_lifespan(server: FastMCP) -> AsyncIterator[Dict[str, Any]]:
     _log('MCP Server starting up')
     
     try:
-        # 1. Register static MCP tools (once at startup)
+        # 1. Register static MCP tools (may start auto-reconnect internally)
+        #    NOTE: on_ue_connected callback is NOT registered yet, so auto-reconnect's
+        #    ue_connect() won't trigger user tool registration here.
         _log('Registering static MCP tools...')
         _register_tools(server)
-        _log('✅ Static MCP tools registered')
-        
-        # 2. Register callback for user tool discovery when UE connects
+        _log('Static MCP tools registered')
+
+        # 2. Try initial UE connection + register user tools synchronously
+        #    This runs in the main thread BEFORE yield, so tools are visible
+        #    when the client sends ListToolsRequest.
+        if not is_ue_connected() and is_ue_listening():
+            _log('UE is listening - attempting initial connection...')
+            ue_connect()
+
+        if is_ue_connected():
+            _log('Registering user tools before server start...')
+            try:
+                register_user_tool_directories(server)
+                _log('User tools registered before server start')
+            except Exception as e:
+                _log(f'User tool registration error: {e}')
+        else:
+            _log('UE not connected - user tools will register on connection via auto-reconnect')
+
+        # 3. NOW register callback for future reconnections (after initial registration)
+        #    This prevents the callback from racing with the explicit call above.
         def on_ue_connected():
-            """Called when UE connection is established."""
-            _log('UE connected - discovering and registering user tools from Unreal Engine...')
+            """Called when UE connection is re-established."""
+            _log('UE reconnected - re-registering user tools...')
             try:
                 register_user_tool_directories(server)
             except Exception as e:
                 _log(f'ERROR in user tool registration: {type(e).__name__}: {e}')
                 import traceback
                 _log(f'Traceback: {traceback.format_exc()}')
-        
+
         register_ue_connected_callback(on_ue_connected)
-        # Callback registration is a DEBUG-level detail
-        from Tools.log_tool import log_debug
-        log_debug('UE connection callback registered')
-        
-        # 3. Check initial UE status and start monitoring
-        listening = is_ue_listening()
-        connected = is_ue_connected()
-        _log(f'UE Status - Listening: {listening}, Connected: {connected}')
-        
-        # 4. Start automatic UE connection management
+
+        # 4. Ensure auto-reconnect is running for ongoing monitoring
         start_auto_reconnect()
-        _log('Auto-reconnect service activated')
-        
-        yield {}  # Server is running
+
+        yield {}  # Server is running — client fetches tool list here
     except Exception as e:
         _log(f'Error during server operation: {e}')
     finally:
@@ -119,6 +131,36 @@ def _register_tools(mcp: FastMCP):
         
     except Exception as e:
         _log(f'Error registering tools: {e}')
+
+    # Tool for refreshing tool list after dynamic tool registration
+    @mcp.tool
+    async def refresh_tools(ctx: Context) -> Dict[str, Any]:
+        """Refresh the MCP tool list after UE reconnection.
+
+        Call this when UE has reconnected and newly registered tools are not visible.
+        Sends a notification to the MCP client to re-fetch the tool list.
+        """
+        import asyncio
+        try:
+            if is_ue_connected():
+                loop = asyncio.get_running_loop()
+                await loop.run_in_executor(None, register_user_tool_directories, mcp)
+            await ctx.send_notification(ToolListChangedNotification())
+            return {
+                "jsonrpc": "2.0",
+                "result": {
+                    "message": "Tool list refresh notification sent. Client will re-fetch tools."
+                }
+            }
+        except Exception as e:
+            _log(f'Error in refresh_tools: {e}')
+            return {
+                "jsonrpc": "2.0",
+                "error": {
+                    "code": -32603,
+                    "message": f"Error refreshing tools: {str(e)}"
+                }
+            }
 
     # Add resource for connection status
     @mcp.resource('ue://status')

@@ -50,5 +50,14 @@ TSharedPtr<FJsonObject> FWN_MCP_CommandGroup::Execute(const FString& InCommandNa
 		rawCommandName.RemoveFromStart(prefix);
 	}
 
-	return OnExecute(rawCommandName, InParamsPtr, InClientSocketPtr);
+	TSharedPtr<FJsonObject> response = OnExecute(rawCommandName, InParamsPtr, InClientSocketPtr);
+
+	// Restore original prefixed name in response id/method for JSON-RPC 2.0 compliance
+	if (response.IsValid())
+	{
+		response->SetStringField(TEXT("id"), InCommandName);
+		response->SetStringField(TEXT("method"), InCommandName);
+	}
+
+	return response;
 }
