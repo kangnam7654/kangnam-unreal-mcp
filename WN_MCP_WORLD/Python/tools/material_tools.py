@@ -7,7 +7,7 @@ Commands: get_available_materials, apply_material_to_actor, apply_material_to_bl
 import json
 from typing import Optional, Dict, Any, List
 from fastmcp import FastMCP
-from . import ue_connection
+import ue_connection
 
 _APP = "WN_MCP_WORLD"
 

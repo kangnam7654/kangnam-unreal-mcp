@@ -6,7 +6,7 @@ Commands: set_static_mesh_properties, set_physics_properties
 import json
 from typing import Optional, Dict, Any
 from fastmcp import FastMCP
-from . import ue_connection
+import ue_connection
 
 _APP = "WN_MCP_WORLD"
 

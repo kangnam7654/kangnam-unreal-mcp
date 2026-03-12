@@ -8,7 +8,7 @@ Commands: get_blueprints, find_blueprints_by_name, create_blueprint,
 import json
 from typing import Optional, Dict, Any, List
 from fastmcp import FastMCP
-from . import ue_connection
+import ue_connection
 
 _APP = "WN_MCP_WORLD"
 

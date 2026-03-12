@@ -6,7 +6,7 @@ Commands: add_component_to_actor, remove_component_from_actor, read_components_f
 import json
 from typing import Optional, Dict, Any
 from fastmcp import FastMCP
-from . import ue_connection
+import ue_connection
 
 _APP = "WN_MCP_WORLD"
 
