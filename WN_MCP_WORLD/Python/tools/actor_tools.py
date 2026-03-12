@@ -7,7 +7,7 @@ Commands: get_actors_in_level, find_actors_by_name, spawn_actor,
 import json
 from typing import Optional, Dict, Any, List
 from fastmcp import FastMCP
-from . import ue_connection
+import ue_connection
 
 _APP = "WN_MCP_WORLD"
 

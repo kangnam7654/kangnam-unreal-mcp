@@ -7,7 +7,7 @@ Commands: read_blueprint_graph, add_event_node, add_function_call_node,
 import json
 from typing import Optional, Dict, Any, List
 from fastmcp import FastMCP
-from . import ue_connection
+import ue_connection
 
 _APP = "WN_MCP_WORLD"
 

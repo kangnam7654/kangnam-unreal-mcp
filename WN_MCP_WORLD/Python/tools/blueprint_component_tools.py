@@ -7,7 +7,7 @@ Commands: add_component_to_blueprint, remove_component_from_blueprint,
 import json
 from typing import Optional, Dict, Any
 from fastmcp import FastMCP
-from . import ue_connection
+import ue_connection
 
 _APP = "WN_MCP_WORLD"
 
