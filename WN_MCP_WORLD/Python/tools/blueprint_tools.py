@@ -9,7 +9,7 @@ import json
 from typing import Optional, Dict, Any, List
 import ue_connection
 
-_APP = "WN_MCP_WORLD"
+_CATEGORY = "Blueprint"
 
 
 @mcp.tool
@@ -25,7 +25,7 @@ def get_blueprints(search_path: Optional[str] = None) -> str:
     if search_path is not None:
         params["search_path"] = search_path
 
-    result = ue_connection.execute("get_blueprints", params, app_name=_APP)
+    result = ue_connection.execute("get_blueprints", params, category_name=_CATEGORY)
     return json.dumps(result, indent=2, ensure_ascii=False)
 
 @mcp.tool
@@ -37,7 +37,7 @@ def find_blueprints_by_name(search_text: str) -> str:
 
     Returns a list of matching Blueprints with their name, path, and package path.
     """
-    result = ue_connection.execute("find_blueprints_by_name", {"search_text": search_text}, app_name=_APP)
+    result = ue_connection.execute("find_blueprints_by_name", {"search_text": search_text}, category_name=_CATEGORY)
     return json.dumps(result, indent=2, ensure_ascii=False)
 
 @mcp.tool
@@ -54,7 +54,7 @@ def create_blueprint(name: str, parent_class: Optional[str] = None) -> str:
     if parent_class is not None:
         params["parent_class"] = parent_class
 
-    result = ue_connection.execute("create_blueprint", params, app_name=_APP)
+    result = ue_connection.execute("create_blueprint", params, category_name=_CATEGORY)
     return json.dumps(result, indent=2, ensure_ascii=False)
 
 @mcp.tool
@@ -88,7 +88,7 @@ def read_blueprint_content(
     if include_interfaces is not None:
         params["include_interfaces"] = include_interfaces
 
-    result = ue_connection.execute("read_blueprint_content", params, app_name=_APP)
+    result = ue_connection.execute("read_blueprint_content", params, category_name=_CATEGORY)
     return json.dumps(result, indent=2, ensure_ascii=False)
 
 @mcp.tool
@@ -100,7 +100,7 @@ def compile_blueprint(blueprint_name: str) -> str:
 
     Compiles the Blueprint to update its generated class.
     """
-    result = ue_connection.execute("compile_blueprint", {"blueprint_name": blueprint_name}, app_name=_APP)
+    result = ue_connection.execute("compile_blueprint", {"blueprint_name": blueprint_name}, category_name=_CATEGORY)
     return json.dumps(result, indent=2, ensure_ascii=False)
 
 @mcp.tool
@@ -118,7 +118,7 @@ def delete_blueprint(blueprint_name: str, force: Optional[bool] = None) -> str:
     if force is not None:
         params["force"] = force
 
-    result = ue_connection.execute("delete_blueprint", params, app_name=_APP)
+    result = ue_connection.execute("delete_blueprint", params, category_name=_CATEGORY)
     return json.dumps(result, indent=2, ensure_ascii=False)
 
 @mcp.tool
@@ -152,5 +152,5 @@ def spawn_blueprint_actor(
     if scale is not None:
         params["scale"] = scale
 
-    result = ue_connection.execute("spawn_blueprint_actor", params, app_name=_APP)
+    result = ue_connection.execute("spawn_blueprint_actor", params, category_name=_CATEGORY)
     return json.dumps(result, indent=2, ensure_ascii=False)

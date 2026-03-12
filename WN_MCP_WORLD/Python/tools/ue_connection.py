@@ -65,13 +65,13 @@ def disconnect():
             logger.info("Disconnected from UE")
 
 
-def execute(command_name: str, params: Optional[Dict[str, Any]] = None, app_name: str = "") -> Dict[str, Any]:
+def execute(command_name: str, params: Optional[Dict[str, Any]] = None, category_name: str = "") -> Dict[str, Any]:
     """Send JSON-RPC 2.0 command to UE and return result.
 
     Args:
         command_name: C++ command name (e.g. "get_actors_in_level")
         params: Optional command parameters
-        app_name: Application name prefix (e.g. "WN_MCP_WORLD")
+        category_name: Category prefix matching C++ GetName() (e.g. "Actor", "Blueprint")
 
     Returns:
         Result dict from UE response
@@ -85,7 +85,7 @@ def execute(command_name: str, params: Optional[Dict[str, Any]] = None, app_name
     if _socket is None:
         raise ConnectionError("Not connected to UE")
 
-    full_name = f"{app_name}_{command_name}" if app_name else command_name
+    full_name = f"{category_name}_{command_name}" if category_name else command_name
     request = {
         "jsonrpc": "2.0",
         "method": "command",
