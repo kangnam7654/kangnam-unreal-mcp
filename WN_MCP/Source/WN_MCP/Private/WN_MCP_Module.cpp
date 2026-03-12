@@ -131,10 +131,9 @@ void FWN_MCP_Module::RegisterCommandGroup(TSharedPtr<FWN_MCP_CommandGroup> InGro
 	TArray<FWN_MCP_CommandInfo> commandInfos;
 	InGroupPtr->OnRegisterCommands(commandInfos);
 
-	FString appName = InGroupPtr->GetApplicationName();
 	for (const FWN_MCP_CommandInfo& info : commandInfos)
 	{
-		FString fullName = appName.IsEmpty() ? info.Name : FString::Printf(TEXT("%s_%s"), *appName, *info.Name);
+		FString fullName = info.Name;
 
 		TSharedPtr<FWN_MCP_CommandGroup>* addrPrevGroupPtr = CommandGroupPtrMap.Find(fullName);
 		if (addrPrevGroupPtr != nullptr)
