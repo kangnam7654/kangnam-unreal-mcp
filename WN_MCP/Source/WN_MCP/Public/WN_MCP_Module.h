@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Modules/ModuleInterface.h"
+#include "WN_MCP_CommandGroup.h"
 
 //-----------------------------------------------------------------------------
 // Forward Declarations
@@ -64,6 +65,10 @@ public:
 	/// get user tool directoreis.
 	/// @return user tool directories.
 	WN_MCP_API const TArray<FString>& GetUserToolDirectories() const { return UserToolDirectories; }
+
+	/// Get all registered command infos.
+	/// @return command infos.
+	WN_MCP_API static const TArray<FWN_MCP_CommandInfo>& GetAllCommandInfos();
 
 	/// Execute command.
 	/// @param InCommandName command name.

@@ -24,6 +24,9 @@ static TArray<TSharedPtr<FWN_MCP_CommandGroup>> CommandGroupPtrs;
 /// command group map. key : command name, value : command group.
 static TMap<FString, TSharedPtr<FWN_MCP_CommandGroup>> CommandGroupPtrMap;
 
+/// all registered command infos.
+static TArray<FWN_MCP_CommandInfo> AllCommandInfos;
+
 //-----------------------------------------------------------------------------
 // Defines
 //-----------------------------------------------------------------------------
@@ -142,9 +145,15 @@ void FWN_MCP_Module::RegisterCommandGroup(TSharedPtr<FWN_MCP_CommandGroup> InGro
 			continue;
 		}
 		CommandGroupPtrMap.Add(fullName, InGroupPtr);
+		AllCommandInfos.Add(info);
 	}
 
 	CommandGroupPtrs.Add(InGroupPtr);
+}
+
+const TArray<FWN_MCP_CommandInfo>& FWN_MCP_Module::GetAllCommandInfos()
+{
+	return AllCommandInfos;
 }
 
 void FWN_MCP_Module::AddUserToolDirectories(const TArray<FString>& InUserToolDirectories)
