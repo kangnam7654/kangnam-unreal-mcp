@@ -8,7 +8,7 @@ import json
 from typing import Optional, Dict, Any
 import ue_connection
 
-_APP = "WN_MCP_WORLD"
+_CATEGORY = "BlueprintComponent"
 
 
 @mcp.tool
@@ -37,7 +37,7 @@ def add_component_to_blueprint(
     if parent_component is not None:
         params["parent_component"] = parent_component
 
-    result = ue_connection.execute("add_component_to_blueprint", params, app_name=_APP)
+    result = ue_connection.execute("add_component_to_blueprint", params, category_name=_CATEGORY)
     return json.dumps(result, indent=2, ensure_ascii=False)
 
 @mcp.tool
@@ -54,7 +54,7 @@ def remove_component_from_blueprint(blueprint_name: str, component_name: str) ->
     result = ue_connection.execute("remove_component_from_blueprint", {
         "blueprint_name": blueprint_name,
         "component_name": component_name,
-    }, app_name=_APP)
+    }, category_name=_CATEGORY)
     return json.dumps(result, indent=2, ensure_ascii=False)
 
 @mcp.tool
@@ -66,5 +66,5 @@ def read_components_from_blueprint(blueprint_name: str) -> str:
 
     Returns a list of components with name, class, is_root flag, and parent info.
     """
-    result = ue_connection.execute("read_components_from_blueprint", {"blueprint_name": blueprint_name}, app_name=_APP)
+    result = ue_connection.execute("read_components_from_blueprint", {"blueprint_name": blueprint_name}, category_name=_CATEGORY)
     return json.dumps(result, indent=2, ensure_ascii=False)

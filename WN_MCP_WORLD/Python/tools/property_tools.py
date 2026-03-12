@@ -7,7 +7,7 @@ import json
 from typing import Optional, Dict, Any
 import ue_connection
 
-_APP = "WN_MCP_WORLD"
+_CATEGORY = "Property"
 
 
 @mcp.tool
@@ -37,7 +37,7 @@ def set_static_mesh_properties(
     if material is not None:
         params["material"] = material
 
-    result = ue_connection.execute("set_static_mesh_properties", params, app_name=_APP)
+    result = ue_connection.execute("set_static_mesh_properties", params, category_name=_CATEGORY)
     return json.dumps(result, indent=2, ensure_ascii=False)
 
 @mcp.tool
@@ -75,5 +75,5 @@ def set_physics_properties(
     if angular_damping is not None:
         params["angular_damping"] = angular_damping
 
-    result = ue_connection.execute("set_physics_properties", params, app_name=_APP)
+    result = ue_connection.execute("set_physics_properties", params, category_name=_CATEGORY)
     return json.dumps(result, indent=2, ensure_ascii=False)

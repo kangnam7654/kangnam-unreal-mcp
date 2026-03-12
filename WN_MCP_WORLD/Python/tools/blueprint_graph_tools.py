@@ -8,7 +8,7 @@ import json
 from typing import Optional, Dict, Any, List
 import ue_connection
 
-_APP = "WN_MCP_WORLD"
+_CATEGORY = "BlueprintGraph"
 
 
 @mcp.tool
@@ -23,7 +23,7 @@ def read_blueprint_graph(blueprint_name: str) -> str:
     """
     result = ue_connection.execute("read_blueprint_graph", {
         "blueprint_name": blueprint_name,
-    }, app_name=_APP)
+    }, category_name=_CATEGORY)
     return json.dumps(result, indent=2, ensure_ascii=False)
 
 @mcp.tool
@@ -49,7 +49,7 @@ def add_event_node(
     if node_position is not None:
         params["node_position"] = node_position
 
-    result = ue_connection.execute("add_event_node", params, app_name=_APP)
+    result = ue_connection.execute("add_event_node", params, category_name=_CATEGORY)
     return json.dumps(result, indent=2, ensure_ascii=False)
 
 @mcp.tool
@@ -79,7 +79,7 @@ def add_function_call_node(
     if node_position is not None:
         params["node_position"] = node_position
 
-    result = ue_connection.execute("add_function_call_node", params, app_name=_APP)
+    result = ue_connection.execute("add_function_call_node", params, category_name=_CATEGORY)
     return json.dumps(result, indent=2, ensure_ascii=False)
 
 @mcp.tool
@@ -104,7 +104,7 @@ def add_variable_get_node(
     if node_position is not None:
         params["node_position"] = node_position
 
-    result = ue_connection.execute("add_variable_get_node", params, app_name=_APP)
+    result = ue_connection.execute("add_variable_get_node", params, category_name=_CATEGORY)
     return json.dumps(result, indent=2, ensure_ascii=False)
 
 @mcp.tool
@@ -129,7 +129,7 @@ def add_variable_set_node(
     if node_position is not None:
         params["node_position"] = node_position
 
-    result = ue_connection.execute("add_variable_set_node", params, app_name=_APP)
+    result = ue_connection.execute("add_variable_set_node", params, category_name=_CATEGORY)
     return json.dumps(result, indent=2, ensure_ascii=False)
 
 @mcp.tool
@@ -157,7 +157,7 @@ def connect_nodes(
         "source_pin_name": source_pin_name,
         "target_node_id": target_node_id,
         "target_pin_name": target_pin_name,
-    }, app_name=_APP)
+    }, category_name=_CATEGORY)
     return json.dumps(result, indent=2, ensure_ascii=False)
 
 @mcp.tool
@@ -179,5 +179,5 @@ def disconnect_nodes(
         "blueprint_name": blueprint_name,
         "node_id": node_id,
         "pin_name": pin_name,
-    }, app_name=_APP)
+    }, category_name=_CATEGORY)
     return json.dumps(result, indent=2, ensure_ascii=False)

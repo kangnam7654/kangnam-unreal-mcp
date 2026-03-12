@@ -7,7 +7,7 @@ import json
 from typing import Optional, Dict, Any
 import ue_connection
 
-_APP = "WN_MCP_WORLD"
+_CATEGORY = "BlueprintVariable"
 
 
 @mcp.tool
@@ -39,7 +39,7 @@ def add_variable_to_blueprint(
     if is_instance_editable is not None:
         params["is_instance_editable"] = is_instance_editable
 
-    result = ue_connection.execute("add_variable_to_blueprint", params, app_name=_APP)
+    result = ue_connection.execute("add_variable_to_blueprint", params, category_name=_CATEGORY)
     return json.dumps(result, indent=2, ensure_ascii=False)
 
 @mcp.tool
@@ -58,5 +58,5 @@ def remove_variable_from_blueprint(
     result = ue_connection.execute("remove_variable_from_blueprint", {
         "blueprint_name": blueprint_name,
         "variable_name": variable_name,
-    }, app_name=_APP)
+    }, category_name=_CATEGORY)
     return json.dumps(result, indent=2, ensure_ascii=False)

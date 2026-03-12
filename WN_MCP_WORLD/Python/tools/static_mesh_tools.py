@@ -7,7 +7,7 @@ import json
 from typing import Optional, Dict, Any
 import ue_connection
 
-_APP = "WN_MCP_WORLD"
+_CATEGORY = "StaticMesh"
 
 
 @mcp.tool
@@ -29,7 +29,7 @@ def get_static_meshes(
     if include_engine_meshes is not None:
         params["include_engine_meshes"] = include_engine_meshes
 
-    result = ue_connection.execute("get_static_meshes", params, app_name=_APP)
+    result = ue_connection.execute("get_static_meshes", params, category_name=_CATEGORY)
     return json.dumps(result, indent=2, ensure_ascii=False)
 
 @mcp.tool
@@ -49,5 +49,5 @@ def find_static_meshes_by_name(
     if include_engine_meshes is not None:
         params["include_engine_meshes"] = include_engine_meshes
 
-    result = ue_connection.execute("find_static_meshes_by_name", params, app_name=_APP)
+    result = ue_connection.execute("find_static_meshes_by_name", params, category_name=_CATEGORY)
     return json.dumps(result, indent=2, ensure_ascii=False)
