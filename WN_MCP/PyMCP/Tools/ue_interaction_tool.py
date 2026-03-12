@@ -711,7 +711,7 @@ def get_user_tool_directories() -> Dict[str, Any]:
     try:
         # Send command to UE to get tool directories
         mcp_log('Requesting tool directories from UE...')
-        success = ue_send_command('get_user_tool_directories')
+        success = ue_send_command('Application_get_user_tool_directories')
         
         if not success:
             return {
