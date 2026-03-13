@@ -622,48 +622,52 @@ def ue_receive_response(buffer_size: int = 4096) -> Optional[Dict[str, Any]]:
         return None
 
 
-def ue_send_command(command_name: str, params: Optional[Dict[str, Any]] = None) -> Optional[bool]:
+def ue_send_command(command_name: str, params: Optional[Dict[str, Any]] = None, category_name: str = "") -> Optional[bool]:
     """Send a command to UE in JSON-RPC 2.0 format.
-    
+
     Args:
         command_name: Command name (becomes 'id' in JSON-RPC 2.0)
         params: Command parameters (optional)
-    
+        category_name: Category prefix matching C++ GetApplicationName() (e.g. "Actor", "Blueprint").
+                       Prepended as "{category_name}_{command_name}" for routing.
+
     Returns:
         True if command sent successfully, False otherwise
-        
+
     JSON-RPC 2.0 request format sent to UE:
         {
             "jsonrpc": "2.0",
-            "method": "command_name",
+            "method": "full_name",
             "params": {...},
-            "id": "command_name"
+            "id": "full_name"
         }
     """
     if not is_ue_connected():
         mcp_log('Warning - Not connected to UE')
         return False
-    
+
+    full_name = f"{category_name}_{command_name}" if category_name else command_name
+
     try:
         # Create JSON-RPC 2.0 request message
         message = {
             "jsonrpc": "2.0",
-            "method": command_name,  # JSON-RPC 2.0: method is the remote procedure name
-            "id": command_name,  # Use command name as ID for request tracking
+            "method": full_name,  # JSON-RPC 2.0: method is the remote procedure name
+            "id": full_name,  # Use full name as ID for request tracking
             "params": params if params is not None else {}  # Always include params (empty dict if not provided)
         }
         
         # Log JSON object at MISC level before sending
-        log_misc(f'[SEND] Request JSON to UE (id={command_name}): {json.dumps(message, indent=2)}')
-        
+        log_misc(f'[SEND] Request JSON to UE (id={full_name}): {json.dumps(message, indent=2)}')
+
         # Send as JSON
         command_str = json.dumps(message)
         if not UE_SOCKET:
             mcp_log('Error - UE_SOCKET is None, cannot send command')
             return False
         UE_SOCKET.send(command_str.encode('utf-8'))
-        
-        mcp_log(f'Sent to UE ({command_name})')
+
+        mcp_log(f'Sent to UE ({full_name})')
     except Exception as e:
         mcp_log(f'Error - Error sending command to UE: {e}')
         # Don't disconnect on send error - connection may still be valid
