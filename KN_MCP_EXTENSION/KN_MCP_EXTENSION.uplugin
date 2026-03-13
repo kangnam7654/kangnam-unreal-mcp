@@ -1,0 +1,41 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "0.1.0",
+	"FriendlyName": "KN_MCP_EXTENSION",
+	"Description": "MCP World commands plugin - Actor CRUD and world operations.",
+	"Category": "Integration",
+	"CreatedBy": "Kangnam Kim",
+	"CanContainContent": true,
+	"Modules": [
+		{
+			"Name": "KN_MCP_EXTENSION",
+			"Type": "Runtime",
+			"LoadingPhase": "Default",
+			"PlatformAllowList": [
+				"Win64"
+			]
+		},
+		{
+			"Name": "KN_MCP_EXTENSION_Editor",
+			"Type": "Editor",
+			"LoadingPhase": "Default",
+			"PlatformAllowList": [
+				"Win64"
+			]
+		}
+	],
+	"Plugins": [
+		{
+			"Name": "KN_MCP",
+			"Enabled": true
+		},
+		{
+			"Name": "EditorScriptingUtilities",
+			"Enabled": true,
+			"TargetAllowList": [
+				"Editor"
+			]
+		}
+	]
+}

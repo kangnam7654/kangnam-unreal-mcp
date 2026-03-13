@@ -1,0 +1,51 @@
+﻿#pragma once
+
+#include "KN_MCP_CommandGroup.h"
+
+//-----------------------------------------------------------------------------
+// Forward Declarations
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// FKN_MCP_CommandGroup_Application
+//-----------------------------------------------------------------------------
+
+/// Command group for UE application.
+class FKN_MCP_CommandGroup_Application : public FKN_MCP_CommandGroup
+{
+	//-------------------------------------------------------------------------
+	// Overrides FKN_MCP_CommandGroup_Application
+	//-------------------------------------------------------------------------
+
+public:
+
+	/// Get command group name.
+	/// This is a virtual function that must be implemented by derived classes to define the specific behavior of the command.
+	/// @return name.
+	FString GetName() const override;
+
+	/// Called when the commands is registered, allowing it to add its info to the list of available commands.
+	/// This is a virtual function that must be implemented by derived classes to define the specific behavior of the command.
+	/// @param InOutCommandInfos List of available command infos, which the command can add its info to.
+	void OnRegisterCommands(TArray<FKN_MCP_CommandInfo>& InOutCommandInfos) const override;
+
+	/// Execute the command with given parameters and client socket. 
+	/// This is a virtual function that must be implemented by derived classes to define the specific behavior of the command.
+	/// @param InCommandName command name.
+	/// @param InParamsPtr Command parameters, passed as a JSON object.
+	/// @param InClientSocketPtr Socket of the client that sent the command, which can be used for sending responses or further communication.
+	/// @return JSON object containing the result of command execution, which will be serialized and sent back to the client as a response.
+	TSharedPtr<FJsonObject> OnExecute(const FString& InCommandName, const TSharedPtr<FJsonObject>& InParamsPtr, TSharedPtr<FSocket> InClientSocketPtr) const override;
+
+	//-------------------------------------------------------------------------
+	// Methods
+	//-------------------------------------------------------------------------
+
+public:
+
+	/// constructor.
+	FKN_MCP_CommandGroup_Application();
+
+	/// destructor.
+	~FKN_MCP_CommandGroup_Application();
+};

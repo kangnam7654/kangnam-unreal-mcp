@@ -1,0 +1,20 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "0.1.0",
+	"FriendlyName": "KN_MCP",
+	"Description": "A plugin to implement MCP(Model Context Protocol) for Unreal.",
+	"Category": "Integration",
+	"CreatedBy": "Kangnam Kim",
+	"CanContainContent": true,
+	"Modules": [
+		{
+            "Name": "KN_MCP",
+            "Type": "Runtime",
+            "LoadingPhase": "Default",
+			"PlatformAllowList": [
+				"Win64"
+			]
+        }
+	]
+}
