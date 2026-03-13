@@ -28,7 +28,6 @@ __all__ = [
     'ue_reconnect',
     'is_ue_listening',
     'is_ue_connected',
-    'ue_execute_simple_command',
     'get_user_tool_directories',
     'register_user_tool_directories',
     'register_connection_callback',
@@ -674,24 +673,6 @@ def ue_send_command(command_name: str, params: Optional[Dict[str, Any]] = None, 
         return False
     return True # ue_send_command()
 
-def ue_execute_simple_command(command_name: str, params: Optional[Dict[str, Any]] = None) -> Optional[Dict[str, Any]]:
-    """
-    Execute simple command for Unreal Engine.
-    
-    Args:
-        command_name: Name of the command to execute
-        params: Optional parameters to pass to the command
-    
-    Returns:
-        Optional[dict]: The JSON-RPC 2.0 response object from Unreal Engine, or None if error
-    """
-    try:
-        ue_send_command(command_name, params)
-        response = ue_receive_response()
-        return response
-    except Exception as e:
-        raise Exception(f"{command_name} failed: {str(e)}")
-
 # Track if tools have been registered (per module import)
 UE_TOOLS_REGISTERED = False
 
@@ -1024,7 +1005,8 @@ def _register_simple_commands_from_ue(mcp: Any, already_registered: int) -> None
                         """Execute a simple command from C++."""
                         try:
                             params = get_mcp_params() or {}
-                            result = ue_execute_simple_command(command, params)
+                            ue_send_command(command, params)
+                            result = ue_receive_response()
                             mcp_log(f'Tool: Executed simple command: {command}')
                             return {
                                 'jsonrpc': '2.0',
