@@ -30,7 +30,7 @@ Agent (Claude/Cursor) <--stdio--> Python MCP Server (Tool) <--TCP JSON-RPC 2.0--
 1. **C++ Command** - UE API 접근이 필요한 기능
    - `FWN_MCP_CommandGroup` 서브클래스에 커맨드 구현
    - `WN_MCP_REGISTER_COMMAND_GROUP` 매크로로 자동 등록
-   - Python Tool에서 `ue_connection.execute(command_name, params, app_name=_APP)`로 호출
+   - Python Tool에서 `ue.ue_send_command(command_name, params, category_name=_CATEGORY)` + `ue.ue_receive_response()`로 호출
 
 2. **Python Tool only** - UE 접근 불필요하거나 복잡한 오케스트레이션
    - `@mcp.tool` 데코레이터로 등록
@@ -87,7 +87,6 @@ WN_MCP_WORLD/Source/
     pyproject.toml
     tools/                                     # Tool 모듈 (용도별 분리)
       __init__.py                              # register_all_tools()
-      ue_connection.py                         # UE TCP 연결 유틸리티
       actor_tools.py                           # Actor CRUD 6개
       actor_component_tools.py                 # ActorComponent CRD 3개
       blueprint_tools.py                       # Blueprint CRUD 7개 (스폰 포함)
@@ -362,18 +361,20 @@ Each CommandGroup MUST override `GetApplicationName()` to return its plugin name
 
 ### UE Connection
 
-Python Tool에서 C++ Command를 `ue_connection.execute()` 외 방법으로 호출하면 안 된다:
+Python Tool에서 C++ Command를 core의 `ue_interaction_tool` 외 방법으로 호출하면 안 된다:
 
 ```python
-from tools import ue_connection
+from Tools import ue_interaction_tool as ue
 
-_APP = "WN_MCP_WORLD"  # 각 tool 모듈 상단에 선언
+_CATEGORY = "Actor"  # C++ GetName() 반환값과 일치
 
-result = ue_connection.execute("command_name", params, app_name=_APP)
+ue.ue_send_command("command_name", params, category_name=_CATEGORY)
+response = ue.ue_receive_response()
+result = response.get("result", {}) if response else {}
 ```
 
-- `app_name` 파라미터가 C++ `GetApplicationName()` 반환값과 불일치하면 안 된다
-- `execute()`가 내부적으로 `"{app_name}_{command_name}"` 형태로 JSON-RPC `id`를 구성한다
+- `category_name` 파라미터가 C++ CommandGroup의 `GetName()` 반환값과 불일치하면 안 된다
+- `ue_send_command()`가 내부적으로 `"{category_name}_{command_name}"` 형태로 JSON-RPC `method`/`id`를 구성한다
 
 ---
 
