@@ -89,7 +89,7 @@ FString GetApplicationName() const override { return "WN_MCP_WORLD"; }
 
 // 5. 커맨드 등록 (GetName() prefix 자동 부여: "Actor_spawn_actor")
 void OnRegisterCommands(TArray<FWN_MCP_CommandInfo>& InOutCommandInfos) const override {
-    WN_MCP_REGISTER_COMMAND(InOutCommandInfos, "spawn_actor", "Spawn an actor");
+    WN_MCP_REGISTER_COMMAND(InOutCommandInfos, "spawn_actor");
 }
 
 // 6. OnExecute에서는 prefix가 제거된 원래 이름으로 매칭

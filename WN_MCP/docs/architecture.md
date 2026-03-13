@@ -120,9 +120,9 @@ FWN_MCP_Module::Get()
 ### 커맨드 디스패치 흐름
 
 ```
-Python: ue_connection.execute("spawn_actor", params, category_name="Actor")
+Python: ue.ue_send_command("spawn_actor", params, category_name="Actor")
     │
-    │ → UnrealConnection.send_command("Actor_spawn_actor", params)
+    │ → full_name = "Actor_spawn_actor"
     │
     │ TCP JSON-RPC: {"jsonrpc":"2.0", "method":"Actor_spawn_actor", "id":"Actor_spawn_actor", "params":{...}}
     │
@@ -184,21 +184,18 @@ PyMCP (유일한 MCP Server)
 
 ### WORLD Tool 연결
 
-WORLD Tool은 `ue_connection.execute()` 호출 → 자체 TCP 소켓으로 UE에 JSON-RPC 2.0 커맨드를 전송한다.
+모든 Tool은 core의 `ue_interaction_tool` 단일 소켓을 사용한다.
 
 ```python
-# WN_MCP_WORLD/Python/tools/ue_connection.py (자체 TCP 연결)
-def execute(command_name, params=None, category_name=""):
-    connect()  # 127.0.0.1:27777 자체 소켓
-    full_name = f"{category_name}_{command_name}" if category_name else command_name
-    # JSON-RPC 2.0 요청 전송 → 응답 수신 → 결과 반환
-    return result
-
 # WN_MCP_WORLD/Python/tools/actor_tools.py (Tool)
+from Tools import ue_interaction_tool as ue
 _CATEGORY = "Actor"
+
 @mcp.tool
 def spawn_actor(type, name, ...):
-    result = ue_connection.execute("spawn_actor", params, category_name=_CATEGORY)
+    ue.ue_send_command("spawn_actor", params, category_name=_CATEGORY)
+    response = ue.ue_receive_response()
+    result = response.get("result", {}) if response else {}
     return json.dumps(result, ...)
 ```
 
@@ -232,10 +229,9 @@ WN_MCP_WORLD/
 WN_MCP_WORLD/Python/
 └── tools/
     ├── __init__.py            # register_all_tools()
-    ├── ue_connection.py       # 자체 TCP 연결 유틸리티
     ├── actor_tools.py         # @mcp.tool (6개, _CATEGORY = "Actor")
     ├── blueprint_tools.py     # @mcp.tool (7개, _CATEGORY = "Blueprint")
     └── ...                    # 9개 모듈, 38개 Tool
 ```
 
-WORLD Tool은 PyMCP 프로세스 내에서 실행되며, `ue_connection.py`의 자체 TCP 소켓으로 UE와 통신한다. (PyMCP의 `UnrealConnection`은 커맨드마다 소켓을 열고 닫으므로 충돌하지 않는다.)
+WORLD Tool은 PyMCP 프로세스 내에서 실행되며, core의 `ue_interaction_tool` 단일 소켓으로 UE와 통신한다.
