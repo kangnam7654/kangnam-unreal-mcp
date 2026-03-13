@@ -8,7 +8,7 @@ import re
 import importlib.util
 from pathlib import Path
 from datetime import datetime
-from typing import Dict, Any, AsyncIterator, Optional, Callable, List, TypedDict
+from typing import Dict, Any, AsyncIterator, Optional, Callable, List
 from contextvars import ContextVar
 
 from .log_tool import log_info as mcp_log, log_debug, log_misc, set_log_level, get_available_log_levels, get_current_log_level
@@ -49,11 +49,6 @@ from .params import get_mcp_params, _set_mcp_params
 # ============================================================================
 # TYPE DEFINITIONS
 # ============================================================================
-class SimpleCommand(TypedDict):
-    """Type definition for simple command returned by register_simple_commands()"""
-    name: str  # Command name (e.g., 'get_hello_message')
-    description: str  # Human-readable description for the LLM (e.g., 'Retrieve a hello message from Unreal Engine')
-
 UE_HOST = '127.0.0.1'
 UE_PORT = 27777
 UE_PORT_START = 27777
@@ -873,16 +868,9 @@ def register_user_tool_directories(mcp: Any) -> None:
                     tool_pattern = r'@mcp\.tool\s+def\s+(\w+)\s*\('
                     matches = re.findall(tool_pattern, content)
                     
-                    # Only load module if it has @mcp.tool functions OR register_simple_commands()
-                    # First check if it has register_simple_commands (use raw string to avoid escape issues)
-                    has_simple_commands = 'def register_simple_commands' in content
-                    
-                    if matches or has_simple_commands:
+                    if matches:
                         mcp_log(f'  File: {py_file.name}')
-                        if matches:
-                            mcp_log(f'    Found {len(matches)} @mcp.tool functions: {matches}')
-                        if has_simple_commands:
-                            mcp_log(f'    Found register_simple_commands() function')
+                        mcp_log(f'    Found {len(matches)} @mcp.tool functions: {matches}')
                         
                         # Dynamically load module and get functions
                         try:
@@ -938,90 +926,6 @@ def register_user_tool_directories(mcp: Any) -> None:
                                         mcp_log(f'      ✅ Registered: {func_name}')
                                         registered_count += 1
                                 
-                                # Check for register_simple_commands() function
-                                if hasattr(module, 'register_simple_commands'):
-                                    mcp_log(f'    DEBUG: Module has register_simple_commands attribute')
-                                    try:
-                                        register_func = getattr(module, 'register_simple_commands')
-                                        mcp_log(f'    DEBUG: Got register_func, callable={callable(register_func)}')
-                                        if callable(register_func):
-                                            # Call the function to get the list of commands
-                                            mcp_log(f'    DEBUG: Calling register_simple_commands()...')
-                                            simple_commands = register_func()
-                                            mcp_log(f'    DEBUG: register_simple_commands() returned: {simple_commands}, type={type(simple_commands)}')
-                                            
-                                            if isinstance(simple_commands, list) and simple_commands:
-                                                mcp_log(f'    Found {len(simple_commands)} simple command(s): {simple_commands}')
-                                                
-                                                # Register each simple command as an MCP tool
-                                                for cmd_info in simple_commands:
-                                                    try:
-                                                        # Support both dict format (with 'name' and 'description') and string format (legacy)
-                                                        if isinstance(cmd_info, dict):
-                                                            cmd_name = cmd_info.get('name', '')
-                                                            cmd_description = cmd_info.get('description', 'Simple command from user tool')
-                                                        else:
-                                                            # Legacy: string format
-                                                            cmd_name = str(cmd_info)
-                                                            cmd_description = f'Execute {cmd_name} command'
-                                                        
-                                                        if not cmd_name:
-                                                            mcp_log(f'      ⚠️  Skipping invalid command info (no name): {cmd_info}')
-                                                            continue
-                                                        
-                                                        # Create a closure-based wrapper for each command
-                                                        def create_command_wrapper(command: str, module_name: str, cmd_name_param: str, cmd_desc: str):
-                                                            # Define wrapper function to execute the command
-                                                            def command_wrapper(options: Optional[dict] = None) -> Dict[str, Any]:
-                                                                """Execute a simple command from user tool."""
-                                                                try:
-                                                                    # Get Agent's parameters (captured by decorator wrapper)
-                                                                    params = get_mcp_params() or {}
-                                                                    result = ue_execute_simple_command(command, params)
-                                                                    mcp_log(f'Tool: Executed simple command: {command} with params: {params}')
-                                                                    return {
-                                                                        'jsonrpc': '2.0',
-                                                                        'result': {
-                                                                            'command': command,
-                                                                            'module': module_name,
-                                                                            'params': params,
-                                                                            'success': True,
-                                                                            'response': result
-                                                                        }
-                                                                    }
-                                                                except Exception as e:
-                                                                    mcp_log(f'Tool: Error executing simple command {command}: {e}')
-                                                                    return {
-                                                                        'jsonrpc': '2.0',
-                                                                        'error': {
-                                                                            'code': -32603,
-                                                                            'message': f'Failed to execute command {command}: {str(e)}'
-                                                                        }
-                                                                    }
-                                                            
-                                                            # Set the function name BEFORE applying decorator
-                                                            command_wrapper.__name__ = cmd_name_param
-                                                            command_wrapper.__doc__ = cmd_desc
-                                                            
-                                                            # Apply decorator AFTER setting the name
-                                                            return mcp.tool(command_wrapper)
-                                                        
-                                                        # Create and register the wrapper
-                                                        tool_func = create_command_wrapper(cmd_name, py_file.stem, cmd_name, cmd_description)
-                                                        tool_key = '{}/{}/cmd_{}'.format(dir_name, py_file.stem, cmd_name)
-                                                        REGISTERED_SIMPLE_COMMANDS[cmd_name] = py_file.stem
-                                                        mcp_log(f'      ✅ Registered simple command: {cmd_name}')
-                                                        registered_count += 1
-                                                    except Exception as e:
-                                                        mcp_log(f'      ⚠️  Error registering simple command {cmd_info}: {e}')
-                                            else:
-                                                mcp_log(f'    DEBUG: simple_commands is not a valid list or is empty: {simple_commands}')
-                                    except Exception as e:
-                                        mcp_log(f'    ⚠️  Error processing register_simple_commands(): {e}')
-                                        import traceback
-                                        mcp_log(f'    Traceback: {traceback.format_exc()}')
-                                else:
-                                    mcp_log(f'    DEBUG: Module does not have register_simple_commands attribute')
                         except Exception as e:
                             mcp_log(f'⚠️  Error loading module from {py_file.name}: {e}')
                             import traceback

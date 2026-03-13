@@ -9,26 +9,10 @@ and interact with Unreal Engine through the MCP server.
 from Tools import get_mcp_params
 from Tools.ue_interaction_tool import ue_send_command, ue_receive_response
 
-def register_simple_commands() -> list[dict]:
-    """
-    Register simple commands that can be executed on Unreal Engine.
-    
-    This function is auto-detected by the MCP server. Each command dict should contain:
-    - 'name': str - The command name to execute on UE (e.g., 'get_hello_message')
-    - 'description': str - Human-readable description for the Agent's LLM context
-    
-    Returns:
-        list[dict]: List of SimpleCommand dicts with 'name' (str) and 'description' (str)
-    """
-    return [
-        {
-            'name': 'get_hello_message',
-            'description': 'Retrieve a hello message from Unreal Engine'
-        }
-    ]
+## get_hello_message is registered as WN_MCP_REGISTER_SIMPLE_COMMAND in C++
+## PyMCP auto-registers it via _register_simple_commands_from_ue()
 
-# Note: @mcp.tool decorator will be injected by the MCP server when registered
-# We cannot import mcp here due to circular imports, so functions are decorated at registration time
+# @mcp.tool decorator is injected by PyMCP when this module is dynamically loaded
 @mcp.tool
 def get_hello_message_array() -> dict:
     """
