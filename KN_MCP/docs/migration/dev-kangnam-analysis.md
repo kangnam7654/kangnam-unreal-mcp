@@ -18,6 +18,8 @@
 | Python Schemas 모듈 | 매크로 대응 빌더/검증 헬퍼 | `ef647ac` (kn_mcp/core/schemas.py) |
 | 연결 확장 기능 | 포트 스캔, 리스닝 체크, 상태 콜백 | `0907fc3` (connection.py) |
 | KN_MCPTest 플러그인 | 확장 플러그인 데모 + 테스트 | `c03527a` (KN_MCPTest/) |
+| Agent 파라미터 컨텍스트 | ContextVar 기반 Tool 파라미터 접근 | `b45e4d7` (kn_mcp/params.py) |
+| MISC 로그 레벨 | DEBUG보다 상세한 진단용 레벨 | `481979a` (tools/logging.py) |
 
 ---
 
@@ -170,8 +172,8 @@ Extension 플러그인 작성 방법을 보여주는 예시 + C++ 커맨드 테�
 | ~~**HIGH**~~ | ~~Python Schemas 모듈~~ | ~~KN_MCP Python 코어~~ | ~~`kn_mcp/core/schemas.py`~~ ✅ `ef647ac` |
 | ~~**MEDIUM**~~ | ~~연결 확장 기능~~ | ~~KN_MCP Python 코어~~ | ~~`kn_mcp/connection.py`~~ ✅ `0907fc3` |
 | ~~**MEDIUM**~~ | ~~테스트 플러그인~~ | ~~별도 플러그인~~ | ~~`KN_MCPTest/`~~ ✅ `c03527a` |
-| **LOW** | Agent 파라미터 컨텍스트 | KN_MCP Python 코어 | `kn_mcp/params.py` |
-| **LOW** | 확장 로깅 (MISC, ring buffer) | KN_MCP Python 코어 | `kn_mcp/tools/logging.py` |
+| ~~**LOW**~~ | ~~Agent 파라미터 컨텍스트~~ | ~~KN_MCP Python 코어~~ | ~~`kn_mcp/params.py`~~ ✅ `b45e4d7` |
+| ~~**LOW**~~ | ~~확장 로깅 (MISC)~~ | ~~KN_MCP Python 코어~~ | ~~`kn_mcp/tools/logging.py`~~ ✅ `481979a` |
 
 ## 참고: KN_MCP 코어 변경 원칙
 
