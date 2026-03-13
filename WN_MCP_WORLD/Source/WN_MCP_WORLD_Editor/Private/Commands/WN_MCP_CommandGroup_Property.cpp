@@ -39,8 +39,8 @@ FString FWN_MCP_CommandGroup_Property::GetApplicationName() const
 
 void FWN_MCP_CommandGroup_Property::OnRegisterCommands(TArray<FWN_MCP_CommandInfo>& InOutCommandInfos) const
 {
-	WN_MCP_REGISTER_COMMAND(InOutCommandInfos, "set_static_mesh_properties", "Set static mesh properties");
-	WN_MCP_REGISTER_COMMAND(InOutCommandInfos, "set_physics_properties", "Set physics properties");
+	WN_MCP_REGISTER_COMMAND(InOutCommandInfos, "set_static_mesh_properties");
+	WN_MCP_REGISTER_COMMAND(InOutCommandInfos, "set_physics_properties");
 }
 
 TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Property::OnExecute(const FString& InCommandName, const TSharedPtr<FJsonObject>& InParamsPtr, TSharedPtr<FSocket> InClientSocketPtr) const

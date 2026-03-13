@@ -35,8 +35,8 @@ FString FWN_MCP_CommandGroup_StaticMesh::GetApplicationName() const
 
 void FWN_MCP_CommandGroup_StaticMesh::OnRegisterCommands(TArray<FWN_MCP_CommandInfo>& InOutCommandInfos) const
 {
-	WN_MCP_REGISTER_COMMAND(InOutCommandInfos, "get_static_meshes", "Get all static mesh assets");
-	WN_MCP_REGISTER_COMMAND(InOutCommandInfos, "find_static_meshes_by_name", "Find static meshes by name pattern");
+	WN_MCP_REGISTER_COMMAND(InOutCommandInfos, "get_static_meshes");
+	WN_MCP_REGISTER_COMMAND(InOutCommandInfos, "find_static_meshes_by_name");
 }
 
 TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_StaticMesh::OnExecute(const FString& InCommandName, const TSharedPtr<FJsonObject>& InParamsPtr, TSharedPtr<FSocket> InClientSocketPtr) const
