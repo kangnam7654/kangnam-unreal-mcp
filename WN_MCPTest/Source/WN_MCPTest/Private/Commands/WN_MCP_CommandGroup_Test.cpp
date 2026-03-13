@@ -30,7 +30,7 @@ FString FWN_MCP_CommandGroup_Test::GetApplicationName() const
 
 void FWN_MCP_CommandGroup_Test::OnRegisterCommands(TArray<FWN_MCP_CommandInfo>& InOutCommandInfos) const
 {
-	WN_MCP_REGISTER_COMMAND(InOutCommandInfos, "get_hello_message", "Get hello message from UE");
+	WN_MCP_REGISTER_SIMPLE_COMMAND(InOutCommandInfos, "get_hello_message", "Get hello message from UE");
 	WN_MCP_REGISTER_COMMAND(InOutCommandInfos, "get_hello_message_array", "Get hello message array from UE");
 }
 
