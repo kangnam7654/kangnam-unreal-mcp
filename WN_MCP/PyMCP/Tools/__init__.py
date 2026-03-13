@@ -24,6 +24,7 @@ def __getattr__(name: str):
         'ue_reconnect',
         'is_ue_listening',
         'is_ue_connected',
+        'ue_execute_simple_command',
         'get_user_tool_directories',
         'register_user_tool_directories',
         'register_connection_callback',
