@@ -13,6 +13,10 @@ from mcp.server.fastmcp import FastMCP
 
 logger = logging.getLogger("UnrealMCP.Tools.logging")
 
+# Custom logging level for detailed diagnostics (below DEBUG=10)
+MISC_LEVEL = 5
+logging.addLevelName(MISC_LEVEL, "MISC")
+
 # Base dir: Python (parent of kn_mcp/tools)
 _BASE_DIR = Path(__file__).resolve().parent.parent.parent
 _SETTINGS_PATH = _BASE_DIR / "settings.ini"
@@ -58,7 +62,7 @@ def _get_max_log_files() -> int:
 
 
 def _get_log_level() -> int:
-    """Get log level from settings.ini (ERROR, WARNING, INFO, DEBUG)."""
+    """Get log level from settings.ini (ERROR, WARNING, INFO, DEBUG, MISC)."""
     config = _load_config()
     try:
         level_str = config.get("Logging", "LOG_LEVEL", fallback="INFO").strip().upper()
@@ -67,6 +71,7 @@ def _get_log_level() -> int:
             "WARNING": logging.WARNING,
             "INFO": logging.INFO,
             "DEBUG": logging.DEBUG,
+            "MISC": MISC_LEVEL,
         }
         return level_map.get(level_str, logging.INFO)
     except (ValueError, configparser.Error):
@@ -119,7 +124,7 @@ def _cleanup_old_logs_with_limit(logs_dir: Path, max_files_limit: int) -> None:
 def _log(level: int, message: str) -> None:
     if level < _get_log_level():
         return
-    level_names = {logging.DEBUG: "DEBUG", logging.INFO: "INFO", logging.WARNING: "WARNING", logging.ERROR: "ERROR"}
+    level_names = {MISC_LEVEL: "MISC", logging.DEBUG: "DEBUG", logging.INFO: "INFO", logging.WARNING: "WARNING", logging.ERROR: "ERROR"}
     level_name = level_names.get(level, "INFO")
     log_line = f"[{level_name}] {message}"
     print(log_line, file=sys.stderr, flush=True)
@@ -141,11 +146,15 @@ def log_debug(message: str) -> None:
     _log(logging.DEBUG, message)
 
 
+def log_misc(message: str) -> None:
+    _log(MISC_LEVEL, message)
+
+
 def set_log_level(level_str: str) -> bool:
     """Set log level and update settings.ini. Returns True on success."""
     global _file_handler
     level_str = level_str.strip().upper()
-    level_map = {"ERROR": logging.ERROR, "WARNING": logging.WARNING, "INFO": logging.INFO, "DEBUG": logging.DEBUG}
+    level_map = {"ERROR": logging.ERROR, "WARNING": logging.WARNING, "INFO": logging.INFO, "DEBUG": logging.DEBUG, "MISC": MISC_LEVEL}
     if level_str not in level_map:
         return False
     config = _load_config()
@@ -170,12 +179,12 @@ def set_log_level(level_str: str) -> bool:
 
 
 def get_available_log_levels() -> list[str]:
-    return ["ERROR", "WARNING", "INFO", "DEBUG"]
+    return ["ERROR", "WARNING", "INFO", "DEBUG", "MISC"]
 
 
 def get_current_log_level() -> str:
     level_int = _get_log_level()
-    level_names = {logging.ERROR: "ERROR", logging.WARNING: "WARNING", logging.INFO: "INFO", logging.DEBUG: "DEBUG"}
+    level_names = {logging.ERROR: "ERROR", logging.WARNING: "WARNING", logging.INFO: "INFO", logging.DEBUG: "DEBUG", MISC_LEVEL: "MISC"}
     return level_names.get(level_int, "INFO")
 
 
@@ -188,7 +197,7 @@ def register_tools(mcp: FastMCP, get_connection: Callable) -> None:
         """Get available log levels / current level, or set log level (saved to settings.ini).
 
         Call with no argument to see available levels and current level.
-        Call with level=DEBUG|INFO|WARNING|ERROR to change level (persisted to settings.ini).
+        Call with level=MISC|DEBUG|INFO|WARNING|ERROR to change level (persisted to settings.ini).
         """
         levels = get_available_log_levels()
         if level is None:
