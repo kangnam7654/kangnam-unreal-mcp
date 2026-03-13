@@ -3,9 +3,9 @@
 Tests tool parameter passing and response formatting.
 UE connection is mocked — no running editor required.
 
-Each tool module's register_tools() creates closures over ue_connection.execute().
-We mock execute() at the source (tools.ue_connection) and call tool
-functions via conftest.call_tool().
+Each tool module imports ue_interaction_tool as ue and calls
+ue.ue_send_command() + ue.ue_receive_response().
+We mock both at the module level and call tool functions via conftest.call_tool().
 """
 
 import json
@@ -15,6 +15,11 @@ import pytest
 from conftest import call_tool, mcp
 
 
+# Helper to wrap result in JSON-RPC response
+def _resp(result):
+    return {"jsonrpc": "2.0", "result": result}
+
+
 # =============================================================================
 # Actor Tools
 # =============================================================================
@@ -22,12 +27,14 @@ from conftest import call_tool, mcp
 
 class TestGetActorsInLevel:
     def test_calls_correct_command(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"count": 0, "actors": []}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"count": 0, "actors": []})
         call_tool("get_actors_in_level")
-        mock_ue_execute.assert_called_once_with("get_actors_in_level", category_name="Actor")
+        mock_send.assert_called_once_with("get_actors_in_level", category_name="Actor")
 
     def test_returns_json_string(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"count": 1, "actors": [{"name": "Cube"}]}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"count": 1, "actors": [{"name": "Cube"}]})
         result = call_tool("get_actors_in_level")
         parsed = json.loads(result)
         assert parsed["count"] == 1
@@ -35,38 +42,42 @@ class TestGetActorsInLevel:
 
 class TestFindActorsByName:
     def test_passes_search_text(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"count": 0, "actors": []}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"count": 0, "actors": []})
         call_tool("find_actors_by_name", search_text="Cube")
-        mock_ue_execute.assert_called_once_with(
+        mock_send.assert_called_once_with(
             "find_actors_by_name", {"search_text": "Cube"}, category_name="Actor"
         )
 
 
 class TestSpawnActor:
     def test_required_params_only(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"status": "success"}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"status": "success"})
         call_tool("spawn_actor", type="StaticMeshActor", name="MyCube")
-        mock_ue_execute.assert_called_once_with(
+        mock_send.assert_called_once_with(
             "spawn_actor", {"type": "StaticMeshActor", "name": "MyCube"}, category_name="Actor"
         )
 
     def test_with_all_optional_params(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"status": "success"}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"status": "success"})
         call_tool("spawn_actor",
             type="PointLight", name="MyLight",
             location=[1.0, 2.0, 3.0],
             rotation=[0.0, 90.0, 0.0],
             scale=[2.0, 2.0, 2.0],
         )
-        params = mock_ue_execute.call_args[0][1]
+        params = mock_send.call_args[0][1]
         assert params["location"] == [1.0, 2.0, 3.0]
         assert params["rotation"] == [0.0, 90.0, 0.0]
         assert params["scale"] == [2.0, 2.0, 2.0]
 
     def test_omitted_optionals_not_sent(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"status": "success"}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"status": "success"})
         call_tool("spawn_actor", type="Actor", name="A", location=[0, 0, 0])
-        params = mock_ue_execute.call_args[0][1]
+        params = mock_send.call_args[0][1]
         assert "location" in params
         assert "rotation" not in params
         assert "scale" not in params
@@ -74,43 +85,48 @@ class TestSpawnActor:
 
 class TestDeleteActor:
     def test_passes_name(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"status": "success"}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"status": "success"})
         call_tool("delete_actor", name="MyCube")
-        mock_ue_execute.assert_called_once_with("delete_actor", {"name": "MyCube"}, category_name="Actor")
+        mock_send.assert_called_once_with("delete_actor", {"name": "MyCube"}, category_name="Actor")
 
 
 class TestSetActorTransform:
     def test_name_only(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"status": "success"}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"status": "success"})
         call_tool("set_actor_transform", name="MyCube")
-        params = mock_ue_execute.call_args[0][1]
+        params = mock_send.call_args[0][1]
         assert params == {"name": "MyCube"}
 
     def test_partial_transform(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"status": "success"}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"status": "success"})
         call_tool("set_actor_transform", name="MyCube", location=[10, 20, 30])
-        params = mock_ue_execute.call_args[0][1]
+        params = mock_send.call_args[0][1]
         assert params["location"] == [10, 20, 30]
         assert "rotation" not in params
 
     def test_with_all_transform(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"status": "success"}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"status": "success"})
         call_tool("set_actor_transform",
             name="MyCube",
             location=[1, 2, 3],
             rotation=[10, 20, 30],
             scale=[2, 2, 2],
         )
-        params = mock_ue_execute.call_args[0][1]
+        params = mock_send.call_args[0][1]
         assert params["rotation"] == [10, 20, 30]
         assert params["scale"] == [2, 2, 2]
 
 
 class TestReadActorContent:
     def test_passes_name(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"name": "Cube", "class": "StaticMeshActor"}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"name": "Cube", "class": "StaticMeshActor"})
         call_tool("read_actor_content", name="Cube")
-        mock_ue_execute.assert_called_once_with("read_actor_content", {"name": "Cube"}, category_name="Actor")
+        mock_send.assert_called_once_with("read_actor_content", {"name": "Cube"}, category_name="Actor")
 
 
 # =============================================================================
@@ -120,32 +136,35 @@ class TestReadActorContent:
 
 class TestAddComponentToActor:
     def test_required_params(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"status": "success"}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"status": "success"})
         call_tool("add_component_to_actor",
             name="MyCube", component_class="PointLightComponent",
         )
-        params = mock_ue_execute.call_args[0][1]
+        params = mock_send.call_args[0][1]
         assert params["name"] == "MyCube"
         assert params["component_class"] == "PointLightComponent"
         assert "component_name" not in params
 
     def test_with_component_name(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"status": "success"}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"status": "success"})
         call_tool("add_component_to_actor",
             name="MyCube", component_class="PointLightComponent",
             component_name="MyLight",
         )
-        params = mock_ue_execute.call_args[0][1]
+        params = mock_send.call_args[0][1]
         assert params["component_name"] == "MyLight"
 
 
 class TestRemoveComponentFromActor:
     def test_passes_params(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"status": "success"}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"status": "success"})
         call_tool("remove_component_from_actor",
             name="MyCube", component_name="MyLight",
         )
-        mock_ue_execute.assert_called_once_with(
+        mock_send.assert_called_once_with(
             "remove_component_from_actor",
             {"name": "MyCube", "component_name": "MyLight"},
             category_name="ActorComponent",
@@ -154,9 +173,10 @@ class TestRemoveComponentFromActor:
 
 class TestReadComponentsFromActor:
     def test_passes_name(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"actor_name": "Cube", "count": 0, "components": []}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"actor_name": "Cube", "count": 0, "components": []})
         call_tool("read_components_from_actor", name="Cube")
-        mock_ue_execute.assert_called_once_with(
+        mock_send.assert_called_once_with(
             "read_components_from_actor", {"name": "Cube"}, category_name="ActorComponent"
         )
 
@@ -168,45 +188,51 @@ class TestReadComponentsFromActor:
 
 class TestGetBlueprints:
     def test_default_no_params(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"count": 0, "blueprints": []}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"count": 0, "blueprints": []})
         call_tool("get_blueprints")
-        mock_ue_execute.assert_called_once_with("get_blueprints", {}, category_name="Blueprint")
+        mock_send.assert_called_once_with("get_blueprints", {}, category_name="Blueprint")
 
     def test_with_search_path(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"count": 0, "blueprints": []}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"count": 0, "blueprints": []})
         call_tool("get_blueprints", search_path="/Game/Maps/")
-        mock_ue_execute.assert_called_once_with(
+        mock_send.assert_called_once_with(
             "get_blueprints", {"search_path": "/Game/Maps/"}, category_name="Blueprint"
         )
 
 
 class TestFindBlueprintsByName:
     def test_passes_search_text(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"count": 0, "blueprints": []}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"count": 0, "blueprints": []})
         call_tool("find_blueprints_by_name", search_text="Player")
-        mock_ue_execute.assert_called_once_with(
+        mock_send.assert_called_once_with(
             "find_blueprints_by_name", {"search_text": "Player"}, category_name="Blueprint"
         )
 
 
 class TestCreateBlueprint:
     def test_required_params_only(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"name": "MyBP", "path": "/Game/Blueprints/MyBP"}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"name": "MyBP", "path": "/Game/Blueprints/MyBP"})
         call_tool("create_blueprint", name="MyBP")
-        mock_ue_execute.assert_called_once_with("create_blueprint", {"name": "MyBP"}, category_name="Blueprint")
+        mock_send.assert_called_once_with("create_blueprint", {"name": "MyBP"}, category_name="Blueprint")
 
     def test_with_parent_class(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"name": "MyBP"}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"name": "MyBP"})
         call_tool("create_blueprint", name="MyBP", parent_class="Pawn")
-        params = mock_ue_execute.call_args[0][1]
+        params = mock_send.call_args[0][1]
         assert params["parent_class"] == "Pawn"
 
 
 class TestReadBlueprintContent:
     def test_required_params_only(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"blueprint_name": "MyBP"}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"blueprint_name": "MyBP"})
         call_tool("read_blueprint_content", blueprint_name="MyBP")
-        params = mock_ue_execute.call_args[0][1]
+        params = mock_send.call_args[0][1]
         assert params["blueprint_name"] == "MyBP"
 
     def test_no_include_components_param(self):
@@ -216,7 +242,8 @@ class TestReadBlueprintContent:
         assert "include_components" not in sig.parameters
 
     def test_with_filter_flags(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"blueprint_name": "MyBP"}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"blueprint_name": "MyBP"})
         call_tool("read_blueprint_content",
             blueprint_name="MyBP",
             include_event_graph=False,
@@ -224,7 +251,7 @@ class TestReadBlueprintContent:
             include_variables=True,
             include_interfaces=False,
         )
-        params = mock_ue_execute.call_args[0][1]
+        params = mock_send.call_args[0][1]
         assert params["include_event_graph"] is False
         assert params["include_functions"] is True
         assert params["include_variables"] is True
@@ -233,37 +260,41 @@ class TestReadBlueprintContent:
 
 class TestCompileBlueprint:
     def test_passes_name(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"name": "MyBP", "compiled": True}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"name": "MyBP", "compiled": True})
         call_tool("compile_blueprint", blueprint_name="MyBP")
-        mock_ue_execute.assert_called_once_with(
+        mock_send.assert_called_once_with(
             "compile_blueprint", {"blueprint_name": "MyBP"}, category_name="Blueprint"
         )
 
 
 class TestDeleteBlueprint:
     def test_default_no_force(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"status": "success"}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"status": "success"})
         call_tool("delete_blueprint", blueprint_name="MyBP")
-        params = mock_ue_execute.call_args[0][1]
+        params = mock_send.call_args[0][1]
         assert params["blueprint_name"] == "MyBP"
         assert "force" not in params
 
     def test_with_force(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"status": "success"}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"status": "success"})
         call_tool("delete_blueprint",
             blueprint_name="MyBP", force=True,
         )
-        params = mock_ue_execute.call_args[0][1]
+        params = mock_send.call_args[0][1]
         assert params["force"] is True
 
 
 class TestSpawnBlueprintActor:
     def test_required_params_only(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"status": "success"}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"status": "success"})
         call_tool("spawn_blueprint_actor",
             blueprint_name="MyBP", name="MyInstance",
         )
-        params = mock_ue_execute.call_args[0][1]
+        params = mock_send.call_args[0][1]
         assert params["blueprint_name"] == "MyBP"
         assert params["name"] == "MyInstance"
         assert "location" not in params
@@ -271,25 +302,27 @@ class TestSpawnBlueprintActor:
         assert "scale" not in params
 
     def test_with_all_optional_params(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"status": "success"}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"status": "success"})
         call_tool("spawn_blueprint_actor",
             blueprint_name="MyBP", name="MyInstance",
             location=[1.0, 2.0, 3.0],
             rotation=[0.0, 90.0, 0.0],
             scale=[2.0, 2.0, 2.0],
         )
-        params = mock_ue_execute.call_args[0][1]
+        params = mock_send.call_args[0][1]
         assert params["location"] == [1.0, 2.0, 3.0]
         assert params["rotation"] == [0.0, 90.0, 0.0]
         assert params["scale"] == [2.0, 2.0, 2.0]
 
     def test_omitted_optionals_not_sent(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"status": "success"}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"status": "success"})
         call_tool("spawn_blueprint_actor",
             blueprint_name="MyBP", name="MyInstance",
             location=[0, 0, 0],
         )
-        params = mock_ue_execute.call_args[0][1]
+        params = mock_send.call_args[0][1]
         assert "location" in params
         assert "rotation" not in params
         assert "scale" not in params
@@ -302,34 +335,37 @@ class TestSpawnBlueprintActor:
 
 class TestAddComponentToBlueprint:
     def test_required_params(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"status": "success"}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"status": "success"})
         call_tool("add_component_to_blueprint",
             blueprint_name="MyBP", component_class="StaticMeshComponent",
         )
-        params = mock_ue_execute.call_args[0][1]
+        params = mock_send.call_args[0][1]
         assert params["blueprint_name"] == "MyBP"
         assert params["component_class"] == "StaticMeshComponent"
         assert "component_name" not in params
         assert "parent_component" not in params
 
     def test_with_all_optional(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"status": "success"}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"status": "success"})
         call_tool("add_component_to_blueprint",
             blueprint_name="MyBP", component_class="StaticMeshComponent",
             component_name="Mesh1", parent_component="DefaultSceneRoot",
         )
-        params = mock_ue_execute.call_args[0][1]
+        params = mock_send.call_args[0][1]
         assert params["component_name"] == "Mesh1"
         assert params["parent_component"] == "DefaultSceneRoot"
 
 
 class TestRemoveComponentFromBlueprint:
     def test_passes_params(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"status": "success"}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"status": "success"})
         call_tool("remove_component_from_blueprint",
             blueprint_name="MyBP", component_name="Mesh1",
         )
-        mock_ue_execute.assert_called_once_with(
+        mock_send.assert_called_once_with(
             "remove_component_from_blueprint",
             {"blueprint_name": "MyBP", "component_name": "Mesh1"},
             category_name="BlueprintComponent",
@@ -338,9 +374,10 @@ class TestRemoveComponentFromBlueprint:
 
 class TestReadComponentsFromBlueprint:
     def test_passes_name(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"blueprint_name": "MyBP", "count": 0, "components": []}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"blueprint_name": "MyBP", "count": 0, "components": []})
         call_tool("read_components_from_blueprint", blueprint_name="MyBP")
-        mock_ue_execute.assert_called_once_with(
+        mock_send.assert_called_once_with(
             "read_components_from_blueprint", {"blueprint_name": "MyBP"}, category_name="BlueprintComponent"
         )
 
@@ -352,96 +389,105 @@ class TestReadComponentsFromBlueprint:
 
 class TestSetStaticMeshProperties:
     def test_required_params_only(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"status": "success"}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"status": "success"})
         call_tool("set_static_mesh_properties",
             blueprint_name="MyBP", component_name="Mesh1",
         )
-        params = mock_ue_execute.call_args[0][1]
+        params = mock_send.call_args[0][1]
         assert params["blueprint_name"] == "MyBP"
         assert params["component_name"] == "Mesh1"
         assert "static_mesh" not in params
         assert "material" not in params
 
     def test_with_static_mesh(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"status": "success"}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"status": "success"})
         call_tool("set_static_mesh_properties",
             blueprint_name="MyBP", component_name="Mesh1",
             static_mesh="/Engine/BasicShapes/Cube.Cube",
         )
-        params = mock_ue_execute.call_args[0][1]
+        params = mock_send.call_args[0][1]
         assert params["static_mesh"] == "/Engine/BasicShapes/Cube.Cube"
 
     def test_with_material(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"status": "success"}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"status": "success"})
         call_tool("set_static_mesh_properties",
             blueprint_name="MyBP", component_name="Mesh1",
             material="/Game/Materials/M_Red",
         )
-        params = mock_ue_execute.call_args[0][1]
+        params = mock_send.call_args[0][1]
         assert params["material"] == "/Game/Materials/M_Red"
 
     def test_with_all_params(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"status": "success"}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"status": "success"})
         call_tool("set_static_mesh_properties",
             blueprint_name="MyBP", component_name="Mesh1",
             static_mesh="/Engine/BasicShapes/Sphere.Sphere",
             material="/Game/Materials/M_Blue",
         )
-        params = mock_ue_execute.call_args[0][1]
+        params = mock_send.call_args[0][1]
         assert params["static_mesh"] == "/Engine/BasicShapes/Sphere.Sphere"
         assert params["material"] == "/Game/Materials/M_Blue"
 
 
 class TestSetPhysicsProperties:
     def test_required_params_only(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"status": "success"}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"status": "success"})
         call_tool("set_physics_properties",
             blueprint_name="MyBP", component_name="Mesh1",
         )
-        params = mock_ue_execute.call_args[0][1]
+        params = mock_send.call_args[0][1]
         assert params["blueprint_name"] == "MyBP"
         assert params["component_name"] == "Mesh1"
         assert "simulate_physics" not in params
         assert "mass" not in params
 
     def test_with_simulate_physics(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"status": "success"}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"status": "success"})
         call_tool("set_physics_properties",
             blueprint_name="MyBP", component_name="Mesh1",
             simulate_physics=True,
         )
-        params = mock_ue_execute.call_args[0][1]
+        params = mock_send.call_args[0][1]
         assert params["simulate_physics"] is True
 
     def test_with_mass(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"status": "success"}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"status": "success"})
         call_tool("set_physics_properties",
             blueprint_name="MyBP", component_name="Mesh1",
             mass=50.0,
         )
-        params = mock_ue_execute.call_args[0][1]
+        params = mock_send.call_args[0][1]
         assert params["mass"] == 50.0
 
     def test_with_all_params(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"status": "success"}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"status": "success"})
         call_tool("set_physics_properties",
             blueprint_name="MyBP", component_name="Mesh1",
             simulate_physics=True, mass=10.0,
             linear_damping=0.5, angular_damping=1.0,
         )
-        params = mock_ue_execute.call_args[0][1]
+        params = mock_send.call_args[0][1]
         assert params["simulate_physics"] is True
         assert params["mass"] == 10.0
         assert params["linear_damping"] == 0.5
         assert params["angular_damping"] == 1.0
 
     def test_omitted_optionals_not_sent(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"status": "success"}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"status": "success"})
         call_tool("set_physics_properties",
             blueprint_name="MyBP", component_name="Mesh1",
             simulate_physics=True,
         )
-        params = mock_ue_execute.call_args[0][1]
+        params = mock_send.call_args[0][1]
         assert "simulate_physics" in params
         assert "mass" not in params
         assert "linear_damping" not in params
@@ -455,81 +501,90 @@ class TestSetPhysicsProperties:
 
 class TestGetAvailableMaterials:
     def test_default_no_params(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"count": 0, "materials": []}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"count": 0, "materials": []})
         call_tool("get_available_materials")
-        mock_ue_execute.assert_called_once_with("get_available_materials", {}, category_name="Material")
+        mock_send.assert_called_once_with("get_available_materials", {}, category_name="Material")
 
     def test_with_search_path(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"count": 0, "materials": []}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"count": 0, "materials": []})
         call_tool("get_available_materials", search_path="/Game/Materials/")
-        params = mock_ue_execute.call_args[0][1]
+        params = mock_send.call_args[0][1]
         assert params["search_path"] == "/Game/Materials/"
 
     def test_with_include_engine(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"count": 0, "materials": []}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"count": 0, "materials": []})
         call_tool("get_available_materials", include_engine_materials=False)
-        params = mock_ue_execute.call_args[0][1]
+        params = mock_send.call_args[0][1]
         assert params["include_engine_materials"] is False
 
 
 class TestApplyMaterialToActor:
     def test_required_params_only(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"status": "success"}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"status": "success"})
         call_tool("apply_material_to_actor",
             actor_name="MyCube", material_path="/Game/Materials/M_Red",
         )
-        params = mock_ue_execute.call_args[0][1]
+        params = mock_send.call_args[0][1]
         assert params["actor_name"] == "MyCube"
         assert params["material_path"] == "/Game/Materials/M_Red"
         assert "material_slot" not in params
 
     def test_with_material_slot(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"status": "success"}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"status": "success"})
         call_tool("apply_material_to_actor",
             actor_name="MyCube", material_path="/Game/Materials/M_Red",
             material_slot=1,
         )
-        params = mock_ue_execute.call_args[0][1]
+        params = mock_send.call_args[0][1]
         assert params["material_slot"] == 1
 
 
 class TestApplyMaterialToBlueprint:
     def test_required_params_only(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"status": "success"}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"status": "success"})
         call_tool("apply_material_to_blueprint",
             blueprint_name="MyBP", component_name="Mesh1",
             material_path="/Game/Materials/M_Red",
         )
-        params = mock_ue_execute.call_args[0][1]
+        params = mock_send.call_args[0][1]
         assert params["blueprint_name"] == "MyBP"
         assert params["component_name"] == "Mesh1"
         assert params["material_path"] == "/Game/Materials/M_Red"
         assert "material_slot" not in params
 
     def test_with_material_slot(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"status": "success"}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"status": "success"})
         call_tool("apply_material_to_blueprint",
             blueprint_name="MyBP", component_name="Mesh1",
             material_path="/Game/Materials/M_Red", material_slot=2,
         )
-        params = mock_ue_execute.call_args[0][1]
+        params = mock_send.call_args[0][1]
         assert params["material_slot"] == 2
 
 
 class TestGetActorMaterialInfo:
     def test_passes_actor_name(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"actor_name": "MyCube", "total_slots": 0, "material_slots": []}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"actor_name": "MyCube", "total_slots": 0, "material_slots": []})
         call_tool("get_actor_material_info", actor_name="MyCube")
-        mock_ue_execute.assert_called_once_with(
+        mock_send.assert_called_once_with(
             "get_actor_material_info", {"actor_name": "MyCube"}, category_name="Material"
         )
 
     def test_returns_json_string(self, mock_ue_execute):
-        mock_ue_execute.return_value = {
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({
             "actor_name": "MyCube",
             "total_slots": 1,
             "material_slots": [{"slot": 0, "component": "StaticMeshComponent0", "material_name": "M_Default"}],
-        }
+        })
         result = call_tool("get_actor_material_info", actor_name="MyCube")
         parsed = json.loads(result)
         assert parsed["actor_name"] == "MyCube"
@@ -538,11 +593,12 @@ class TestGetActorMaterialInfo:
 
 class TestGetBlueprintMaterialInfo:
     def test_passes_params(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"blueprint_name": "MyBP", "total_slots": 0, "material_slots": []}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"blueprint_name": "MyBP", "total_slots": 0, "material_slots": []})
         call_tool("get_blueprint_material_info",
             blueprint_name="MyBP", component_name="Mesh1",
         )
-        mock_ue_execute.assert_called_once_with(
+        mock_send.assert_called_once_with(
             "get_blueprint_material_info",
             {"blueprint_name": "MyBP", "component_name": "Mesh1"},
             category_name="Material",
@@ -551,12 +607,13 @@ class TestGetBlueprintMaterialInfo:
 
 class TestSetMeshMaterialColor:
     def test_required_params_only(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"status": "success"}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"status": "success"})
         call_tool("set_mesh_material_color",
             blueprint_name="MyBP", component_name="Mesh1",
             color=[1.0, 0.0, 0.0],
         )
-        params = mock_ue_execute.call_args[0][1]
+        params = mock_send.call_args[0][1]
         assert params["blueprint_name"] == "MyBP"
         assert params["component_name"] == "Mesh1"
         assert params["color"] == [1.0, 0.0, 0.0]
@@ -567,14 +624,15 @@ class TestSetMeshMaterialColor:
         assert "roughness" not in params
 
     def test_with_all_optional_params(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"status": "success"}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"status": "success"})
         call_tool("set_mesh_material_color",
             blueprint_name="MyBP", component_name="Mesh1",
             color=[0.0, 1.0, 0.0, 1.0], material_slot=1,
             parameter_name="Emissive", material_path="/Game/Materials/M_Base",
             metallic=1.0, roughness=0.2,
         )
-        params = mock_ue_execute.call_args[0][1]
+        params = mock_send.call_args[0][1]
         assert params["color"] == [0.0, 1.0, 0.0, 1.0]
         assert params["material_slot"] == 1
         assert params["parameter_name"] == "Emissive"
@@ -583,12 +641,13 @@ class TestSetMeshMaterialColor:
         assert params["roughness"] == 0.2
 
     def test_omitted_optionals_not_sent(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"status": "success"}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"status": "success"})
         call_tool("set_mesh_material_color",
             blueprint_name="MyBP", component_name="Mesh1",
             color=[1.0, 0.0, 0.0], material_slot=0,
         )
-        params = mock_ue_execute.call_args[0][1]
+        params = mock_send.call_args[0][1]
         assert "material_slot" in params
         assert "parameter_name" not in params
         assert "material_path" not in params
@@ -596,22 +655,24 @@ class TestSetMeshMaterialColor:
         assert "roughness" not in params
 
     def test_metallic_only(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"status": "success"}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"status": "success"})
         call_tool("set_mesh_material_color",
             blueprint_name="MyBP", component_name="Mesh1",
             color=[0.7, 0.7, 0.7], metallic=1.0,
         )
-        params = mock_ue_execute.call_args[0][1]
+        params = mock_send.call_args[0][1]
         assert params["metallic"] == 1.0
         assert "roughness" not in params
 
     def test_roughness_only(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"status": "success"}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"status": "success"})
         call_tool("set_mesh_material_color",
             blueprint_name="MyBP", component_name="Mesh1",
             color=[0.5, 0.5, 0.5], roughness=0.1,
         )
-        params = mock_ue_execute.call_args[0][1]
+        params = mock_send.call_args[0][1]
         assert params["roughness"] == 0.1
         assert "metallic" not in params
 
@@ -623,44 +684,50 @@ class TestSetMeshMaterialColor:
 
 class TestGetStaticMeshes:
     def test_default_no_params(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"count": 0, "static_meshes": []}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"count": 0, "static_meshes": []})
         call_tool("get_static_meshes")
-        mock_ue_execute.assert_called_once_with("get_static_meshes", {}, category_name="StaticMesh")
+        mock_send.assert_called_once_with("get_static_meshes", {}, category_name="StaticMesh")
 
     def test_with_search_path(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"count": 0, "static_meshes": []}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"count": 0, "static_meshes": []})
         call_tool("get_static_meshes", search_path="/Game/Meshes/")
-        params = mock_ue_execute.call_args[0][1]
+        params = mock_send.call_args[0][1]
         assert params["search_path"] == "/Game/Meshes/"
 
     def test_with_include_engine(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"count": 0, "static_meshes": []}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"count": 0, "static_meshes": []})
         call_tool("get_static_meshes", include_engine_meshes=False)
-        params = mock_ue_execute.call_args[0][1]
+        params = mock_send.call_args[0][1]
         assert params["include_engine_meshes"] is False
 
 
 class TestFindStaticMeshesByName:
     def test_passes_search_text(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"count": 0, "static_meshes": []}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"count": 0, "static_meshes": []})
         call_tool("find_static_meshes_by_name", search_text="Cube")
-        mock_ue_execute.assert_called_once_with(
+        mock_send.assert_called_once_with(
             "find_static_meshes_by_name", {"search_text": "Cube"}, category_name="StaticMesh"
         )
 
     def test_with_include_engine(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"count": 0, "static_meshes": []}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"count": 0, "static_meshes": []})
         call_tool("find_static_meshes_by_name",
             search_text="Sphere", include_engine_meshes=True,
         )
-        params = mock_ue_execute.call_args[0][1]
+        params = mock_send.call_args[0][1]
         assert params["search_text"] == "Sphere"
         assert params["include_engine_meshes"] is True
 
     def test_omitted_optionals_not_sent(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"count": 0, "static_meshes": []}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"count": 0, "static_meshes": []})
         call_tool("find_static_meshes_by_name", search_text="Cube")
-        params = mock_ue_execute.call_args[0][1]
+        params = mock_send.call_args[0][1]
         assert "search_text" in params
         assert "include_engine_meshes" not in params
 
@@ -672,11 +739,12 @@ class TestFindStaticMeshesByName:
 
 class TestAddVariableToBlueprint:
     def test_required_params_only(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"status": "success"}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"status": "success"})
         call_tool("add_variable_to_blueprint",
             blueprint_name="MyBP", variable_name="HP", variable_type="Float",
         )
-        params = mock_ue_execute.call_args[0][1]
+        params = mock_send.call_args[0][1]
         assert params["blueprint_name"] == "MyBP"
         assert params["variable_name"] == "HP"
         assert params["variable_type"] == "Float"
@@ -684,50 +752,55 @@ class TestAddVariableToBlueprint:
         assert "is_instance_editable" not in params
 
     def test_with_default_value(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"status": "success"}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"status": "success"})
         call_tool("add_variable_to_blueprint",
             blueprint_name="MyBP", variable_name="HP", variable_type="Float",
             default_value="100.0",
         )
-        params = mock_ue_execute.call_args[0][1]
+        params = mock_send.call_args[0][1]
         assert params["default_value"] == "100.0"
 
     def test_with_instance_editable(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"status": "success"}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"status": "success"})
         call_tool("add_variable_to_blueprint",
             blueprint_name="MyBP", variable_name="IsAlive", variable_type="Bool",
             is_instance_editable=True,
         )
-        params = mock_ue_execute.call_args[0][1]
+        params = mock_send.call_args[0][1]
         assert params["is_instance_editable"] is True
 
     def test_with_all_params(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"status": "success"}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"status": "success"})
         call_tool("add_variable_to_blueprint",
             blueprint_name="MyBP", variable_name="Speed", variable_type="Float",
             default_value="300.0", is_instance_editable=True,
         )
-        params = mock_ue_execute.call_args[0][1]
+        params = mock_send.call_args[0][1]
         assert params["default_value"] == "300.0"
         assert params["is_instance_editable"] is True
 
     def test_omitted_optionals_not_sent(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"status": "success"}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"status": "success"})
         call_tool("add_variable_to_blueprint",
             blueprint_name="MyBP", variable_name="HP", variable_type="Float",
         )
-        params = mock_ue_execute.call_args[0][1]
+        params = mock_send.call_args[0][1]
         assert "default_value" not in params
         assert "is_instance_editable" not in params
 
 
 class TestRemoveVariableFromBlueprint:
     def test_passes_params(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"status": "success"}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"status": "success"})
         call_tool("remove_variable_from_blueprint",
             blueprint_name="MyBP", variable_name="HP",
         )
-        mock_ue_execute.assert_called_once_with(
+        mock_send.assert_called_once_with(
             "remove_variable_from_blueprint",
             {"blueprint_name": "MyBP", "variable_name": "HP"},
             category_name="BlueprintVariable",
@@ -741,126 +814,138 @@ class TestRemoveVariableFromBlueprint:
 
 class TestReadBlueprintGraph:
     def test_passes_name(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"blueprint_name": "MyBP", "nodes": []}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"blueprint_name": "MyBP", "nodes": []})
         call_tool("read_blueprint_graph", blueprint_name="MyBP")
-        mock_ue_execute.assert_called_once_with(
+        mock_send.assert_called_once_with(
             "read_blueprint_graph", {"blueprint_name": "MyBP"}, category_name="BlueprintGraph"
         )
 
 
 class TestAddEventNode:
     def test_required_params_only(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"status": "success", "node_id": "AAA"}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"status": "success", "node_id": "AAA"})
         call_tool("add_event_node",
             blueprint_name="MyBP", event_type="BeginPlay",
         )
-        params = mock_ue_execute.call_args[0][1]
+        params = mock_send.call_args[0][1]
         assert params["blueprint_name"] == "MyBP"
         assert params["event_type"] == "BeginPlay"
         assert "node_position" not in params
 
     def test_with_position(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"status": "success", "node_id": "AAA"}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"status": "success", "node_id": "AAA"})
         call_tool("add_event_node",
             blueprint_name="MyBP", event_type="Tick",
             node_position=[100, 200],
         )
-        params = mock_ue_execute.call_args[0][1]
+        params = mock_send.call_args[0][1]
         assert params["node_position"] == [100, 200]
 
 
 class TestAddFunctionCallNode:
     def test_required_params_only(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"status": "success", "node_id": "BBB"}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"status": "success", "node_id": "BBB"})
         call_tool("add_function_call_node",
             blueprint_name="MyBP", function_name="PrintString",
         )
-        params = mock_ue_execute.call_args[0][1]
+        params = mock_send.call_args[0][1]
         assert params["blueprint_name"] == "MyBP"
         assert params["function_name"] == "PrintString"
         assert "target_class" not in params
         assert "node_position" not in params
 
     def test_with_target_class(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"status": "success", "node_id": "BBB"}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"status": "success", "node_id": "BBB"})
         call_tool("add_function_call_node",
             blueprint_name="MyBP", function_name="PrintString",
             target_class="KismetSystemLibrary",
         )
-        params = mock_ue_execute.call_args[0][1]
+        params = mock_send.call_args[0][1]
         assert params["target_class"] == "KismetSystemLibrary"
 
     def test_with_all_params(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"status": "success", "node_id": "BBB"}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"status": "success", "node_id": "BBB"})
         call_tool("add_function_call_node",
             blueprint_name="MyBP", function_name="Delay",
             target_class="KismetSystemLibrary", node_position=[300, 100],
         )
-        params = mock_ue_execute.call_args[0][1]
+        params = mock_send.call_args[0][1]
         assert params["target_class"] == "KismetSystemLibrary"
         assert params["node_position"] == [300, 100]
 
     def test_omitted_optionals_not_sent(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"status": "success", "node_id": "BBB"}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"status": "success", "node_id": "BBB"})
         call_tool("add_function_call_node",
             blueprint_name="MyBP", function_name="PrintString",
         )
-        params = mock_ue_execute.call_args[0][1]
+        params = mock_send.call_args[0][1]
         assert "target_class" not in params
         assert "node_position" not in params
 
 
 class TestAddVariableGetNode:
     def test_required_params_only(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"status": "success", "node_id": "CCC"}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"status": "success", "node_id": "CCC"})
         call_tool("add_variable_get_node",
             blueprint_name="MyBP", variable_name="HP",
         )
-        params = mock_ue_execute.call_args[0][1]
+        params = mock_send.call_args[0][1]
         assert params["blueprint_name"] == "MyBP"
         assert params["variable_name"] == "HP"
         assert "node_position" not in params
 
     def test_with_position(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"status": "success", "node_id": "CCC"}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"status": "success", "node_id": "CCC"})
         call_tool("add_variable_get_node",
             blueprint_name="MyBP", variable_name="HP",
             node_position=[200, 300],
         )
-        params = mock_ue_execute.call_args[0][1]
+        params = mock_send.call_args[0][1]
         assert params["node_position"] == [200, 300]
 
 
 class TestAddVariableSetNode:
     def test_required_params_only(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"status": "success", "node_id": "DDD"}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"status": "success", "node_id": "DDD"})
         call_tool("add_variable_set_node",
             blueprint_name="MyBP", variable_name="HP",
         )
-        params = mock_ue_execute.call_args[0][1]
+        params = mock_send.call_args[0][1]
         assert params["blueprint_name"] == "MyBP"
         assert params["variable_name"] == "HP"
         assert "node_position" not in params
 
     def test_with_position(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"status": "success", "node_id": "DDD"}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"status": "success", "node_id": "DDD"})
         call_tool("add_variable_set_node",
             blueprint_name="MyBP", variable_name="HP",
             node_position=[400, 100],
         )
-        params = mock_ue_execute.call_args[0][1]
+        params = mock_send.call_args[0][1]
         assert params["node_position"] == [400, 100]
 
 
 class TestConnectNodes:
     def test_passes_all_params(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"status": "success"}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"status": "success"})
         call_tool("connect_nodes",
             blueprint_name="MyBP",
             source_node_id="AAA", source_pin_name="then",
             target_node_id="BBB", target_pin_name="execute",
         )
-        mock_ue_execute.assert_called_once_with(
+        mock_send.assert_called_once_with(
             "connect_nodes",
             {
                 "blueprint_name": "MyBP",
@@ -875,11 +960,12 @@ class TestConnectNodes:
 
 class TestDisconnectNodes:
     def test_passes_all_params(self, mock_ue_execute):
-        mock_ue_execute.return_value = {"status": "success", "disconnected_count": 1}
+        mock_send, mock_recv = mock_ue_execute
+        mock_recv.return_value = _resp({"status": "success", "disconnected_count": 1})
         call_tool("disconnect_nodes",
             blueprint_name="MyBP", node_id="AAA", pin_name="then",
         )
-        mock_ue_execute.assert_called_once_with(
+        mock_send.assert_called_once_with(
             "disconnect_nodes",
             {"blueprint_name": "MyBP", "node_id": "AAA", "pin_name": "then"},
             category_name="BlueprintGraph",
@@ -892,13 +978,18 @@ class TestDisconnectNodes:
 
 
 class TestErrorHandling:
-    def test_connection_error_propagates(self, mock_ue_connection_error):
-        with pytest.raises(ConnectionError, match="Cannot connect to UE"):
-            call_tool("get_actors_in_level")
+    def test_connection_returns_empty_on_not_connected(self, mock_ue_connection_error):
+        """When send returns False, tool returns empty JSON."""
+        result = call_tool("get_actors_in_level")
+        parsed = json.loads(result)
+        assert parsed == {}
 
-    def test_runtime_error_propagates(self, mock_ue_runtime_error):
-        with pytest.raises(RuntimeError, match="UE error"):
-            call_tool("spawn_actor", type="Actor", name="Test")
+    def test_error_response_returns_empty(self, mock_ue_runtime_error):
+        """When UE returns error response, result is empty (no 'result' key)."""
+        mock_send, mock_recv = mock_ue_runtime_error
+        result = call_tool("spawn_actor", type="Actor", name="Test")
+        parsed = json.loads(result)
+        assert parsed == {}
 
 
 # =============================================================================
