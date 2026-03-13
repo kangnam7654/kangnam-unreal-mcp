@@ -227,7 +227,7 @@ FString FWN_MCP_CommandGroup_XXX::GetApplicationName() const
 
 void FWN_MCP_CommandGroup_XXX::OnRegisterCommands(TArray<FWN_MCP_CommandInfo>& InOutCommandInfos) const
 {
-	WN_MCP_REGISTER_COMMAND(InOutCommandInfos, "command_name_here", "Description of the command");
+	WN_MCP_REGISTER_COMMAND(InOutCommandInfos, "command_name_here");
 }
 
 TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_XXX::OnExecute(const FString& InCommandName, const TSharedPtr<FJsonObject>& InParamsPtr, TSharedPtr<FSocket> InClientSocketPtr) const
@@ -262,10 +262,10 @@ struct FWN_MCP_CommandInfo
     bool bIsSimple;
 };
 
-/// Register a standard command (requires manual JSON response building).
-WN_MCP_REGISTER_COMMAND(InOutList, "command_name", "Description")
+/// Register a command (requires custom Python Tool with docstring as description).
+WN_MCP_REGISTER_COMMAND(InOutList, "command_name")
 
-/// Register a simple command (auto-wrapped by the framework).
+/// Register a simple command (Python Tool auto-generated, description required).
 WN_MCP_REGISTER_SIMPLE_COMMAND(InOutList, "command_name", "Description")
 ```
 
