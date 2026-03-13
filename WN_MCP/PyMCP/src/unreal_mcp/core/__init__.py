@@ -1,5 +1,5 @@
-﻿"""Core layer: protocol (JSON-RPC 2.0) for Unreal communication."""
+"""Core layer: protocol (JSON-RPC 2.0) and Case Study schemas for Unreal communication."""
 
-from unreal_mcp.core import protocol
+from unreal_mcp.core import protocol, schemas
 
-__all__ = ["protocol"]
+__all__ = ["protocol", "schemas"]

@@ -1,6 +1,8 @@
-﻿"""
+"""
 User tool directories: fetch from UE and register @mcp.tool functions with the MCP server.
 Called when the Unreal connection is established (e.g. in server lifespan).
+Command naming must match C++ (WN_MCP_CommandGroup_Application):
+  - Method name uses Application_ prefix, e.g. Application_get_user_tool_directories.
 """
 import importlib.util
 import re
@@ -16,6 +18,9 @@ logger = logging.getLogger("UnrealMCP.UserTools")
 
 # Project root: PyMCP (this file is src/unreal_mcp/tools/user_tools.py)
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
+
+# UE command name: must match C++ Application group (Application_get_user_tool_directories)
+UE_CMD_GET_USER_TOOL_DIRECTORIES = "Application_get_user_tool_directories"
 
 
 def _dir_name_to_prefix(dir_name: str) -> str:
@@ -35,10 +40,11 @@ def get_user_tool_directories() -> List[str]:
     if not conn:
         logger.warning("No Unreal connection available for get_user_tool_directories")
         return []
-    resp = conn.send_command("get_user_tool_directories", {})
+    resp = conn.send_command(UE_CMD_GET_USER_TOOL_DIRECTORIES, {})
     if not resp or resp.get("status") == "error":
         logger.warning(
-            "get_user_tool_directories failed: %s",
+            "%s command failed: %s",
+            UE_CMD_GET_USER_TOOL_DIRECTORIES,
             resp.get("error", "no response") if resp else "no connection",
         )
         return []

@@ -1,4 +1,4 @@
-﻿"""
+"""
 MCP server: FastMCP app with lifespan and tool registration.
 Connection is created in lifespan and set globally so tools/helpers can use get_unreal_connection().
 """
@@ -10,7 +10,12 @@ from mcp.server.fastmcp import FastMCP
 
 from unreal_mcp.config import Settings, load_config
 from unreal_mcp.connection import UnrealConnection, get_unreal_connection, set_current_connection
-from unreal_mcp.tools import agent, general, logging, user_tools
+from unreal_mcp.tools import (
+    agent, 
+    general, 
+    logging as logging_tools, 
+    user_tools
+)
 from unreal_mcp.tools.ue import (
     actors,
     blueprints,
@@ -71,7 +76,7 @@ def create_app(settings: Optional[Settings] = None) -> FastMCP:
     # Register agent tools (notifications, questions, confirmations)
     register_if_enabled("agent", agent.register_tools)
     # Register logging tools (set_log_level, persisted to settings.ini)
-    register_if_enabled("logging", logging.register_tools)
+    register_if_enabled("logging", logging_tools.register_tools)
 
     # Register Unreal Engine Command tools
     # TODO: Dynamically register tools based on the enabled tools and local plugin paths
