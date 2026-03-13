@@ -25,8 +25,8 @@ FString FWN_MCP_CommandGroup_Application::GetName() const
 
 void FWN_MCP_CommandGroup_Application::OnRegisterCommands(TArray<FWN_MCP_CommandInfo>& InOutCommandInfos) const
 {
-	WN_MCP_REGISTER_COMMAND(InOutCommandInfos, "get_user_tool_directories", "Get user tool directories");
-	WN_MCP_REGISTER_COMMAND(InOutCommandInfos, "get_simple_commands", "Get all registered simple commands");
+	WN_MCP_REGISTER_COMMAND(InOutCommandInfos, "get_user_tool_directories");
+	WN_MCP_REGISTER_COMMAND(InOutCommandInfos, "get_simple_commands");
 }
 
 TSharedPtr<FJsonObject> FWN_MCP_CommandGroup_Application::OnExecute(const FString& InCommandName, const TSharedPtr<FJsonObject>& InParamsPtr, TSharedPtr<FSocket> InClientSocketPtr) const

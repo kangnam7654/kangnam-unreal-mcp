@@ -66,10 +66,10 @@ public:\
 };\
 static RegisterCommandGroup_ ##CommandGroupClass RegisterCommandGroupInstance_ ##CommandGroupClass
 
-/// Register a command (requires custom Python Tool).
+/// Register a command (requires custom Python Tool with docstring as description).
 /// GetName() prefix is prepended automatically (e.g. "Actor" + "_" + "spawn_actor" = "Actor_spawn_actor").
-#define WN_MCP_REGISTER_COMMAND(InOutList, CommandName, CommandDesc) \
-	InOutList.Add({ GetName() + TEXT("_") + FString(TEXT(CommandName)), FString(TEXT(CommandDesc)), false })
+#define WN_MCP_REGISTER_COMMAND(InOutList, CommandName) \
+	InOutList.Add({ GetName() + TEXT("_") + FString(TEXT(CommandName)), FString(TEXT("")), false })
 
 /// Register a simple command (Python Tool auto-generated).
 /// GetName() prefix is prepended automatically (e.g. "Actor" + "_" + "spawn_actor" = "Actor_spawn_actor").
