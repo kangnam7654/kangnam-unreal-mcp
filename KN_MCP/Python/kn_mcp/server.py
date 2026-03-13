@@ -10,7 +10,7 @@ from mcp.server.fastmcp import FastMCP
 
 from kn_mcp.config import Settings, load_config
 from kn_mcp.connection import UnrealConnection, get_unreal_connection, set_current_connection
-from kn_mcp.tools import agent, general, user_tools
+from kn_mcp.tools import agent, general, simple_commands, user_tools
 from kn_mcp.tools import logging as logging_tools
 from kn_mcp.tools.ue import (
     actors,
@@ -38,13 +38,17 @@ def _lifespan(settings: Settings):
         try:
             # Register user tool directories from UE
             if conn.connect():
-                logger.info("Unreal connected; registering user tool directories from UE...")
+                logger.info("Unreal connected; registering tools from UE...")
+                try:
+                    simple_commands.register_simple_commands(server)
+                except Exception as e:
+                    logger.error("Error registering simple commands from UE: %s", e)
                 try:
                     user_tools.register_user_tool_directories(server)
                 except Exception as e:
                     logger.error("Error registering user tool directories from UE: %s", e)
             else:
-                logger.info("Unreal not connected; skipping user tool directories registration")
+                logger.info("Unreal not connected; skipping UE tool registration")
             yield {}
         
         finally:
