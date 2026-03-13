@@ -12,6 +12,7 @@ import socket
 import struct
 import threading
 import time
+from collections.abc import Callable
 from typing import Any
 
 from kn_mcp.core import protocol as jsonrpc_protocol
@@ -21,6 +22,10 @@ logger = logging.getLogger("UnrealMCP.Connection")
 # Current connection set at server startup (lifespan); used by helpers that import get_unreal_connection
 _current_connection: "UnrealConnection | None" = None
 _connection_lock = threading.Lock()
+
+# UE TCP server port range (matches C++ KN_MCP_ServerThread)
+UE_PORT_START = 27777
+UE_PORT_END = 27787
 
 
 def set_current_connection(conn: "UnrealConnection | None") -> None:
@@ -34,6 +39,43 @@ def get_unreal_connection() -> "UnrealConnection | None":
     """Return the current connection (set at server startup). Used by tools and helpers."""
     with _connection_lock:
         return _current_connection
+
+
+def find_available_ue_ports() -> list[int]:
+    """Scan UE port range (27777–27787) and return ports with active UE instances."""
+    available = []
+    for port in range(UE_PORT_START, UE_PORT_END + 1):
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(1.0)
+            result = sock.connect_ex(("127.0.0.1", port))
+            sock.close()
+            time.sleep(0.05)
+            if result == 0:
+                available.append(port)
+        except Exception:
+            pass
+    return available
+
+
+def is_ue_listening(host: str = "127.0.0.1", port: int = UE_PORT_START) -> bool:
+    """Quick non-blocking check whether UE is listening on the given port."""
+    for attempt in range(2):
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(1.0)
+            result = sock.connect_ex((host, port))
+            sock.close()
+            if result == 0:
+                return True
+            if result == 10061:  # WSAECONNREFUSED
+                return False
+            if attempt < 1:
+                time.sleep(0.1)
+        except Exception:
+            if attempt < 1:
+                time.sleep(0.1)
+    return False
 
 
 class UnrealConnection:
@@ -68,6 +110,9 @@ class UnrealConnection:
         self.connected = False
         self._lock = threading.RLock()
         self._last_error: str | None = None
+        self._on_connected: Callable[[], None] | None = None
+        self._on_disconnected: Callable[[], None] | None = None
+        self._last_notified_state: bool | None = None
 
     def _create_socket(self) -> socket.socket:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -99,6 +144,7 @@ class UnrealConnection:
                     self.connected = True
                     self._last_error = None
                     logger.info("Successfully connected to Unreal Engine")
+                    self._notify_state_change(True)
                     return True
                 except socket.timeout as e:
                     self._last_error = f"Connection timeout: {e}"
@@ -138,8 +184,32 @@ class UnrealConnection:
 
     def disconnect(self) -> None:
         with self._lock:
+            was_connected = self.connected
             self._close_socket_unsafe()
             logger.debug("Disconnected from Unreal Engine")
+        if was_connected:
+            self._notify_state_change(False)
+
+    def on_connected(self, callback: Callable[[], None]) -> None:
+        """Register callback invoked when connection is established."""
+        self._on_connected = callback
+
+    def on_disconnected(self, callback: Callable[[], None]) -> None:
+        """Register callback invoked when connection is lost."""
+        self._on_disconnected = callback
+
+    def _notify_state_change(self, connected: bool) -> None:
+        """Invoke registered callback if state actually changed."""
+        if self._last_notified_state == connected:
+            return
+        self._last_notified_state = connected
+        try:
+            if connected and self._on_connected:
+                self._on_connected()
+            elif not connected and self._on_disconnected:
+                self._on_disconnected()
+        except Exception as e:
+            logger.warning("Connection callback error: %s", e)
 
     def _get_timeout_for_command(self, command_type: str) -> int:
         if any(large_cmd in command_type for large_cmd in self.LARGE_OPERATION_COMMANDS):
