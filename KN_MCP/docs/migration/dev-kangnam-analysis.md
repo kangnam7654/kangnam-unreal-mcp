@@ -14,6 +14,8 @@
 | KN_MCP_REGISTER_COMMAND 2-param | Description 제거 | `9989cbd` |
 | JSON-RPC method 필드 | 요청에 method 필드 포함 | `9989cbd` (protocol.py) |
 | 로깅 인프라 | settings.ini 기반 로그 레벨/보존/정리 | `9989cbd` (tools/logging.py) |
+| Agent-Chain Result 매크로 | C++ 7개 result 빌더 매크로 | `30aecb6` (KN_MCP_CommandGroup.h) |
+| Python Schemas 모듈 | 매크로 대응 빌더/검증 헬퍼 | `ef647ac` (kn_mcp/core/schemas.py) |
 
 ---
 
@@ -162,8 +164,8 @@ Extension 플러그인 작성 방법을 보여주는 예시 + C++ 커맨드 테�
 
 | 우선순위 | 항목 | 유형 | 변경 대상 |
 |----------|------|------|-----------|
-| **HIGH** | Agent-Chain Result 매크로 (C++) | KN_MCP 코어 | `KN_MCP_CommandGroup.h` |
-| **HIGH** | Python Schemas 모듈 | KN_MCP Python 코어 | `kn_mcp/core/schemas.py` |
+| ~~**HIGH**~~ | ~~Agent-Chain Result 매크로 (C++)~~ | ~~KN_MCP 코어~~ | ~~`KN_MCP_CommandGroup.h`~~ ✅ `30aecb6` |
+| ~~**HIGH**~~ | ~~Python Schemas 모듈~~ | ~~KN_MCP Python 코어~~ | ~~`kn_mcp/core/schemas.py`~~ ✅ `ef647ac` |
 | **MEDIUM** | 연결 확장 기능 | KN_MCP Python 코어 | `kn_mcp/connection.py` |
 | **MEDIUM** | 테스트 플러그인 | 별도 플러그인 | `KN_MCPTest/` |
 | **LOW** | Agent 파라미터 컨텍스트 | KN_MCP Python 코어 | `kn_mcp/params.py` |
