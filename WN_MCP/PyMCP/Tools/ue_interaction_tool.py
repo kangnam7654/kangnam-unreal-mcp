@@ -640,7 +640,7 @@ def ue_send_command(command_name: str, params: Optional[Dict[str, Any]] = None) 
     JSON-RPC 2.0 request format sent to UE:
         {
             "jsonrpc": "2.0",
-            "method": "command",
+            "method": "command_name",
             "params": {...},
             "id": "command_name"
         }
@@ -653,7 +653,7 @@ def ue_send_command(command_name: str, params: Optional[Dict[str, Any]] = None) 
         # Create JSON-RPC 2.0 request message
         message = {
             "jsonrpc": "2.0",
-            "method": "command",  # Fixed method name
+            "method": command_name,  # JSON-RPC 2.0: method is the remote procedure name
             "id": command_name,  # Use command name as ID for request tracking
             "params": params if params is not None else {}  # Always include params (empty dict if not provided)
         }
