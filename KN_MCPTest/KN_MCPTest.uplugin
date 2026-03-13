@@ -1,0 +1,25 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "0.1.0",
+	"FriendlyName": "KN_MCPTest",
+	"Description": "Test plugin for KN_MCP. Demonstrates extension plugin pattern.",
+	"Category": "Integration",
+	"CanContainContent": true,
+	"Modules": [
+		{
+			"Name": "KN_MCPTest",
+			"Type": "Runtime",
+			"LoadingPhase": "Default",
+			"WhitelistPlatforms": [
+				"Win64"
+			]
+		}
+	],
+	"Plugins": [
+		{
+			"Name": "KN_MCP",
+			"Enabled": true
+		}
+	]
+}
