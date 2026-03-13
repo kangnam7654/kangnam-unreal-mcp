@@ -5,7 +5,7 @@ Commands: add_variable_to_blueprint, remove_variable_from_blueprint
 
 import json
 from typing import Optional, Dict, Any
-import ue_connection
+from Tools import ue_interaction_tool as ue
 
 _CATEGORY = "BlueprintVariable"
 
@@ -39,7 +39,9 @@ def add_variable_to_blueprint(
     if is_instance_editable is not None:
         params["is_instance_editable"] = is_instance_editable
 
-    result = ue_connection.execute("add_variable_to_blueprint", params, category_name=_CATEGORY)
+    ue.ue_send_command("add_variable_to_blueprint", params, category_name=_CATEGORY)
+    response = ue.ue_receive_response()
+    result = response.get("result", {}) if response else {}
     return json.dumps(result, indent=2, ensure_ascii=False)
 
 @mcp.tool
@@ -55,8 +57,10 @@ def remove_variable_from_blueprint(
 
     The Blueprint is automatically marked as structurally modified.
     """
-    result = ue_connection.execute("remove_variable_from_blueprint", {
+    ue.ue_send_command("remove_variable_from_blueprint", {
         "blueprint_name": blueprint_name,
         "variable_name": variable_name,
     }, category_name=_CATEGORY)
+    response = ue.ue_receive_response()
+    result = response.get("result", {}) if response else {}
     return json.dumps(result, indent=2, ensure_ascii=False)

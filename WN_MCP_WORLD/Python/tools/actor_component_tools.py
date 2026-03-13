@@ -5,7 +5,7 @@ Commands: add_component_to_actor, remove_component_from_actor, read_components_f
 
 import json
 from typing import Optional, Dict, Any
-import ue_connection
+from Tools import ue_interaction_tool as ue
 
 _CATEGORY = "ActorComponent"
 
@@ -29,7 +29,9 @@ def add_component_to_actor(
     if component_name is not None:
         params["component_name"] = component_name
 
-    result = ue_connection.execute("add_component_to_actor", params, category_name=_CATEGORY)
+    ue.ue_send_command("add_component_to_actor", params, category_name=_CATEGORY)
+    response = ue.ue_receive_response()
+    result = response.get("result", {}) if response else {}
     return json.dumps(result, indent=2, ensure_ascii=False)
 
 @mcp.tool
@@ -42,10 +44,12 @@ def remove_component_from_actor(name: str, component_name: str) -> str:
 
     The root component cannot be removed. Use delete_actor() to remove the entire actor.
     """
-    result = ue_connection.execute("remove_component_from_actor", {
+    ue.ue_send_command("remove_component_from_actor", {
         "name": name,
         "component_name": component_name,
     }, category_name=_CATEGORY)
+    response = ue.ue_receive_response()
+    result = response.get("result", {}) if response else {}
     return json.dumps(result, indent=2, ensure_ascii=False)
 
 @mcp.tool
@@ -58,5 +62,7 @@ def read_components_from_actor(name: str) -> str:
     Returns a list of components with name, class, is_root flag,
     and transform info (relative_location/rotation/scale) for SceneComponents.
     """
-    result = ue_connection.execute("read_components_from_actor", {"name": name}, category_name=_CATEGORY)
+    ue.ue_send_command("read_components_from_actor", {"name": name}, category_name=_CATEGORY)
+    response = ue.ue_receive_response()
+    result = response.get("result", {}) if response else {}
     return json.dumps(result, indent=2, ensure_ascii=False)

@@ -5,7 +5,7 @@ Commands: get_static_meshes, find_static_meshes_by_name
 
 import json
 from typing import Optional, Dict, Any
-import ue_connection
+from Tools import ue_interaction_tool as ue
 
 _CATEGORY = "StaticMesh"
 
@@ -29,7 +29,9 @@ def get_static_meshes(
     if include_engine_meshes is not None:
         params["include_engine_meshes"] = include_engine_meshes
 
-    result = ue_connection.execute("get_static_meshes", params, category_name=_CATEGORY)
+    ue.ue_send_command("get_static_meshes", params, category_name=_CATEGORY)
+    response = ue.ue_receive_response()
+    result = response.get("result", {}) if response else {}
     return json.dumps(result, indent=2, ensure_ascii=False)
 
 @mcp.tool
@@ -49,5 +51,7 @@ def find_static_meshes_by_name(
     if include_engine_meshes is not None:
         params["include_engine_meshes"] = include_engine_meshes
 
-    result = ue_connection.execute("find_static_meshes_by_name", params, category_name=_CATEGORY)
+    ue.ue_send_command("find_static_meshes_by_name", params, category_name=_CATEGORY)
+    response = ue.ue_receive_response()
+    result = response.get("result", {}) if response else {}
     return json.dumps(result, indent=2, ensure_ascii=False)

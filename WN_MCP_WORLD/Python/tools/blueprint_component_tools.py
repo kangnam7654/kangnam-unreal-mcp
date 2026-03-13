@@ -6,7 +6,7 @@ Commands: add_component_to_blueprint, remove_component_from_blueprint,
 
 import json
 from typing import Optional, Dict, Any
-import ue_connection
+from Tools import ue_interaction_tool as ue
 
 _CATEGORY = "BlueprintComponent"
 
@@ -37,7 +37,9 @@ def add_component_to_blueprint(
     if parent_component is not None:
         params["parent_component"] = parent_component
 
-    result = ue_connection.execute("add_component_to_blueprint", params, category_name=_CATEGORY)
+    ue.ue_send_command("add_component_to_blueprint", params, category_name=_CATEGORY)
+    response = ue.ue_receive_response()
+    result = response.get("result", {}) if response else {}
     return json.dumps(result, indent=2, ensure_ascii=False)
 
 @mcp.tool
@@ -51,10 +53,12 @@ def remove_component_from_blueprint(blueprint_name: str, component_name: str) ->
     Children of the removed component are re-parented to its parent (or promoted to root).
     The default scene root cannot be removed. The Blueprint is automatically recompiled.
     """
-    result = ue_connection.execute("remove_component_from_blueprint", {
+    ue.ue_send_command("remove_component_from_blueprint", {
         "blueprint_name": blueprint_name,
         "component_name": component_name,
     }, category_name=_CATEGORY)
+    response = ue.ue_receive_response()
+    result = response.get("result", {}) if response else {}
     return json.dumps(result, indent=2, ensure_ascii=False)
 
 @mcp.tool
@@ -66,5 +70,7 @@ def read_components_from_blueprint(blueprint_name: str) -> str:
 
     Returns a list of components with name, class, is_root flag, and parent info.
     """
-    result = ue_connection.execute("read_components_from_blueprint", {"blueprint_name": blueprint_name}, category_name=_CATEGORY)
+    ue.ue_send_command("read_components_from_blueprint", {"blueprint_name": blueprint_name}, category_name=_CATEGORY)
+    response = ue.ue_receive_response()
+    result = response.get("result", {}) if response else {}
     return json.dumps(result, indent=2, ensure_ascii=False)

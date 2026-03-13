@@ -6,7 +6,7 @@ Commands: read_blueprint_graph, add_event_node, add_function_call_node,
 
 import json
 from typing import Optional, Dict, Any, List
-import ue_connection
+from Tools import ue_interaction_tool as ue
 
 _CATEGORY = "BlueprintGraph"
 
@@ -21,9 +21,11 @@ def read_blueprint_graph(blueprint_name: str) -> str:
     Returns nodes with node_id (GUID), class, title, position, and pins
     (including connection info). Use node_id and pin_name for connect_nodes.
     """
-    result = ue_connection.execute("read_blueprint_graph", {
+    ue.ue_send_command("read_blueprint_graph", {
         "blueprint_name": blueprint_name,
     }, category_name=_CATEGORY)
+    response = ue.ue_receive_response()
+    result = response.get("result", {}) if response else {}
     return json.dumps(result, indent=2, ensure_ascii=False)
 
 @mcp.tool
@@ -49,7 +51,9 @@ def add_event_node(
     if node_position is not None:
         params["node_position"] = node_position
 
-    result = ue_connection.execute("add_event_node", params, category_name=_CATEGORY)
+    ue.ue_send_command("add_event_node", params, category_name=_CATEGORY)
+    response = ue.ue_receive_response()
+    result = response.get("result", {}) if response else {}
     return json.dumps(result, indent=2, ensure_ascii=False)
 
 @mcp.tool
@@ -79,7 +83,9 @@ def add_function_call_node(
     if node_position is not None:
         params["node_position"] = node_position
 
-    result = ue_connection.execute("add_function_call_node", params, category_name=_CATEGORY)
+    ue.ue_send_command("add_function_call_node", params, category_name=_CATEGORY)
+    response = ue.ue_receive_response()
+    result = response.get("result", {}) if response else {}
     return json.dumps(result, indent=2, ensure_ascii=False)
 
 @mcp.tool
@@ -104,7 +110,9 @@ def add_variable_get_node(
     if node_position is not None:
         params["node_position"] = node_position
 
-    result = ue_connection.execute("add_variable_get_node", params, category_name=_CATEGORY)
+    ue.ue_send_command("add_variable_get_node", params, category_name=_CATEGORY)
+    response = ue.ue_receive_response()
+    result = response.get("result", {}) if response else {}
     return json.dumps(result, indent=2, ensure_ascii=False)
 
 @mcp.tool
@@ -129,7 +137,9 @@ def add_variable_set_node(
     if node_position is not None:
         params["node_position"] = node_position
 
-    result = ue_connection.execute("add_variable_set_node", params, category_name=_CATEGORY)
+    ue.ue_send_command("add_variable_set_node", params, category_name=_CATEGORY)
+    response = ue.ue_receive_response()
+    result = response.get("result", {}) if response else {}
     return json.dumps(result, indent=2, ensure_ascii=False)
 
 @mcp.tool
@@ -151,13 +161,15 @@ def connect_nodes(
 
     Common pin names: "execute" (exec in), "then" (exec out), "ReturnValue".
     """
-    result = ue_connection.execute("connect_nodes", {
+    ue.ue_send_command("connect_nodes", {
         "blueprint_name": blueprint_name,
         "source_node_id": source_node_id,
         "source_pin_name": source_pin_name,
         "target_node_id": target_node_id,
         "target_pin_name": target_pin_name,
     }, category_name=_CATEGORY)
+    response = ue.ue_receive_response()
+    result = response.get("result", {}) if response else {}
     return json.dumps(result, indent=2, ensure_ascii=False)
 
 @mcp.tool
@@ -175,9 +187,11 @@ def disconnect_nodes(
 
     Returns the number of connections that were removed.
     """
-    result = ue_connection.execute("disconnect_nodes", {
+    ue.ue_send_command("disconnect_nodes", {
         "blueprint_name": blueprint_name,
         "node_id": node_id,
         "pin_name": pin_name,
     }, category_name=_CATEGORY)
+    response = ue.ue_receive_response()
+    result = response.get("result", {}) if response else {}
     return json.dumps(result, indent=2, ensure_ascii=False)

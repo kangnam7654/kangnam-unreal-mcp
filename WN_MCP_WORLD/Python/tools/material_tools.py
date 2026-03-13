@@ -6,7 +6,7 @@ Commands: get_available_materials, apply_material_to_actor, apply_material_to_bl
 
 import json
 from typing import Optional, Dict, Any, List
-import ue_connection
+from Tools import ue_interaction_tool as ue
 
 _CATEGORY = "Material"
 
@@ -30,7 +30,9 @@ def get_available_materials(
     if include_engine_materials is not None:
         params["include_engine_materials"] = include_engine_materials
 
-    result = ue_connection.execute("get_available_materials", params, category_name=_CATEGORY)
+    ue.ue_send_command("get_available_materials", params, category_name=_CATEGORY)
+    response = ue.ue_receive_response()
+    result = response.get("result", {}) if response else {}
     return json.dumps(result, indent=2, ensure_ascii=False)
 
 @mcp.tool
@@ -55,7 +57,9 @@ def apply_material_to_actor(
     if material_slot is not None:
         params["material_slot"] = material_slot
 
-    result = ue_connection.execute("apply_material_to_actor", params, category_name=_CATEGORY)
+    ue.ue_send_command("apply_material_to_actor", params, category_name=_CATEGORY)
+    response = ue.ue_receive_response()
+    result = response.get("result", {}) if response else {}
     return json.dumps(result, indent=2, ensure_ascii=False)
 
 @mcp.tool
@@ -83,7 +87,9 @@ def apply_material_to_blueprint(
     if material_slot is not None:
         params["material_slot"] = material_slot
 
-    result = ue_connection.execute("apply_material_to_blueprint", params, category_name=_CATEGORY)
+    ue.ue_send_command("apply_material_to_blueprint", params, category_name=_CATEGORY)
+    response = ue.ue_receive_response()
+    result = response.get("result", {}) if response else {}
     return json.dumps(result, indent=2, ensure_ascii=False)
 
 @mcp.tool
@@ -95,7 +101,9 @@ def get_actor_material_info(actor_name: str) -> str:
 
     Returns material slot info (name, path, class) for all StaticMeshComponents.
     """
-    result = ue_connection.execute("get_actor_material_info", {"actor_name": actor_name}, category_name=_CATEGORY)
+    ue.ue_send_command("get_actor_material_info", {"actor_name": actor_name}, category_name=_CATEGORY)
+    response = ue.ue_receive_response()
+    result = response.get("result", {}) if response else {}
     return json.dumps(result, indent=2, ensure_ascii=False)
 
 @mcp.tool
@@ -111,10 +119,12 @@ def get_blueprint_material_info(
 
     Returns material slot info and whether a static mesh is assigned.
     """
-    result = ue_connection.execute("get_blueprint_material_info", {
+    ue.ue_send_command("get_blueprint_material_info", {
         "blueprint_name": blueprint_name,
         "component_name": component_name,
     }, category_name=_CATEGORY)
+    response = ue.ue_receive_response()
+    result = response.get("result", {}) if response else {}
     return json.dumps(result, indent=2, ensure_ascii=False)
 
 @mcp.tool
@@ -161,5 +171,7 @@ def set_mesh_material_color(
     if roughness is not None:
         params["roughness"] = roughness
 
-    result = ue_connection.execute("set_mesh_material_color", params, category_name=_CATEGORY)
+    ue.ue_send_command("set_mesh_material_color", params, category_name=_CATEGORY)
+    response = ue.ue_receive_response()
+    result = response.get("result", {}) if response else {}
     return json.dumps(result, indent=2, ensure_ascii=False)

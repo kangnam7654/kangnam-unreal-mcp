@@ -5,7 +5,7 @@ Commands: set_static_mesh_properties, set_physics_properties
 
 import json
 from typing import Optional, Dict, Any
-import ue_connection
+from Tools import ue_interaction_tool as ue
 
 _CATEGORY = "Property"
 
@@ -37,7 +37,9 @@ def set_static_mesh_properties(
     if material is not None:
         params["material"] = material
 
-    result = ue_connection.execute("set_static_mesh_properties", params, category_name=_CATEGORY)
+    ue.ue_send_command("set_static_mesh_properties", params, category_name=_CATEGORY)
+    response = ue.ue_receive_response()
+    result = response.get("result", {}) if response else {}
     return json.dumps(result, indent=2, ensure_ascii=False)
 
 @mcp.tool
@@ -75,5 +77,7 @@ def set_physics_properties(
     if angular_damping is not None:
         params["angular_damping"] = angular_damping
 
-    result = ue_connection.execute("set_physics_properties", params, category_name=_CATEGORY)
+    ue.ue_send_command("set_physics_properties", params, category_name=_CATEGORY)
+    response = ue.ue_receive_response()
+    result = response.get("result", {}) if response else {}
     return json.dumps(result, indent=2, ensure_ascii=False)

@@ -6,7 +6,7 @@ Commands: get_actors_in_level, find_actors_by_name, spawn_actor,
 
 import json
 from typing import Optional, Dict, Any, List
-import ue_connection
+from Tools import ue_interaction_tool as ue
 
 _CATEGORY = "Actor"
 
@@ -18,7 +18,9 @@ def get_actors_in_level() -> str:
     Returns a list of all actors with their name, class, location, rotation, and scale.
     Use this to inspect the current state of the level.
     """
-    result = ue_connection.execute("get_actors_in_level", category_name=_CATEGORY)
+    ue.ue_send_command("get_actors_in_level", category_name=_CATEGORY)
+    response = ue.ue_receive_response()
+    result = response.get("result", {}) if response else {}
     return json.dumps(result, indent=2, ensure_ascii=False)
 
 @mcp.tool
@@ -30,7 +32,9 @@ def find_actors_by_name(search_text: str) -> str:
 
     Returns a list of matching actors with their name, class, location, rotation, and scale.
     """
-    result = ue_connection.execute("find_actors_by_name", {"search_text": search_text}, category_name=_CATEGORY)
+    ue.ue_send_command("find_actors_by_name", {"search_text": search_text}, category_name=_CATEGORY)
+    response = ue.ue_receive_response()
+    result = response.get("result", {}) if response else {}
     return json.dumps(result, indent=2, ensure_ascii=False)
 
 @mcp.tool
@@ -60,7 +64,9 @@ def spawn_actor(
     if scale is not None:
         params["scale"] = scale
 
-    result = ue_connection.execute("spawn_actor", params, category_name=_CATEGORY)
+    ue.ue_send_command("spawn_actor", params, category_name=_CATEGORY)
+    response = ue.ue_receive_response()
+    result = response.get("result", {}) if response else {}
     return json.dumps(result, indent=2, ensure_ascii=False)
 
 @mcp.tool
@@ -72,7 +78,9 @@ def delete_actor(name: str) -> str:
 
     Permanently removes the actor from the level.
     """
-    result = ue_connection.execute("delete_actor", {"name": name}, category_name=_CATEGORY)
+    ue.ue_send_command("delete_actor", {"name": name}, category_name=_CATEGORY)
+    response = ue.ue_receive_response()
+    result = response.get("result", {}) if response else {}
     return json.dumps(result, indent=2, ensure_ascii=False)
 
 @mcp.tool
@@ -100,7 +108,9 @@ def set_actor_transform(
     if scale is not None:
         params["scale"] = scale
 
-    result = ue_connection.execute("set_actor_transform", params, category_name=_CATEGORY)
+    ue.ue_send_command("set_actor_transform", params, category_name=_CATEGORY)
+    response = ue.ue_receive_response()
+    result = response.get("result", {}) if response else {}
     return json.dumps(result, indent=2, ensure_ascii=False)
 
 @mcp.tool
@@ -113,5 +123,7 @@ def read_actor_content(name: str) -> str:
     Returns name, class, and transform (location/rotation/scale).
     For component info, use read_components_from_actor() instead.
     """
-    result = ue_connection.execute("read_actor_content", {"name": name}, category_name=_CATEGORY)
+    ue.ue_send_command("read_actor_content", {"name": name}, category_name=_CATEGORY)
+    response = ue.ue_receive_response()
+    result = response.get("result", {}) if response else {}
     return json.dumps(result, indent=2, ensure_ascii=False)
