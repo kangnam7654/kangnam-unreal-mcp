@@ -354,9 +354,12 @@ def is_ue_connected() -> bool:
                 # Try to recv 1 byte without consuming it
                 # This will immediately return if socket is ready/closed
                 data = UE_SOCKET.recv(1, socket_module.MSG_PEEK)
-                
-                # If we get here without exception, connection is valid
-                # (MSG_PEEK means data isn't consumed, we're just peeking)
+
+                if not data:
+                    # Empty data = connection closed by peer (TCP FIN received)
+                    log_debug('recv check detected closed connection (empty data from peer)')
+                    return False
+
                 return True
             except BlockingIOError:
                 # Socket would block = connection is still active
