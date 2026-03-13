@@ -16,6 +16,8 @@
 | 로깅 인프라 | settings.ini 기반 로그 레벨/보존/정리 | `9989cbd` (tools/logging.py) |
 | Agent-Chain Result 매크로 | C++ 7개 result 빌더 매크로 | `30aecb6` (KN_MCP_CommandGroup.h) |
 | Python Schemas 모듈 | 매크로 대응 빌더/검증 헬퍼 | `ef647ac` (kn_mcp/core/schemas.py) |
+| 연결 확장 기능 | 포트 스캔, 리스닝 체크, 상태 콜백 | `0907fc3` (connection.py) |
+| KN_MCPTest 플러그인 | 확장 플러그인 데모 + 테스트 | `c03527a` (KN_MCPTest/) |
 
 ---
 
@@ -166,8 +168,8 @@ Extension 플러그인 작성 방법을 보여주는 예시 + C++ 커맨드 테�
 |----------|------|------|-----------|
 | ~~**HIGH**~~ | ~~Agent-Chain Result 매크로 (C++)~~ | ~~KN_MCP 코어~~ | ~~`KN_MCP_CommandGroup.h`~~ ✅ `30aecb6` |
 | ~~**HIGH**~~ | ~~Python Schemas 모듈~~ | ~~KN_MCP Python 코어~~ | ~~`kn_mcp/core/schemas.py`~~ ✅ `ef647ac` |
-| **MEDIUM** | 연결 확장 기능 | KN_MCP Python 코어 | `kn_mcp/connection.py` |
-| **MEDIUM** | 테스트 플러그인 | 별도 플러그인 | `KN_MCPTest/` |
+| ~~**MEDIUM**~~ | ~~연결 확장 기능~~ | ~~KN_MCP Python 코어~~ | ~~`kn_mcp/connection.py`~~ ✅ `0907fc3` |
+| ~~**MEDIUM**~~ | ~~테스트 플러그인~~ | ~~별도 플러그인~~ | ~~`KN_MCPTest/`~~ ✅ `c03527a` |
 | **LOW** | Agent 파라미터 컨텍스트 | KN_MCP Python 코어 | `kn_mcp/params.py` |
 | **LOW** | 확장 로깅 (MISC, ring buffer) | KN_MCP Python 코어 | `kn_mcp/tools/logging.py` |
 
