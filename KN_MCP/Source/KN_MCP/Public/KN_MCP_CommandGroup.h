@@ -303,6 +303,238 @@ static RegisterCommandGroup_ ##CommandGroupClass RegisterCommandGroupInstance_ #
 	jsonErrorResponse->SetStringField(TEXT("id"), InCommandName);\
 	return jsonErrorResponse
 
+// =============================================================================
+// KN_MCP_CREATE_RESULT_XXX — result object builders
+//
+// These macros create a TSharedPtr<FJsonObject> that represents the inner
+// 'result' payload for a JSON-RPC 2.0 success response.
+// Pass the return value directly to KN_RETURN_COMMAND_RESPONSE().
+//
+// Each macro corresponds to one of the agent-chain cases defined in
+// Docs/MCP-UE-Agent-Chain-Case-Study.md.
+// =============================================================================
+
+/// Case 2 / Case 7 — Delegation execution (run_required)
+///
+/// UE instructs the agent to run an external command and report the result back
+/// via a paired <tool>_result call.
+///
+/// result.status  = "run_required"
+/// result.command : full command line the agent must execute
+/// result.message : human-readable instruction shown to the agent
+/// (set any additional parameter fields directly on the returned object)
+///
+/// Code snippet:
+///
+///   TSharedPtr<FJsonObject> OnExecute(...) const override
+///   {
+///       FString cmd = FString::Printf(
+///           TEXT("uv run python movie_to_fbx.py --skeleton_path %s --movie_path %s"),
+///           *skeletonPath, *moviePath);
+///
+///       auto result = KN_MCP_CREATE_RESULT_RUN_REQUIRED(
+///           cmd,
+///           TEXT("Run the command below, then report result via movie_to_fbx_result."));
+///       result->SetStringField(TEXT("skeleton_path"), skeletonPath);
+///
+///       KN_RETURN_COMMAND_RESPONSE(result);
+///   }
+///
+/// @param InCommand  Full command line string (FString or const TCHAR*)
+/// @param InMessage  Instruction text shown to the agent (FString or const TCHAR*)
+#define KN_MCP_CREATE_RESULT_RUN_REQUIRED(InCommand, InMessage) \
+	[&]() -> TSharedPtr<FJsonObject> \
+	{ \
+		TSharedPtr<FJsonObject> _r = MakeShareable(new FJsonObject); \
+		_r->SetStringField(TEXT("status"),  TEXT("run_required")); \
+		_r->SetStringField(TEXT("message"), (InMessage)); \
+		_r->SetStringField(TEXT("command"), (InCommand)); \
+		return _r; \
+	}()
+
+/// Case 3 — Async task accepted (accepted)
+///
+/// The task has been accepted and is now running in the background.
+/// The agent must poll get_task_result or wait for a completion notification.
+///
+/// result.status     = "accepted"
+/// result.request_id : opaque token used to identify this job in follow-up calls
+/// result.message    : human-readable status hint for the agent
+///
+/// Code snippet:
+///
+///   TSharedPtr<FJsonObject> OnExecute(...) const override
+///   {
+///       FString RequestId = FGuid::NewGuid().ToString();
+///       LaunchBackgroundBake(RequestId);
+///
+///       KN_RETURN_COMMAND_RESPONSE(KN_MCP_CREATE_RESULT_ACCEPTED(
+///           RequestId,
+///           TEXT("Bake started. Poll get_task_result or wait for notification.")));
+///   }
+///
+/// @param InRequestId  Unique job identifier (FString or const TCHAR*)
+/// @param InMessage    Status hint for the agent (FString or const TCHAR*)
+#define KN_MCP_CREATE_RESULT_ACCEPTED(InRequestId, InMessage) \
+	[&]() -> TSharedPtr<FJsonObject> \
+	{ \
+		TSharedPtr<FJsonObject> _r = MakeShareable(new FJsonObject); \
+		_r->SetStringField(TEXT("status"),     TEXT("accepted")); \
+		_r->SetStringField(TEXT("request_id"), (InRequestId)); \
+		_r->SetStringField(TEXT("message"),    (InMessage)); \
+		return _r; \
+	}()
+
+/// Case 3 — Async task still running (running)
+///
+/// The agent polled for a result but the job has not finished yet.
+///
+/// result.status     = "running"
+/// result.request_id : same token returned by the accepted response
+/// result.progress   : 0.0–1.0 completion estimate (pass negative to omit)
+///
+/// Code snippet:
+///
+///   TSharedPtr<FJsonObject> OnExecute(...) const override
+///   {
+///       FString RequestId = InParamsPtr->GetStringField(TEXT("request_id"));
+///       float Progress = GetBakeProgress(RequestId);
+///
+///       KN_RETURN_COMMAND_RESPONSE(KN_MCP_CREATE_RESULT_RUNNING(RequestId, Progress));
+///   }
+///
+/// @param InRequestId  Unique job identifier (FString or const TCHAR*)
+/// @param InProgress   Completion fraction in [0, 1]; pass negative to omit the field
+#define KN_MCP_CREATE_RESULT_RUNNING(InRequestId, InProgress) \
+	[&]() -> TSharedPtr<FJsonObject> \
+	{ \
+		TSharedPtr<FJsonObject> _r = MakeShareable(new FJsonObject); \
+		_r->SetStringField(TEXT("status"),     TEXT("running")); \
+		_r->SetStringField(TEXT("request_id"), (InRequestId)); \
+		if ((InProgress) >= 0.0f) { _r->SetNumberField(TEXT("progress"), (InProgress)); } \
+		return _r; \
+	}()
+
+/// Case 3 — Async task completed (completed)
+///
+/// The background job finished successfully.
+/// Set any output data fields directly on the returned object.
+///
+/// result.status     = "completed"
+/// result.request_id : same token returned by the accepted response
+///
+/// Code snippet:
+///
+///   TSharedPtr<FJsonObject> OnExecute(...) const override
+///   {
+///       FString requestId = InParamsPtr->GetStringField(TEXT("request_id"));
+///
+///       auto result = KN_MCP_CREATE_RESULT_COMPLETED(requestId);
+///       result->SetNumberField(TEXT("duration_sec"), 120.0);
+///       result->SetStringField(TEXT("output_path"), TEXT("F:\\Baked\\Scene.umap"));
+///
+///       KN_RETURN_COMMAND_RESPONSE(result);
+///   }
+///
+/// @param InRequestId  Unique job identifier (FString or const TCHAR*)
+#define KN_MCP_CREATE_RESULT_COMPLETED(InRequestId) \
+	[&]() -> TSharedPtr<FJsonObject> \
+	{ \
+		TSharedPtr<FJsonObject> _r = MakeShareable(new FJsonObject); \
+		_r->SetStringField(TEXT("status"),     TEXT("completed")); \
+		_r->SetStringField(TEXT("request_id"), (InRequestId)); \
+		return _r; \
+	}()
+
+/// Case 2 — Script result acknowledged (received)
+///
+/// Response to a <tool>_result report call. Tells the agent that UE has
+/// received and processed the script output.
+///
+/// Produces: { "received": true }
+///
+/// Code snippet:
+///
+///   TSharedPtr<FJsonObject> OnExecute(...) const override
+///   {
+///       bool bSuccess = InParamsPtr->GetBoolField(TEXT("success"));
+///       if (bSuccess)
+///       {
+///           FString FbxPath = InParamsPtr->GetStringField(TEXT("fbx_path"));
+///           ApplyFbxToSequencer(FbxPath);
+///       }
+///
+///       KN_RETURN_COMMAND_RESPONSE(KN_MCP_CREATE_RESULT_RECEIVED());
+///   }
+#define KN_MCP_CREATE_RESULT_RECEIVED() \
+	[&]() -> TSharedPtr<FJsonObject> \
+	{ \
+		TSharedPtr<FJsonObject> _r = MakeShareable(new FJsonObject); \
+		_r->SetBoolField(TEXT("received"), true); \
+		return _r; \
+	}()
+
+/// Chained tool call required (follow_up_required)
+///
+/// Returned when UE wants the agent to immediately call another MCP tool.
+/// Set then_params and any other fields directly on the returned object.
+///
+/// result.status      = "follow_up_required"
+/// result.then_method : name of the MCP tool the agent must call next
+///
+/// Code snippet:
+///
+///   TSharedPtr<FJsonObject> OnExecute(...) const override
+///   {
+///       TSharedPtr<FJsonObject> thenParams = MakeShareable(new FJsonObject);
+///       thenParams->SetStringField(TEXT("fbx_path"), fbxPath);
+///
+///       auto result = KN_MCP_CREATE_RESULT_FOLLOW_UP_REQUIRED(TEXT("Actor_import_fbx"));
+///       result->SetObjectField(TEXT("then_params"), thenParams);
+///
+///       KN_RETURN_COMMAND_RESPONSE(result);
+///   }
+///
+/// @param InThenMethod  Name of the MCP tool to call next (FString or const TCHAR*)
+#define KN_MCP_CREATE_RESULT_FOLLOW_UP_REQUIRED(InThenMethod) \
+	[&]() -> TSharedPtr<FJsonObject> \
+	{ \
+		TSharedPtr<FJsonObject> _r = MakeShareable(new FJsonObject); \
+		_r->SetStringField(TEXT("status"),      TEXT("follow_up_required")); \
+		_r->SetStringField(TEXT("then_method"), (InThenMethod)); \
+		return _r; \
+	}()
+
+/// Multi-step workflow hint (suggested_tool)
+///
+/// A pipeline step returns its result AND hints which tool to call next.
+/// Set step result fields and params_for_next directly on the returned object.
+///
+/// result.suggested_tool : name of the tool the agent should call next
+///
+/// Code snippet:
+///
+///   TSharedPtr<FJsonObject> OnExecute(...) const override
+///   {
+///       TSharedPtr<FJsonObject> paramsForNext = MakeShareable(new FJsonObject);
+///       paramsForNext->SetStringField(TEXT("movie_path"), moviePath);
+///
+///       auto result = KN_MCP_CREATE_RESULT_WITH_SUGGESTED_TOOL(TEXT("movie_to_fbx"));
+///       result->SetStringField(TEXT("movie_path"), moviePath);
+///       result->SetObjectField(TEXT("params_for_next"), paramsForNext);
+///
+///       KN_RETURN_COMMAND_RESPONSE(result);
+///   }
+///
+/// @param InSuggestedTool  Name of the recommended next tool (FString or const TCHAR*)
+#define KN_MCP_CREATE_RESULT_WITH_SUGGESTED_TOOL(InSuggestedTool) \
+	[&]() -> TSharedPtr<FJsonObject> \
+	{ \
+		TSharedPtr<FJsonObject> _r = MakeShareable(new FJsonObject); \
+		_r->SetStringField(TEXT("suggested_tool"), (InSuggestedTool)); \
+		return _r; \
+	}()
+
 //-----------------------------------------------------------------------------
 // FKN_MCP_CommandGroup
 //-----------------------------------------------------------------------------
