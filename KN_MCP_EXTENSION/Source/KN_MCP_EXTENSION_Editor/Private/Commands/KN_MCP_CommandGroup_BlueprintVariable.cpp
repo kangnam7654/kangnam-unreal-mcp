@@ -47,22 +47,28 @@ TSharedPtr<FJsonObject> FKN_MCP_CommandGroup_BlueprintVariable::OnExecute(const 
 	if (InCommandName == FString(TEXT("add_variable_to_blueprint")))
 	{
 		FString blueprintName;
-		if (!InParamsPtr.IsValid() || !InParamsPtr->TryGetStringField(TEXT("blueprint_name"), blueprintName))
+		const FString* _blueprintNamePtr = InParamsPtr.IsValid() ? InParamsPtr->TryGetStringField(TEXT("blueprint_name")) : nullptr;
+		if (!_blueprintNamePtr)
 		{
 			KN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(KN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: blueprint_name"));
 		}
+		blueprintName = *_blueprintNamePtr;
 
 		FString variableName;
-		if (!InParamsPtr->TryGetStringField(TEXT("variable_name"), variableName))
+		const FString* _variableNamePtr = InParamsPtr->TryGetStringField(TEXT("variable_name"));
+		if (!_variableNamePtr)
 		{
 			KN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(KN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: variable_name"));
 		}
+		variableName = *_variableNamePtr;
 
 		FString variableType;
-		if (!InParamsPtr->TryGetStringField(TEXT("variable_type"), variableType))
+		const FString* _variableTypePtr = InParamsPtr->TryGetStringField(TEXT("variable_type"));
+		if (!_variableTypePtr)
 		{
 			KN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(KN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: variable_type"));
 		}
+		variableType = *_variableTypePtr;
 
 		// Find blueprint
 		UBlueprint* blueprint = FKN_MCP_BlueprintUtils::FindBlueprintByName(blueprintName);
@@ -142,8 +148,9 @@ TSharedPtr<FJsonObject> FKN_MCP_CommandGroup_BlueprintVariable::OnExecute(const 
 
 		// Set default value if provided
 		FString defaultValue;
-		if (InParamsPtr->TryGetStringField(TEXT("default_value"), defaultValue))
+		if (const FString* _defaultValuePtr = InParamsPtr->TryGetStringField(TEXT("default_value")))
 		{
+			defaultValue = *_defaultValuePtr;
 			for (FBPVariableDescription& varDesc : blueprint->NewVariables)
 			{
 				if (varDesc.VarName == varFName)
@@ -156,8 +163,10 @@ TSharedPtr<FJsonObject> FKN_MCP_CommandGroup_BlueprintVariable::OnExecute(const 
 
 		// Set instance editable if specified
 		bool bInstanceEditable = false;
-		if (InParamsPtr->TryGetBoolField(TEXT("is_instance_editable"), bInstanceEditable) && bInstanceEditable)
+		const bool* _bInstanceEditablePtr = InParamsPtr->TryGetBoolField(TEXT("is_instance_editable"));
+		if (_bInstanceEditablePtr && *_bInstanceEditablePtr)
 		{
+			bInstanceEditable = *_bInstanceEditablePtr;
 			for (FBPVariableDescription& varDesc : blueprint->NewVariables)
 			{
 				if (varDesc.VarName == varFName)
@@ -184,16 +193,20 @@ TSharedPtr<FJsonObject> FKN_MCP_CommandGroup_BlueprintVariable::OnExecute(const 
 	if (InCommandName == FString(TEXT("remove_variable_from_blueprint")))
 	{
 		FString blueprintName;
-		if (!InParamsPtr.IsValid() || !InParamsPtr->TryGetStringField(TEXT("blueprint_name"), blueprintName))
+		const FString* _blueprintNamePtr = InParamsPtr.IsValid() ? InParamsPtr->TryGetStringField(TEXT("blueprint_name")) : nullptr;
+		if (!_blueprintNamePtr)
 		{
 			KN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(KN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: blueprint_name"));
 		}
+		blueprintName = *_blueprintNamePtr;
 
 		FString variableName;
-		if (!InParamsPtr->TryGetStringField(TEXT("variable_name"), variableName))
+		const FString* _variableNamePtr = InParamsPtr->TryGetStringField(TEXT("variable_name"));
+		if (!_variableNamePtr)
 		{
 			KN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(KN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: variable_name"));
 		}
+		variableName = *_variableNamePtr;
 
 		// Find blueprint
 		UBlueprint* blueprint = FKN_MCP_BlueprintUtils::FindBlueprintByName(blueprintName);

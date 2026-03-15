@@ -52,16 +52,20 @@ TSharedPtr<FJsonObject> FKN_MCP_CommandGroup_Property::OnExecute(const FString& 
 	if (InCommandName == FString(TEXT("set_static_mesh_properties")))
 	{
 		FString blueprintName;
-		if (!InParamsPtr.IsValid() || !InParamsPtr->TryGetStringField(TEXT("blueprint_name"), blueprintName))
+		const FString* _blueprintNamePtr = InParamsPtr.IsValid() ? InParamsPtr->TryGetStringField(TEXT("blueprint_name")) : nullptr;
+		if (!_blueprintNamePtr)
 		{
 			KN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(KN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: blueprint_name"));
 		}
+		blueprintName = *_blueprintNamePtr;
 
 		FString componentName;
-		if (!InParamsPtr->TryGetStringField(TEXT("component_name"), componentName))
+		const FString* _componentNamePtr = InParamsPtr->TryGetStringField(TEXT("component_name"));
+		if (!_componentNamePtr)
 		{
 			KN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(KN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: component_name"));
 		}
+		componentName = *_componentNamePtr;
 
 		// Find blueprint
 		UBlueprint* blueprint = FKN_MCP_BlueprintUtils::FindBlueprintByName(blueprintName);
@@ -94,8 +98,9 @@ TSharedPtr<FJsonObject> FKN_MCP_CommandGroup_Property::OnExecute(const FString& 
 
 		// Set static mesh if provided
 		FString meshPath;
-		if (InParamsPtr->TryGetStringField(TEXT("static_mesh"), meshPath))
+		if (const FString* _meshPathPtr = InParamsPtr->TryGetStringField(TEXT("static_mesh")))
 		{
+			meshPath = *_meshPathPtr;
 			UStaticMesh* mesh = Cast<UStaticMesh>(UEditorAssetLibrary::LoadAsset(meshPath));
 			if (mesh)
 			{
@@ -110,8 +115,9 @@ TSharedPtr<FJsonObject> FKN_MCP_CommandGroup_Property::OnExecute(const FString& 
 
 		// Set material if provided
 		FString materialPath;
-		if (InParamsPtr->TryGetStringField(TEXT("material"), materialPath))
+		if (const FString* _materialPathPtr = InParamsPtr->TryGetStringField(TEXT("material")))
 		{
+			materialPath = *_materialPathPtr;
 			UMaterialInterface* material = Cast<UMaterialInterface>(UEditorAssetLibrary::LoadAsset(materialPath));
 			if (material)
 			{
@@ -141,16 +147,20 @@ TSharedPtr<FJsonObject> FKN_MCP_CommandGroup_Property::OnExecute(const FString& 
 	if (InCommandName == FString(TEXT("set_physics_properties")))
 	{
 		FString blueprintName;
-		if (!InParamsPtr.IsValid() || !InParamsPtr->TryGetStringField(TEXT("blueprint_name"), blueprintName))
+		const FString* _blueprintNamePtr = InParamsPtr.IsValid() ? InParamsPtr->TryGetStringField(TEXT("blueprint_name")) : nullptr;
+		if (!_blueprintNamePtr)
 		{
 			KN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(KN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: blueprint_name"));
 		}
+		blueprintName = *_blueprintNamePtr;
 
 		FString componentName;
-		if (!InParamsPtr->TryGetStringField(TEXT("component_name"), componentName))
+		const FString* _componentNamePtr = InParamsPtr->TryGetStringField(TEXT("component_name"));
+		if (!_componentNamePtr)
 		{
 			KN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(KN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: component_name"));
 		}
+		componentName = *_componentNamePtr;
 
 		// Find blueprint
 		UBlueprint* blueprint = FKN_MCP_BlueprintUtils::FindBlueprintByName(blueprintName);
@@ -183,26 +193,30 @@ TSharedPtr<FJsonObject> FKN_MCP_CommandGroup_Property::OnExecute(const FString& 
 
 		// Set physics properties
 		bool bValue;
-		if (InParamsPtr->TryGetBoolField(TEXT("simulate_physics"), bValue))
+		if (const bool* _bValuePtr = InParamsPtr->TryGetBoolField(TEXT("simulate_physics")))
 		{
+			bValue = *_bValuePtr;
 			primComponent->SetSimulatePhysics(bValue);
 		}
 
 		double massValue;
-		if (InParamsPtr->TryGetNumberField(TEXT("mass"), massValue))
+		if (const double* _massValuePtr = InParamsPtr->TryGetNumberField(TEXT("mass")))
 		{
+			massValue = *_massValuePtr;
 			primComponent->SetMassOverrideInKg(NAME_None, static_cast<float>(massValue));
 		}
 
 		double linearDamping;
-		if (InParamsPtr->TryGetNumberField(TEXT("linear_damping"), linearDamping))
+		if (const double* _linearDampingPtr = InParamsPtr->TryGetNumberField(TEXT("linear_damping")))
 		{
+			linearDamping = *_linearDampingPtr;
 			primComponent->SetLinearDamping(static_cast<float>(linearDamping));
 		}
 
 		double angularDamping;
-		if (InParamsPtr->TryGetNumberField(TEXT("angular_damping"), angularDamping))
+		if (const double* _angularDampingPtr = InParamsPtr->TryGetNumberField(TEXT("angular_damping")))
 		{
+			angularDamping = *_angularDampingPtr;
 			primComponent->SetAngularDamping(static_cast<float>(angularDamping));
 		}
 

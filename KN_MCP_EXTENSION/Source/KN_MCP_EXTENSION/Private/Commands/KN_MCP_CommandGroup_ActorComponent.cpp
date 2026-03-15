@@ -49,20 +49,27 @@ TSharedPtr<FJsonObject> FKN_MCP_CommandGroup_ActorComponent::OnExecute(const FSt
 	if (InCommandName == FString(TEXT("add_component_to_actor")))
 	{
 		FString actorName;
-		if (!InParamsPtr.IsValid() || !InParamsPtr->TryGetStringField(TEXT("name"), actorName))
+		const FString* _actorNamePtr = InParamsPtr.IsValid() ? InParamsPtr->TryGetStringField(TEXT("name")) : nullptr;
+		if (!_actorNamePtr)
 		{
 			KN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(KN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: name"));
 		}
+		actorName = *_actorNamePtr;
 
 		FString componentClassName;
-		if (!InParamsPtr->TryGetStringField(TEXT("component_class"), componentClassName))
+		const FString* _componentClassNamePtr = InParamsPtr->TryGetStringField(TEXT("component_class"));
+		if (!_componentClassNamePtr)
 		{
 			KN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(KN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: component_class"));
 		}
+		componentClassName = *_componentClassNamePtr;
 
 		// Optional component name
 		FString componentName;
-		InParamsPtr->TryGetStringField(TEXT("component_name"), componentName);
+		if (const FString* _componentNamePtr = InParamsPtr->TryGetStringField(TEXT("component_name")))
+		{
+			componentName = *_componentNamePtr;
+		}
 
 		AActor* foundActor = FKN_MCP_ActorUtils::FindActorByName(actorName);
 		if (!foundActor)
@@ -129,16 +136,20 @@ TSharedPtr<FJsonObject> FKN_MCP_CommandGroup_ActorComponent::OnExecute(const FSt
 	if (InCommandName == FString(TEXT("remove_component_from_actor")))
 	{
 		FString actorName;
-		if (!InParamsPtr.IsValid() || !InParamsPtr->TryGetStringField(TEXT("name"), actorName))
+		const FString* _actorNamePtr = InParamsPtr.IsValid() ? InParamsPtr->TryGetStringField(TEXT("name")) : nullptr;
+		if (!_actorNamePtr)
 		{
 			KN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(KN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: name"));
 		}
+		actorName = *_actorNamePtr;
 
 		FString componentName;
-		if (!InParamsPtr->TryGetStringField(TEXT("component_name"), componentName))
+		const FString* _componentNamePtr = InParamsPtr->TryGetStringField(TEXT("component_name"));
+		if (!_componentNamePtr)
 		{
 			KN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(KN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: component_name"));
 		}
+		componentName = *_componentNamePtr;
 
 		AActor* foundActor = FKN_MCP_ActorUtils::FindActorByName(actorName);
 		if (!foundActor)
@@ -194,10 +205,12 @@ TSharedPtr<FJsonObject> FKN_MCP_CommandGroup_ActorComponent::OnExecute(const FSt
 	if (InCommandName == FString(TEXT("read_components_from_actor")))
 	{
 		FString actorName;
-		if (!InParamsPtr.IsValid() || !InParamsPtr->TryGetStringField(TEXT("name"), actorName))
+		const FString* _actorNamePtr = InParamsPtr.IsValid() ? InParamsPtr->TryGetStringField(TEXT("name")) : nullptr;
+		if (!_actorNamePtr)
 		{
 			KN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(KN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: name"));
 		}
+		actorName = *_actorNamePtr;
 
 		AActor* foundActor = FKN_MCP_ActorUtils::FindActorByName(actorName);
 		if (!foundActor)

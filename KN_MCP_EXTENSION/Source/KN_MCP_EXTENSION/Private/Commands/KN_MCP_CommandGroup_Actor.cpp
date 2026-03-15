@@ -86,10 +86,12 @@ TSharedPtr<FJsonObject> FKN_MCP_CommandGroup_Actor::OnExecute(const FString& InC
 		}
 
 		FString searchText;
-		if (!InParamsPtr.IsValid() || !InParamsPtr->TryGetStringField(TEXT("search_text"), searchText))
+		const FString* _searchTextPtr = InParamsPtr.IsValid() ? InParamsPtr->TryGetStringField(TEXT("search_text")) : nullptr;
+		if (!_searchTextPtr)
 		{
 			KN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(KN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: search_text"));
 		}
+		searchText = *_searchTextPtr;
 
 		TArray<AActor*> allActors;
 		UGameplayStatics::GetAllActorsOfClass(GWorld, AActor::StaticClass(), allActors);
@@ -121,16 +123,20 @@ TSharedPtr<FJsonObject> FKN_MCP_CommandGroup_Actor::OnExecute(const FString& InC
 		}
 
 		FString actorType;
-		if (!InParamsPtr.IsValid() || !InParamsPtr->TryGetStringField(TEXT("type"), actorType))
+		const FString* _actorTypePtr = InParamsPtr.IsValid() ? InParamsPtr->TryGetStringField(TEXT("type")) : nullptr;
+		if (!_actorTypePtr)
 		{
 			KN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(KN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: type"));
 		}
+		actorType = *_actorTypePtr;
 
 		FString actorName;
-		if (!InParamsPtr->TryGetStringField(TEXT("name"), actorName))
+		const FString* _actorNamePtr = InParamsPtr->TryGetStringField(TEXT("name"));
+		if (!_actorNamePtr)
 		{
 			KN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(KN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: name"));
 		}
+		actorName = *_actorNamePtr;
 
 		// optional transform parameters
 		FVector location(0.0f, 0.0f, 0.0f);
@@ -139,34 +145,34 @@ TSharedPtr<FJsonObject> FKN_MCP_CommandGroup_Actor::OnExecute(const FString& InC
 
 		if (InParamsPtr->HasField(TEXT("location")))
 		{
-			const TArray<TSharedPtr<FJsonValue>>* locationArray;
-			if (InParamsPtr->TryGetArrayField(TEXT("location"), locationArray) && locationArray->Num() >= 3)
+			const TArray<TSharedPtr<FJsonValue>>* _locationArrayPtr = InParamsPtr->TryGetArrayField(TEXT("location"));
+			if (_locationArrayPtr && _locationArrayPtr->Num() >= 3)
 			{
-				location.X = (*locationArray)[0]->AsNumber();
-				location.Y = (*locationArray)[1]->AsNumber();
-				location.Z = (*locationArray)[2]->AsNumber();
+				location.X = (*_locationArrayPtr)[0]->AsNumber();
+				location.Y = (*_locationArrayPtr)[1]->AsNumber();
+				location.Z = (*_locationArrayPtr)[2]->AsNumber();
 			}
 		}
 
 		if (InParamsPtr->HasField(TEXT("rotation")))
 		{
-			const TArray<TSharedPtr<FJsonValue>>* rotationArray;
-			if (InParamsPtr->TryGetArrayField(TEXT("rotation"), rotationArray) && rotationArray->Num() >= 3)
+			const TArray<TSharedPtr<FJsonValue>>* _rotationArrayPtr = InParamsPtr->TryGetArrayField(TEXT("rotation"));
+			if (_rotationArrayPtr && _rotationArrayPtr->Num() >= 3)
 			{
-				rotation.Pitch = (*rotationArray)[0]->AsNumber();
-				rotation.Yaw = (*rotationArray)[1]->AsNumber();
-				rotation.Roll = (*rotationArray)[2]->AsNumber();
+				rotation.Pitch = (*_rotationArrayPtr)[0]->AsNumber();
+				rotation.Yaw = (*_rotationArrayPtr)[1]->AsNumber();
+				rotation.Roll = (*_rotationArrayPtr)[2]->AsNumber();
 			}
 		}
 
 		if (InParamsPtr->HasField(TEXT("scale")))
 		{
-			const TArray<TSharedPtr<FJsonValue>>* scaleArray;
-			if (InParamsPtr->TryGetArrayField(TEXT("scale"), scaleArray) && scaleArray->Num() >= 3)
+			const TArray<TSharedPtr<FJsonValue>>* _scaleArrayPtr = InParamsPtr->TryGetArrayField(TEXT("scale"));
+			if (_scaleArrayPtr && _scaleArrayPtr->Num() >= 3)
 			{
-				scale.X = (*scaleArray)[0]->AsNumber();
-				scale.Y = (*scaleArray)[1]->AsNumber();
-				scale.Z = (*scaleArray)[2]->AsNumber();
+				scale.X = (*_scaleArrayPtr)[0]->AsNumber();
+				scale.Y = (*_scaleArrayPtr)[1]->AsNumber();
+				scale.Z = (*_scaleArrayPtr)[2]->AsNumber();
 			}
 		}
 
@@ -227,10 +233,12 @@ TSharedPtr<FJsonObject> FKN_MCP_CommandGroup_Actor::OnExecute(const FString& InC
 		}
 
 		FString actorName;
-		if (!InParamsPtr.IsValid() || !InParamsPtr->TryGetStringField(TEXT("name"), actorName))
+		const FString* _actorNamePtr = InParamsPtr.IsValid() ? InParamsPtr->TryGetStringField(TEXT("name")) : nullptr;
+		if (!_actorNamePtr)
 		{
 			KN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(KN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: name"));
 		}
+		actorName = *_actorNamePtr;
 
 		AActor* foundActor = FKN_MCP_ActorUtils::FindActorByName(actorName);
 		if (!foundActor)
@@ -263,10 +271,12 @@ TSharedPtr<FJsonObject> FKN_MCP_CommandGroup_Actor::OnExecute(const FString& InC
 		}
 
 		FString actorName;
-		if (!InParamsPtr.IsValid() || !InParamsPtr->TryGetStringField(TEXT("name"), actorName))
+		const FString* _actorNamePtr = InParamsPtr.IsValid() ? InParamsPtr->TryGetStringField(TEXT("name")) : nullptr;
+		if (!_actorNamePtr)
 		{
 			KN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(KN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: name"));
 		}
+		actorName = *_actorNamePtr;
 
 		AActor* foundActor = FKN_MCP_ActorUtils::FindActorByName(actorName);
 		if (!foundActor)
@@ -278,39 +288,39 @@ TSharedPtr<FJsonObject> FKN_MCP_CommandGroup_Actor::OnExecute(const FString& InC
 		// Apply only provided transform components
 		if (InParamsPtr->HasField(TEXT("location")))
 		{
-			const TArray<TSharedPtr<FJsonValue>>* locationArray;
-			if (InParamsPtr->TryGetArrayField(TEXT("location"), locationArray) && locationArray->Num() >= 3)
+			const TArray<TSharedPtr<FJsonValue>>* _locationArrayPtr = InParamsPtr->TryGetArrayField(TEXT("location"));
+			if (_locationArrayPtr && _locationArrayPtr->Num() >= 3)
 			{
 				FVector location;
-				location.X = (*locationArray)[0]->AsNumber();
-				location.Y = (*locationArray)[1]->AsNumber();
-				location.Z = (*locationArray)[2]->AsNumber();
+				location.X = (*_locationArrayPtr)[0]->AsNumber();
+				location.Y = (*_locationArrayPtr)[1]->AsNumber();
+				location.Z = (*_locationArrayPtr)[2]->AsNumber();
 				foundActor->SetActorLocation(location);
 			}
 		}
 
 		if (InParamsPtr->HasField(TEXT("rotation")))
 		{
-			const TArray<TSharedPtr<FJsonValue>>* rotationArray;
-			if (InParamsPtr->TryGetArrayField(TEXT("rotation"), rotationArray) && rotationArray->Num() >= 3)
+			const TArray<TSharedPtr<FJsonValue>>* _rotationArrayPtr = InParamsPtr->TryGetArrayField(TEXT("rotation"));
+			if (_rotationArrayPtr && _rotationArrayPtr->Num() >= 3)
 			{
 				FRotator rotation;
-				rotation.Pitch = (*rotationArray)[0]->AsNumber();
-				rotation.Yaw = (*rotationArray)[1]->AsNumber();
-				rotation.Roll = (*rotationArray)[2]->AsNumber();
+				rotation.Pitch = (*_rotationArrayPtr)[0]->AsNumber();
+				rotation.Yaw = (*_rotationArrayPtr)[1]->AsNumber();
+				rotation.Roll = (*_rotationArrayPtr)[2]->AsNumber();
 				foundActor->SetActorRotation(rotation);
 			}
 		}
 
 		if (InParamsPtr->HasField(TEXT("scale")))
 		{
-			const TArray<TSharedPtr<FJsonValue>>* scaleArray;
-			if (InParamsPtr->TryGetArrayField(TEXT("scale"), scaleArray) && scaleArray->Num() >= 3)
+			const TArray<TSharedPtr<FJsonValue>>* _scaleArrayPtr = InParamsPtr->TryGetArrayField(TEXT("scale"));
+			if (_scaleArrayPtr && _scaleArrayPtr->Num() >= 3)
 			{
 				FVector scale;
-				scale.X = (*scaleArray)[0]->AsNumber();
-				scale.Y = (*scaleArray)[1]->AsNumber();
-				scale.Z = (*scaleArray)[2]->AsNumber();
+				scale.X = (*_scaleArrayPtr)[0]->AsNumber();
+				scale.Y = (*_scaleArrayPtr)[1]->AsNumber();
+				scale.Z = (*_scaleArrayPtr)[2]->AsNumber();
 				foundActor->SetActorScale3D(scale);
 			}
 		}
@@ -333,10 +343,12 @@ TSharedPtr<FJsonObject> FKN_MCP_CommandGroup_Actor::OnExecute(const FString& InC
 		}
 
 		FString actorName;
-		if (!InParamsPtr.IsValid() || !InParamsPtr->TryGetStringField(TEXT("name"), actorName))
+		const FString* _actorNamePtr = InParamsPtr.IsValid() ? InParamsPtr->TryGetStringField(TEXT("name")) : nullptr;
+		if (!_actorNamePtr)
 		{
 			KN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(KN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: name"));
 		}
+		actorName = *_actorNamePtr;
 
 		AActor* foundActor = FKN_MCP_ActorUtils::FindActorByName(actorName);
 		if (!foundActor)

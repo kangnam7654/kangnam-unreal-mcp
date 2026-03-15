@@ -51,13 +51,19 @@ TSharedPtr<FJsonObject> FKN_MCP_CommandGroup_StaticMesh::OnExecute(const FString
 		FString searchPath = TEXT("/Game/");
 		if (InParamsPtr.IsValid())
 		{
-			InParamsPtr->TryGetStringField(TEXT("search_path"), searchPath);
+			if (const FString* _searchPathPtr = InParamsPtr->TryGetStringField(TEXT("search_path")))
+			{
+				searchPath = *_searchPathPtr;
+			}
 		}
 
 		bool bIncludeEngineMeshes = true;
 		if (InParamsPtr.IsValid())
 		{
-			InParamsPtr->TryGetBoolField(TEXT("include_engine_meshes"), bIncludeEngineMeshes);
+			if (const bool* _bIncludeEngineMeshesPtr = InParamsPtr->TryGetBoolField(TEXT("include_engine_meshes")))
+			{
+				bIncludeEngineMeshes = *_bIncludeEngineMeshesPtr;
+			}
 		}
 
 		// Query AssetRegistry for static meshes
@@ -102,16 +108,21 @@ TSharedPtr<FJsonObject> FKN_MCP_CommandGroup_StaticMesh::OnExecute(const FString
 	{
 		// Get required parameters
 		FString searchText;
-		if (!InParamsPtr.IsValid() || !InParamsPtr->TryGetStringField(TEXT("search_text"), searchText))
+		const FString* _searchTextPtr = InParamsPtr.IsValid() ? InParamsPtr->TryGetStringField(TEXT("search_text")) : nullptr;
+		if (!_searchTextPtr)
 		{
 			KN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(KN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: search_text"));
 		}
+		searchText = *_searchTextPtr;
 
 		// Optional: include engine meshes (default: true)
 		bool bIncludeEngineMeshes = true;
 		if (InParamsPtr.IsValid())
 		{
-			InParamsPtr->TryGetBoolField(TEXT("include_engine_meshes"), bIncludeEngineMeshes);
+			if (const bool* _bIncludeEngineMeshesPtr = InParamsPtr->TryGetBoolField(TEXT("include_engine_meshes")))
+			{
+				bIncludeEngineMeshes = *_bIncludeEngineMeshesPtr;
+			}
 		}
 
 		// Query AssetRegistry for static meshes

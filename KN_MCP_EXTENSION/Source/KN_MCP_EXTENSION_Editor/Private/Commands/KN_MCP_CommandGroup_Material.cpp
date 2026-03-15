@@ -129,13 +129,19 @@ TSharedPtr<FJsonObject> FKN_MCP_CommandGroup_Material::OnExecute(const FString& 
 		FString searchPath = TEXT("/Game/");
 		if (InParamsPtr.IsValid())
 		{
-			InParamsPtr->TryGetStringField(TEXT("search_path"), searchPath);
+			if (const FString* _searchPathPtr = InParamsPtr->TryGetStringField(TEXT("search_path")))
+			{
+				searchPath = *_searchPathPtr;
+			}
 		}
 
 		bool bIncludeEngineMaterials = true;
 		if (InParamsPtr.IsValid())
 		{
-			InParamsPtr->TryGetBoolField(TEXT("include_engine_materials"), bIncludeEngineMaterials);
+			if (const bool* _bIncludeEngineMaterialsPtr = InParamsPtr->TryGetBoolField(TEXT("include_engine_materials")))
+			{
+				bIncludeEngineMaterials = *_bIncludeEngineMaterialsPtr;
+			}
 		}
 
 		// Query AssetRegistry for materials
@@ -181,22 +187,27 @@ TSharedPtr<FJsonObject> FKN_MCP_CommandGroup_Material::OnExecute(const FString& 
 	if (InCommandName == FString(TEXT("apply_material_to_actor")))
 	{
 		FString actorName;
-		if (!InParamsPtr.IsValid() || !InParamsPtr->TryGetStringField(TEXT("actor_name"), actorName))
+		const FString* _actorNamePtr = InParamsPtr.IsValid() ? InParamsPtr->TryGetStringField(TEXT("actor_name")) : nullptr;
+		if (!_actorNamePtr)
 		{
 			KN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(KN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: actor_name"));
 		}
+		actorName = *_actorNamePtr;
 
 		FString materialPath;
-		if (!InParamsPtr->TryGetStringField(TEXT("material_path"), materialPath))
+		const FString* _materialPathPtr = InParamsPtr->TryGetStringField(TEXT("material_path"));
+		if (!_materialPathPtr)
 		{
 			KN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(KN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: material_path"));
 		}
+		materialPath = *_materialPathPtr;
 
 		// Optional material slot
 		int32 materialSlot = 0;
 		double slotValue;
-		if (InParamsPtr->TryGetNumberField(TEXT("material_slot"), slotValue))
+		if (const double* _slotValuePtr = InParamsPtr->TryGetNumberField(TEXT("material_slot")))
 		{
+			slotValue = *_slotValuePtr;
 			materialSlot = static_cast<int32>(slotValue);
 		}
 
@@ -247,28 +258,35 @@ TSharedPtr<FJsonObject> FKN_MCP_CommandGroup_Material::OnExecute(const FString& 
 	if (InCommandName == FString(TEXT("apply_material_to_blueprint")))
 	{
 		FString blueprintName;
-		if (!InParamsPtr.IsValid() || !InParamsPtr->TryGetStringField(TEXT("blueprint_name"), blueprintName))
+		const FString* _blueprintNamePtr = InParamsPtr.IsValid() ? InParamsPtr->TryGetStringField(TEXT("blueprint_name")) : nullptr;
+		if (!_blueprintNamePtr)
 		{
 			KN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(KN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: blueprint_name"));
 		}
+		blueprintName = *_blueprintNamePtr;
 
 		FString componentName;
-		if (!InParamsPtr->TryGetStringField(TEXT("component_name"), componentName))
+		const FString* _componentNamePtr = InParamsPtr->TryGetStringField(TEXT("component_name"));
+		if (!_componentNamePtr)
 		{
 			KN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(KN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: component_name"));
 		}
+		componentName = *_componentNamePtr;
 
 		FString materialPath;
-		if (!InParamsPtr->TryGetStringField(TEXT("material_path"), materialPath))
+		const FString* _materialPathPtr = InParamsPtr->TryGetStringField(TEXT("material_path"));
+		if (!_materialPathPtr)
 		{
 			KN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(KN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: material_path"));
 		}
+		materialPath = *_materialPathPtr;
 
 		// Optional material slot
 		int32 materialSlot = 0;
 		double slotValue;
-		if (InParamsPtr->TryGetNumberField(TEXT("material_slot"), slotValue))
+		if (const double* _slotValuePtr = InParamsPtr->TryGetNumberField(TEXT("material_slot")))
 		{
+			slotValue = *_slotValuePtr;
 			materialSlot = static_cast<int32>(slotValue);
 		}
 
@@ -329,10 +347,12 @@ TSharedPtr<FJsonObject> FKN_MCP_CommandGroup_Material::OnExecute(const FString& 
 	if (InCommandName == FString(TEXT("get_actor_material_info")))
 	{
 		FString actorName;
-		if (!InParamsPtr.IsValid() || !InParamsPtr->TryGetStringField(TEXT("actor_name"), actorName))
+		const FString* _actorNamePtr = InParamsPtr.IsValid() ? InParamsPtr->TryGetStringField(TEXT("actor_name")) : nullptr;
+		if (!_actorNamePtr)
 		{
 			KN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(KN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: actor_name"));
 		}
+		actorName = *_actorNamePtr;
 
 		// Find actor
 		AActor* foundActor = FKN_MCP_ActorUtils::FindActorByName(actorName);
@@ -388,16 +408,20 @@ TSharedPtr<FJsonObject> FKN_MCP_CommandGroup_Material::OnExecute(const FString& 
 	if (InCommandName == FString(TEXT("get_blueprint_material_info")))
 	{
 		FString blueprintName;
-		if (!InParamsPtr.IsValid() || !InParamsPtr->TryGetStringField(TEXT("blueprint_name"), blueprintName))
+		const FString* _blueprintNamePtr = InParamsPtr.IsValid() ? InParamsPtr->TryGetStringField(TEXT("blueprint_name")) : nullptr;
+		if (!_blueprintNamePtr)
 		{
 			KN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(KN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: blueprint_name"));
 		}
+		blueprintName = *_blueprintNamePtr;
 
 		FString componentName;
-		if (!InParamsPtr->TryGetStringField(TEXT("component_name"), componentName))
+		const FString* _componentNamePtr = InParamsPtr->TryGetStringField(TEXT("component_name"));
+		if (!_componentNamePtr)
 		{
 			KN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(KN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: component_name"));
 		}
+		componentName = *_componentNamePtr;
 
 		// Find blueprint
 		UBlueprint* blueprint = FKN_MCP_BlueprintUtils::FindBlueprintByName(blueprintName);
@@ -475,47 +499,59 @@ TSharedPtr<FJsonObject> FKN_MCP_CommandGroup_Material::OnExecute(const FString& 
 	if (InCommandName == FString(TEXT("set_mesh_material_color")))
 	{
 		FString blueprintName;
-		if (!InParamsPtr.IsValid() || !InParamsPtr->TryGetStringField(TEXT("blueprint_name"), blueprintName))
+		const FString* _blueprintNamePtr = InParamsPtr.IsValid() ? InParamsPtr->TryGetStringField(TEXT("blueprint_name")) : nullptr;
+		if (!_blueprintNamePtr)
 		{
 			KN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(KN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: blueprint_name"));
 		}
+		blueprintName = *_blueprintNamePtr;
 
 		FString componentName;
-		if (!InParamsPtr->TryGetStringField(TEXT("component_name"), componentName))
+		const FString* _componentNamePtr = InParamsPtr->TryGetStringField(TEXT("component_name"));
+		if (!_componentNamePtr)
 		{
 			KN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(KN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: component_name"));
 		}
+		componentName = *_componentNamePtr;
 
 		// Color array [R, G, B, A] (0.0 - 1.0)
-		const TArray<TSharedPtr<FJsonValue>>* colorArray;
-		if (!InParamsPtr->TryGetArrayField(TEXT("color"), colorArray) || colorArray->Num() < 3)
+		const TArray<TSharedPtr<FJsonValue>>* _colorArrayPtr = InParamsPtr->TryGetArrayField(TEXT("color"));
+		if (!_colorArrayPtr || _colorArrayPtr->Num() < 3)
 		{
 			KN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(KN_JSON_RPC_ERROR_INVALID_PARAMS,
 				TEXT("Missing or invalid 'color' parameter (expected [R, G, B] or [R, G, B, A])"));
 		}
 
-		float r = static_cast<float>((*colorArray)[0]->AsNumber());
-		float g = static_cast<float>((*colorArray)[1]->AsNumber());
-		float b = static_cast<float>((*colorArray)[2]->AsNumber());
-		float a = (colorArray->Num() >= 4) ? static_cast<float>((*colorArray)[3]->AsNumber()) : 1.0f;
+		float r = static_cast<float>((*_colorArrayPtr)[0]->AsNumber());
+		float g = static_cast<float>((*_colorArrayPtr)[1]->AsNumber());
+		float b = static_cast<float>((*_colorArrayPtr)[2]->AsNumber());
+		float a = (_colorArrayPtr->Num() >= 4) ? static_cast<float>((*_colorArrayPtr)[3]->AsNumber()) : 1.0f;
 
 		// Optional scalar parameters
 		double metallicValue = 0.0;
-		bool bHasMetallic = InParamsPtr->TryGetNumberField(TEXT("metallic"), metallicValue);
+		const double* _metallicValuePtr = InParamsPtr->TryGetNumberField(TEXT("metallic"));
+		bool bHasMetallic = (_metallicValuePtr != nullptr);
+		if (bHasMetallic) { metallicValue = *_metallicValuePtr; }
 
 		double roughnessValue = 0.5;
-		bool bHasRoughness = InParamsPtr->TryGetNumberField(TEXT("roughness"), roughnessValue);
+		const double* _roughnessValuePtr = InParamsPtr->TryGetNumberField(TEXT("roughness"));
+		bool bHasRoughness = (_roughnessValuePtr != nullptr);
+		if (bHasRoughness) { roughnessValue = *_roughnessValuePtr; }
 
 		// Optional parameters
 		int32 materialSlot = 0;
 		double slotValue;
-		if (InParamsPtr->TryGetNumberField(TEXT("material_slot"), slotValue))
+		if (const double* _slotValuePtr = InParamsPtr->TryGetNumberField(TEXT("material_slot")))
 		{
+			slotValue = *_slotValuePtr;
 			materialSlot = static_cast<int32>(slotValue);
 		}
 
 		FString parameterName = TEXT("BaseColor");
-		InParamsPtr->TryGetStringField(TEXT("parameter_name"), parameterName);
+		if (const FString* _parameterNamePtr = InParamsPtr->TryGetStringField(TEXT("parameter_name")))
+		{
+			parameterName = *_parameterNamePtr;
+		}
 
 		// Find blueprint
 		UBlueprint* blueprint = FKN_MCP_BlueprintUtils::FindBlueprintByName(blueprintName);
@@ -551,8 +587,9 @@ TSharedPtr<FJsonObject> FKN_MCP_CommandGroup_Material::OnExecute(const FString& 
 
 		// Try loading a base material from optional material_path
 		FString materialPath;
-		if (InParamsPtr->TryGetStringField(TEXT("material_path"), materialPath))
+		if (const FString* _materialPathPtr = InParamsPtr->TryGetStringField(TEXT("material_path")))
 		{
+			materialPath = *_materialPathPtr;
 			UMaterialInterface* loadedMat = Cast<UMaterialInterface>(UEditorAssetLibrary::LoadAsset(materialPath));
 			if (loadedMat)
 			{
