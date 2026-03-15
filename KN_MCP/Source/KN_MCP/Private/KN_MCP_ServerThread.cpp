@@ -68,23 +68,22 @@ uint32 FKN_MCP_ServerThread::Run()
 					TSharedRef<TJsonReader<>> jsonReader = TJsonReaderFactory<>::Create(message);
 					if (FJsonSerializer::Deserialize(jsonReader, jsonObject) && jsonObject.IsValid())
 					{
-						FString commandName;
-						if (const FString* commandNamePtr = jsonObject->TryGetStringField(TEXT("method")))
+						if (jsonObject->HasField(TEXT("method")))
 						{
-							commandName = *commandNamePtr;
+							FString commandName = jsonObject->GetStringField(TEXT("method"));
 
 							// extract request id for JSON-RPC 2.0 response correlation.
 							FString requestId;
-							if (const FString* requestIdPtr = jsonObject->TryGetStringField(TEXT("id")))
+							if (jsonObject->HasField(TEXT("id")))
 							{
-								requestId = *requestIdPtr;
+								requestId = jsonObject->GetStringField(TEXT("id"));
 							}
 
 							// extract params safely (may be absent or null).
 							TSharedPtr<FJsonObject> paramsPtr;
-							if (const TSharedPtr<FJsonObject>* paramsFieldPtr = jsonObject->TryGetObjectField(TEXT("params")))
+							if (jsonObject->HasField(TEXT("params")))
 							{
-								paramsPtr = *paramsFieldPtr;
+								paramsPtr = jsonObject->GetObjectField(TEXT("params"));
 							}
 							else
 							{
