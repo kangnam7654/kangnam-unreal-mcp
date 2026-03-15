@@ -65,18 +65,17 @@ TSharedPtr<FJsonObject> FKN_MCP_CommandGroup_Blueprint::OnExecute(const FString&
 	if (InCommandName == FString(TEXT("create_blueprint")))
 	{
 		FString blueprintName;
-		const FString* _blueprintNamePtr = InParamsPtr.IsValid() ? InParamsPtr->TryGetStringField(TEXT("name")) : nullptr;
-		if (!_blueprintNamePtr)
+		if (!InParamsPtr.IsValid() || !InParamsPtr->HasField(TEXT("name")))
 		{
 			KN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(KN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: name"));
 		}
-		blueprintName = *_blueprintNamePtr;
+		blueprintName = InParamsPtr->GetStringField(TEXT("name"));
 
 		// Check if blueprint already exists
 		FString packagePath = TEXT("/Game/Blueprints/");
-		if (const FString* _packagePathPtr = InParamsPtr->TryGetStringField(TEXT("path")))
+		if (InParamsPtr->HasField(TEXT("path")))
 		{
-			packagePath = *_packagePathPtr;
+			packagePath = InParamsPtr->GetStringField(TEXT("path"));
 		}
 		if (!packagePath.EndsWith(TEXT("/")))
 		{
@@ -94,9 +93,9 @@ TSharedPtr<FJsonObject> FKN_MCP_CommandGroup_Blueprint::OnExecute(const FString&
 
 		// Handle parent class
 		FString parentClassName;
-		if (const FString* _parentClassNamePtr = InParamsPtr->TryGetStringField(TEXT("parent_class")))
+		if (InParamsPtr->HasField(TEXT("parent_class")))
 		{
-			parentClassName = *_parentClassNamePtr;
+			parentClassName = InParamsPtr->GetStringField(TEXT("parent_class"));
 		}
 
 		// Default to Actor if no parent class specified
@@ -170,12 +169,11 @@ TSharedPtr<FJsonObject> FKN_MCP_CommandGroup_Blueprint::OnExecute(const FString&
 	if (InCommandName == FString(TEXT("read_blueprint_content")))
 	{
 		FString blueprintName;
-		const FString* _blueprintNamePtr = InParamsPtr.IsValid() ? InParamsPtr->TryGetStringField(TEXT("blueprint_name")) : nullptr;
-		if (!_blueprintNamePtr)
+		if (!InParamsPtr.IsValid() || !InParamsPtr->HasField(TEXT("blueprint_name")))
 		{
 			KN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(KN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: blueprint_name"));
 		}
-		blueprintName = *_blueprintNamePtr;
+		blueprintName = InParamsPtr->GetStringField(TEXT("blueprint_name"));
 
 		// Get optional filter flags
 		bool bIncludeEventGraph = true;
@@ -183,21 +181,21 @@ TSharedPtr<FJsonObject> FKN_MCP_CommandGroup_Blueprint::OnExecute(const FString&
 		bool bIncludeVariables = true;
 		bool bIncludeInterfaces = true;
 
-		if (const bool* _bIncludeEventGraphPtr = InParamsPtr->TryGetBoolField(TEXT("include_event_graph")))
+		if (InParamsPtr->HasField(TEXT("include_event_graph")))
 		{
-			bIncludeEventGraph = *_bIncludeEventGraphPtr;
+			bIncludeEventGraph = InParamsPtr->GetBoolField(TEXT("include_event_graph"));
 		}
-		if (const bool* _bIncludeFunctionsPtr = InParamsPtr->TryGetBoolField(TEXT("include_functions")))
+		if (InParamsPtr->HasField(TEXT("include_functions")))
 		{
-			bIncludeFunctions = *_bIncludeFunctionsPtr;
+			bIncludeFunctions = InParamsPtr->GetBoolField(TEXT("include_functions"));
 		}
-		if (const bool* _bIncludeVariablesPtr = InParamsPtr->TryGetBoolField(TEXT("include_variables")))
+		if (InParamsPtr->HasField(TEXT("include_variables")))
 		{
-			bIncludeVariables = *_bIncludeVariablesPtr;
+			bIncludeVariables = InParamsPtr->GetBoolField(TEXT("include_variables"));
 		}
-		if (const bool* _bIncludeInterfacesPtr = InParamsPtr->TryGetBoolField(TEXT("include_interfaces")))
+		if (InParamsPtr->HasField(TEXT("include_interfaces")))
 		{
-			bIncludeInterfaces = *_bIncludeInterfacesPtr;
+			bIncludeInterfaces = InParamsPtr->GetBoolField(TEXT("include_interfaces"));
 		}
 
 		// Find the blueprint
@@ -300,12 +298,11 @@ TSharedPtr<FJsonObject> FKN_MCP_CommandGroup_Blueprint::OnExecute(const FString&
 	if (InCommandName == FString(TEXT("compile_blueprint")))
 	{
 		FString blueprintName;
-		const FString* _blueprintNamePtr = InParamsPtr.IsValid() ? InParamsPtr->TryGetStringField(TEXT("blueprint_name")) : nullptr;
-		if (!_blueprintNamePtr)
+		if (!InParamsPtr.IsValid() || !InParamsPtr->HasField(TEXT("blueprint_name")))
 		{
 			KN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(KN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: blueprint_name"));
 		}
-		blueprintName = *_blueprintNamePtr;
+		blueprintName = InParamsPtr->GetStringField(TEXT("blueprint_name"));
 
 		// Find the blueprint
 		UBlueprint* blueprint = FKN_MCP_BlueprintUtils::FindBlueprintByName(blueprintName);
@@ -334,12 +331,11 @@ TSharedPtr<FJsonObject> FKN_MCP_CommandGroup_Blueprint::OnExecute(const FString&
 	if (InCommandName == FString(TEXT("delete_blueprint")))
 	{
 		FString blueprintName;
-		const FString* _blueprintNamePtr = InParamsPtr.IsValid() ? InParamsPtr->TryGetStringField(TEXT("blueprint_name")) : nullptr;
-		if (!_blueprintNamePtr)
+		if (!InParamsPtr.IsValid() || !InParamsPtr->HasField(TEXT("blueprint_name")))
 		{
 			KN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(KN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: blueprint_name"));
 		}
-		blueprintName = *_blueprintNamePtr;
+		blueprintName = InParamsPtr->GetStringField(TEXT("blueprint_name"));
 
 		// Find the blueprint
 		UBlueprint* blueprint = FKN_MCP_BlueprintUtils::FindBlueprintByName(blueprintName);
@@ -356,9 +352,9 @@ TSharedPtr<FJsonObject> FKN_MCP_CommandGroup_Blueprint::OnExecute(const FString&
 
 		// Check for referencers unless force is true
 		bool bForce = false;
-		if (const bool* _bForcePtr = InParamsPtr->TryGetBoolField(TEXT("force")))
+		if (InParamsPtr->HasField(TEXT("force")))
 		{
-			bForce = *_bForcePtr;
+			bForce = InParamsPtr->GetBoolField(TEXT("force"));
 		}
 
 		if (!bForce)
@@ -410,9 +406,9 @@ TSharedPtr<FJsonObject> FKN_MCP_CommandGroup_Blueprint::OnExecute(const FString&
 		FString searchPath = TEXT("/Game/");
 		if (InParamsPtr.IsValid())
 		{
-			if (const FString* _searchPathPtr = InParamsPtr->TryGetStringField(TEXT("search_path")))
+			if (InParamsPtr->HasField(TEXT("search_path")))
 			{
-				searchPath = *_searchPathPtr;
+				searchPath = InParamsPtr->GetStringField(TEXT("search_path"));
 			}
 		}
 
@@ -450,12 +446,11 @@ TSharedPtr<FJsonObject> FKN_MCP_CommandGroup_Blueprint::OnExecute(const FString&
 	if (InCommandName == FString(TEXT("find_blueprints_by_name")))
 	{
 		FString searchText;
-		const FString* _searchTextPtr = InParamsPtr.IsValid() ? InParamsPtr->TryGetStringField(TEXT("search_text")) : nullptr;
-		if (!_searchTextPtr)
+		if (!InParamsPtr.IsValid() || !InParamsPtr->HasField(TEXT("search_text")))
 		{
 			KN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(KN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: search_text"));
 		}
-		searchText = *_searchTextPtr;
+		searchText = InParamsPtr->GetStringField(TEXT("search_text"));
 
 		// Query asset registry for all Blueprint assets
 		FAssetRegistryModule& assetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>(TEXT("AssetRegistry"));
@@ -494,20 +489,18 @@ TSharedPtr<FJsonObject> FKN_MCP_CommandGroup_Blueprint::OnExecute(const FString&
 	if (InCommandName == FString(TEXT("spawn_blueprint_actor")))
 	{
 		FString blueprintName;
-		const FString* _blueprintNamePtr = InParamsPtr.IsValid() ? InParamsPtr->TryGetStringField(TEXT("blueprint_name")) : nullptr;
-		if (!_blueprintNamePtr)
+		if (!InParamsPtr.IsValid() || !InParamsPtr->HasField(TEXT("blueprint_name")))
 		{
 			KN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(KN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: blueprint_name"));
 		}
-		blueprintName = *_blueprintNamePtr;
+		blueprintName = InParamsPtr->GetStringField(TEXT("blueprint_name"));
 
 		FString actorName;
-		const FString* _actorNamePtr = InParamsPtr->TryGetStringField(TEXT("name"));
-		if (!_actorNamePtr)
+		if (!InParamsPtr->HasField(TEXT("name")))
 		{
 			KN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(KN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: name"));
 		}
-		actorName = *_actorNamePtr;
+		actorName = InParamsPtr->GetStringField(TEXT("name"));
 
 		// Find blueprint
 		UBlueprint* blueprint = FKN_MCP_BlueprintUtils::FindBlueprintByName(blueprintName);
@@ -538,34 +531,34 @@ TSharedPtr<FJsonObject> FKN_MCP_CommandGroup_Blueprint::OnExecute(const FString&
 
 		if (InParamsPtr->HasField(TEXT("location")))
 		{
-			const TArray<TSharedPtr<FJsonValue>>* _locationArrayPtr = InParamsPtr->TryGetArrayField(TEXT("location"));
-			if (_locationArrayPtr && _locationArrayPtr->Num() >= 3)
+			if (InParamsPtr->HasField(TEXT("location")) && InParamsPtr->GetArrayField(TEXT("location")).Num() >= 3)
 			{
-				location.X = (*_locationArrayPtr)[0]->AsNumber();
-				location.Y = (*_locationArrayPtr)[1]->AsNumber();
-				location.Z = (*_locationArrayPtr)[2]->AsNumber();
+				const TArray<TSharedPtr<FJsonValue>>& locationArray = InParamsPtr->GetArrayField(TEXT("location"));
+				location.X = locationArray[0]->AsNumber();
+				location.Y = locationArray[1]->AsNumber();
+				location.Z = locationArray[2]->AsNumber();
 			}
 		}
 
 		if (InParamsPtr->HasField(TEXT("rotation")))
 		{
-			const TArray<TSharedPtr<FJsonValue>>* _rotationArrayPtr = InParamsPtr->TryGetArrayField(TEXT("rotation"));
-			if (_rotationArrayPtr && _rotationArrayPtr->Num() >= 3)
+			if (InParamsPtr->HasField(TEXT("rotation")) && InParamsPtr->GetArrayField(TEXT("rotation")).Num() >= 3)
 			{
-				rotation.Pitch = (*_rotationArrayPtr)[0]->AsNumber();
-				rotation.Yaw = (*_rotationArrayPtr)[1]->AsNumber();
-				rotation.Roll = (*_rotationArrayPtr)[2]->AsNumber();
+				const TArray<TSharedPtr<FJsonValue>>& rotationArray = InParamsPtr->GetArrayField(TEXT("rotation"));
+				rotation.Pitch = rotationArray[0]->AsNumber();
+				rotation.Yaw = rotationArray[1]->AsNumber();
+				rotation.Roll = rotationArray[2]->AsNumber();
 			}
 		}
 
 		if (InParamsPtr->HasField(TEXT("scale")))
 		{
-			const TArray<TSharedPtr<FJsonValue>>* _scaleArrayPtr = InParamsPtr->TryGetArrayField(TEXT("scale"));
-			if (_scaleArrayPtr && _scaleArrayPtr->Num() >= 3)
+			if (InParamsPtr->HasField(TEXT("scale")) && InParamsPtr->GetArrayField(TEXT("scale")).Num() >= 3)
 			{
-				scale.X = (*_scaleArrayPtr)[0]->AsNumber();
-				scale.Y = (*_scaleArrayPtr)[1]->AsNumber();
-				scale.Z = (*_scaleArrayPtr)[2]->AsNumber();
+				const TArray<TSharedPtr<FJsonValue>>& scaleArray = InParamsPtr->GetArrayField(TEXT("scale"));
+				scale.X = scaleArray[0]->AsNumber();
+				scale.Y = scaleArray[1]->AsNumber();
+				scale.Z = scaleArray[2]->AsNumber();
 			}
 		}
 

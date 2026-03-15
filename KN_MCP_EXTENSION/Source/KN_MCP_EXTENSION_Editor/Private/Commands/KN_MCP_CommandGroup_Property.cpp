@@ -52,20 +52,18 @@ TSharedPtr<FJsonObject> FKN_MCP_CommandGroup_Property::OnExecute(const FString& 
 	if (InCommandName == FString(TEXT("set_static_mesh_properties")))
 	{
 		FString blueprintName;
-		const FString* _blueprintNamePtr = InParamsPtr.IsValid() ? InParamsPtr->TryGetStringField(TEXT("blueprint_name")) : nullptr;
-		if (!_blueprintNamePtr)
+		if (!InParamsPtr.IsValid() || !InParamsPtr->HasField(TEXT("blueprint_name")))
 		{
 			KN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(KN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: blueprint_name"));
 		}
-		blueprintName = *_blueprintNamePtr;
+		blueprintName = InParamsPtr->GetStringField(TEXT("blueprint_name"));
 
 		FString componentName;
-		const FString* _componentNamePtr = InParamsPtr->TryGetStringField(TEXT("component_name"));
-		if (!_componentNamePtr)
+		if (!InParamsPtr->HasField(TEXT("component_name")))
 		{
 			KN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(KN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: component_name"));
 		}
-		componentName = *_componentNamePtr;
+		componentName = InParamsPtr->GetStringField(TEXT("component_name"));
 
 		// Find blueprint
 		UBlueprint* blueprint = FKN_MCP_BlueprintUtils::FindBlueprintByName(blueprintName);
@@ -98,9 +96,9 @@ TSharedPtr<FJsonObject> FKN_MCP_CommandGroup_Property::OnExecute(const FString& 
 
 		// Set static mesh if provided
 		FString meshPath;
-		if (const FString* _meshPathPtr = InParamsPtr->TryGetStringField(TEXT("static_mesh")))
+		if (InParamsPtr->HasField(TEXT("static_mesh")))
 		{
-			meshPath = *_meshPathPtr;
+			meshPath = InParamsPtr->GetStringField(TEXT("static_mesh"));
 			UStaticMesh* mesh = Cast<UStaticMesh>(UEditorAssetLibrary::LoadAsset(meshPath));
 			if (mesh)
 			{
@@ -115,9 +113,9 @@ TSharedPtr<FJsonObject> FKN_MCP_CommandGroup_Property::OnExecute(const FString& 
 
 		// Set material if provided
 		FString materialPath;
-		if (const FString* _materialPathPtr = InParamsPtr->TryGetStringField(TEXT("material")))
+		if (InParamsPtr->HasField(TEXT("material")))
 		{
-			materialPath = *_materialPathPtr;
+			materialPath = InParamsPtr->GetStringField(TEXT("material"));
 			UMaterialInterface* material = Cast<UMaterialInterface>(UEditorAssetLibrary::LoadAsset(materialPath));
 			if (material)
 			{
@@ -147,20 +145,18 @@ TSharedPtr<FJsonObject> FKN_MCP_CommandGroup_Property::OnExecute(const FString& 
 	if (InCommandName == FString(TEXT("set_physics_properties")))
 	{
 		FString blueprintName;
-		const FString* _blueprintNamePtr = InParamsPtr.IsValid() ? InParamsPtr->TryGetStringField(TEXT("blueprint_name")) : nullptr;
-		if (!_blueprintNamePtr)
+		if (!InParamsPtr.IsValid() || !InParamsPtr->HasField(TEXT("blueprint_name")))
 		{
 			KN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(KN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: blueprint_name"));
 		}
-		blueprintName = *_blueprintNamePtr;
+		blueprintName = InParamsPtr->GetStringField(TEXT("blueprint_name"));
 
 		FString componentName;
-		const FString* _componentNamePtr = InParamsPtr->TryGetStringField(TEXT("component_name"));
-		if (!_componentNamePtr)
+		if (!InParamsPtr->HasField(TEXT("component_name")))
 		{
 			KN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(KN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: component_name"));
 		}
-		componentName = *_componentNamePtr;
+		componentName = InParamsPtr->GetStringField(TEXT("component_name"));
 
 		// Find blueprint
 		UBlueprint* blueprint = FKN_MCP_BlueprintUtils::FindBlueprintByName(blueprintName);
@@ -193,30 +189,30 @@ TSharedPtr<FJsonObject> FKN_MCP_CommandGroup_Property::OnExecute(const FString& 
 
 		// Set physics properties
 		bool bValue;
-		if (const bool* _bValuePtr = InParamsPtr->TryGetBoolField(TEXT("simulate_physics")))
+		if (InParamsPtr->HasField(TEXT("simulate_physics")))
 		{
-			bValue = *_bValuePtr;
+			bValue = InParamsPtr->GetBoolField(TEXT("simulate_physics"));
 			primComponent->SetSimulatePhysics(bValue);
 		}
 
 		double massValue;
-		if (const double* _massValuePtr = InParamsPtr->TryGetNumberField(TEXT("mass")))
+		if (InParamsPtr->HasField(TEXT("mass")))
 		{
-			massValue = *_massValuePtr;
+			massValue = InParamsPtr->GetNumberField(TEXT("mass"));
 			primComponent->SetMassOverrideInKg(NAME_None, static_cast<float>(massValue));
 		}
 
 		double linearDamping;
-		if (const double* _linearDampingPtr = InParamsPtr->TryGetNumberField(TEXT("linear_damping")))
+		if (InParamsPtr->HasField(TEXT("linear_damping")))
 		{
-			linearDamping = *_linearDampingPtr;
+			linearDamping = InParamsPtr->GetNumberField(TEXT("linear_damping"));
 			primComponent->SetLinearDamping(static_cast<float>(linearDamping));
 		}
 
 		double angularDamping;
-		if (const double* _angularDampingPtr = InParamsPtr->TryGetNumberField(TEXT("angular_damping")))
+		if (InParamsPtr->HasField(TEXT("angular_damping")))
 		{
-			angularDamping = *_angularDampingPtr;
+			angularDamping = InParamsPtr->GetNumberField(TEXT("angular_damping"));
 			primComponent->SetAngularDamping(static_cast<float>(angularDamping));
 		}
 

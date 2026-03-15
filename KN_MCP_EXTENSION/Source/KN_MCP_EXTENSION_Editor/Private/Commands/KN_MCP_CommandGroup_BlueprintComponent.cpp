@@ -53,32 +53,30 @@ TSharedPtr<FJsonObject> FKN_MCP_CommandGroup_BlueprintComponent::OnExecute(const
 	if (InCommandName == FString(TEXT("add_component_to_blueprint")))
 	{
 		FString blueprintName;
-		const FString* _blueprintNamePtr = InParamsPtr.IsValid() ? InParamsPtr->TryGetStringField(TEXT("blueprint_name")) : nullptr;
-		if (!_blueprintNamePtr)
+		if (!InParamsPtr.IsValid() || !InParamsPtr->HasField(TEXT("blueprint_name")))
 		{
 			KN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(KN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: blueprint_name"));
 		}
-		blueprintName = *_blueprintNamePtr;
+		blueprintName = InParamsPtr->GetStringField(TEXT("blueprint_name"));
 
 		FString componentClassName;
-		const FString* _componentClassNamePtr = InParamsPtr->TryGetStringField(TEXT("component_class"));
-		if (!_componentClassNamePtr)
+		if (!InParamsPtr->HasField(TEXT("component_class")))
 		{
 			KN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(KN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: component_class"));
 		}
-		componentClassName = *_componentClassNamePtr;
+		componentClassName = InParamsPtr->GetStringField(TEXT("component_class"));
 
 		// Optional parameters
 		FString componentName;
-		if (const FString* _componentNamePtr = InParamsPtr->TryGetStringField(TEXT("component_name")))
+		if (InParamsPtr->HasField(TEXT("component_name")))
 		{
-			componentName = *_componentNamePtr;
+			componentName = InParamsPtr->GetStringField(TEXT("component_name"));
 		}
 
 		FString parentComponentName;
-		if (const FString* _parentComponentNamePtr = InParamsPtr->TryGetStringField(TEXT("parent_component")))
+		if (InParamsPtr->HasField(TEXT("parent_component")))
 		{
-			parentComponentName = *_parentComponentNamePtr;
+			parentComponentName = InParamsPtr->GetStringField(TEXT("parent_component"));
 		}
 
 		// Find blueprint
@@ -175,20 +173,18 @@ TSharedPtr<FJsonObject> FKN_MCP_CommandGroup_BlueprintComponent::OnExecute(const
 	if (InCommandName == FString(TEXT("remove_component_from_blueprint")))
 	{
 		FString blueprintName;
-		const FString* _blueprintNamePtr = InParamsPtr.IsValid() ? InParamsPtr->TryGetStringField(TEXT("blueprint_name")) : nullptr;
-		if (!_blueprintNamePtr)
+		if (!InParamsPtr.IsValid() || !InParamsPtr->HasField(TEXT("blueprint_name")))
 		{
 			KN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(KN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: blueprint_name"));
 		}
-		blueprintName = *_blueprintNamePtr;
+		blueprintName = InParamsPtr->GetStringField(TEXT("blueprint_name"));
 
 		FString componentName;
-		const FString* _componentNamePtr = InParamsPtr->TryGetStringField(TEXT("component_name"));
-		if (!_componentNamePtr)
+		if (!InParamsPtr->HasField(TEXT("component_name")))
 		{
 			KN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(KN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: component_name"));
 		}
-		componentName = *_componentNamePtr;
+		componentName = InParamsPtr->GetStringField(TEXT("component_name"));
 
 		// Find blueprint
 		UBlueprint* blueprint = FKN_MCP_BlueprintUtils::FindBlueprintByName(blueprintName);
@@ -282,12 +278,11 @@ TSharedPtr<FJsonObject> FKN_MCP_CommandGroup_BlueprintComponent::OnExecute(const
 	if (InCommandName == FString(TEXT("read_components_from_blueprint")))
 	{
 		FString blueprintName;
-		const FString* _blueprintNamePtr = InParamsPtr.IsValid() ? InParamsPtr->TryGetStringField(TEXT("blueprint_name")) : nullptr;
-		if (!_blueprintNamePtr)
+		if (!InParamsPtr.IsValid() || !InParamsPtr->HasField(TEXT("blueprint_name")))
 		{
 			KN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(KN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: blueprint_name"));
 		}
-		blueprintName = *_blueprintNamePtr;
+		blueprintName = InParamsPtr->GetStringField(TEXT("blueprint_name"));
 
 		// Find blueprint
 		UBlueprint* blueprint = FKN_MCP_BlueprintUtils::FindBlueprintByName(blueprintName);

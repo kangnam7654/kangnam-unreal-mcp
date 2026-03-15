@@ -47,28 +47,25 @@ TSharedPtr<FJsonObject> FKN_MCP_CommandGroup_BlueprintVariable::OnExecute(const 
 	if (InCommandName == FString(TEXT("add_variable_to_blueprint")))
 	{
 		FString blueprintName;
-		const FString* _blueprintNamePtr = InParamsPtr.IsValid() ? InParamsPtr->TryGetStringField(TEXT("blueprint_name")) : nullptr;
-		if (!_blueprintNamePtr)
+		if (!InParamsPtr.IsValid() || !InParamsPtr->HasField(TEXT("blueprint_name")))
 		{
 			KN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(KN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: blueprint_name"));
 		}
-		blueprintName = *_blueprintNamePtr;
+		blueprintName = InParamsPtr->GetStringField(TEXT("blueprint_name"));
 
 		FString variableName;
-		const FString* _variableNamePtr = InParamsPtr->TryGetStringField(TEXT("variable_name"));
-		if (!_variableNamePtr)
+		if (!InParamsPtr->HasField(TEXT("variable_name")))
 		{
 			KN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(KN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: variable_name"));
 		}
-		variableName = *_variableNamePtr;
+		variableName = InParamsPtr->GetStringField(TEXT("variable_name"));
 
 		FString variableType;
-		const FString* _variableTypePtr = InParamsPtr->TryGetStringField(TEXT("variable_type"));
-		if (!_variableTypePtr)
+		if (!InParamsPtr->HasField(TEXT("variable_type")))
 		{
 			KN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(KN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: variable_type"));
 		}
-		variableType = *_variableTypePtr;
+		variableType = InParamsPtr->GetStringField(TEXT("variable_type"));
 
 		// Find blueprint
 		UBlueprint* blueprint = FKN_MCP_BlueprintUtils::FindBlueprintByName(blueprintName);
@@ -148,9 +145,9 @@ TSharedPtr<FJsonObject> FKN_MCP_CommandGroup_BlueprintVariable::OnExecute(const 
 
 		// Set default value if provided
 		FString defaultValue;
-		if (const FString* _defaultValuePtr = InParamsPtr->TryGetStringField(TEXT("default_value")))
+		if (InParamsPtr->HasField(TEXT("default_value")))
 		{
-			defaultValue = *_defaultValuePtr;
+			defaultValue = InParamsPtr->GetStringField(TEXT("default_value"));
 			for (FBPVariableDescription& varDesc : blueprint->NewVariables)
 			{
 				if (varDesc.VarName == varFName)
@@ -163,10 +160,9 @@ TSharedPtr<FJsonObject> FKN_MCP_CommandGroup_BlueprintVariable::OnExecute(const 
 
 		// Set instance editable if specified
 		bool bInstanceEditable = false;
-		const bool* _bInstanceEditablePtr = InParamsPtr->TryGetBoolField(TEXT("is_instance_editable"));
-		if (_bInstanceEditablePtr && *_bInstanceEditablePtr)
+		if (InParamsPtr->HasField(TEXT("is_instance_editable")) && InParamsPtr->GetBoolField(TEXT("is_instance_editable")))
 		{
-			bInstanceEditable = *_bInstanceEditablePtr;
+			bInstanceEditable = true;
 			for (FBPVariableDescription& varDesc : blueprint->NewVariables)
 			{
 				if (varDesc.VarName == varFName)
@@ -193,20 +189,18 @@ TSharedPtr<FJsonObject> FKN_MCP_CommandGroup_BlueprintVariable::OnExecute(const 
 	if (InCommandName == FString(TEXT("remove_variable_from_blueprint")))
 	{
 		FString blueprintName;
-		const FString* _blueprintNamePtr = InParamsPtr.IsValid() ? InParamsPtr->TryGetStringField(TEXT("blueprint_name")) : nullptr;
-		if (!_blueprintNamePtr)
+		if (!InParamsPtr.IsValid() || !InParamsPtr->HasField(TEXT("blueprint_name")))
 		{
 			KN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(KN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: blueprint_name"));
 		}
-		blueprintName = *_blueprintNamePtr;
+		blueprintName = InParamsPtr->GetStringField(TEXT("blueprint_name"));
 
 		FString variableName;
-		const FString* _variableNamePtr = InParamsPtr->TryGetStringField(TEXT("variable_name"));
-		if (!_variableNamePtr)
+		if (!InParamsPtr->HasField(TEXT("variable_name")))
 		{
 			KN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(KN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: variable_name"));
 		}
-		variableName = *_variableNamePtr;
+		variableName = InParamsPtr->GetStringField(TEXT("variable_name"));
 
 		// Find blueprint
 		UBlueprint* blueprint = FKN_MCP_BlueprintUtils::FindBlueprintByName(blueprintName);

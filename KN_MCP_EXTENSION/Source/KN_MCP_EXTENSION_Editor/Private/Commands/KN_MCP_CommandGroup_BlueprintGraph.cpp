@@ -215,12 +215,11 @@ TSharedPtr<FJsonObject> FKN_MCP_CommandGroup_BlueprintGraph::OnExecute(const FSt
 	if (InCommandName == FString(TEXT("read_blueprint_graph")))
 	{
 		FString blueprintName;
-		const FString* _blueprintNamePtr = InParamsPtr.IsValid() ? InParamsPtr->TryGetStringField(TEXT("blueprint_name")) : nullptr;
-		if (!_blueprintNamePtr)
+		if (!InParamsPtr.IsValid() || !InParamsPtr->HasField(TEXT("blueprint_name")))
 		{
 			KN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(KN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: blueprint_name"));
 		}
-		blueprintName = *_blueprintNamePtr;
+		blueprintName = InParamsPtr->GetStringField(TEXT("blueprint_name"));
 
 		UBlueprint* blueprint = FKN_MCP_BlueprintUtils::FindBlueprintByName(blueprintName);
 		if (!blueprint)
@@ -300,20 +299,18 @@ TSharedPtr<FJsonObject> FKN_MCP_CommandGroup_BlueprintGraph::OnExecute(const FSt
 	if (InCommandName == FString(TEXT("add_event_node")))
 	{
 		FString blueprintName;
-		const FString* _blueprintNamePtr = InParamsPtr.IsValid() ? InParamsPtr->TryGetStringField(TEXT("blueprint_name")) : nullptr;
-		if (!_blueprintNamePtr)
+		if (!InParamsPtr.IsValid() || !InParamsPtr->HasField(TEXT("blueprint_name")))
 		{
 			KN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(KN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: blueprint_name"));
 		}
-		blueprintName = *_blueprintNamePtr;
+		blueprintName = InParamsPtr->GetStringField(TEXT("blueprint_name"));
 
 		FString eventType;
-		const FString* _eventTypePtr = InParamsPtr->TryGetStringField(TEXT("event_type"));
-		if (!_eventTypePtr)
+		if (!InParamsPtr->HasField(TEXT("event_type")))
 		{
 			KN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(KN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: event_type"));
 		}
-		eventType = *_eventTypePtr;
+		eventType = InParamsPtr->GetStringField(TEXT("event_type"));
 
 		UBlueprint* blueprint = FKN_MCP_BlueprintUtils::FindBlueprintByName(blueprintName);
 		if (!blueprint)
@@ -338,11 +335,11 @@ TSharedPtr<FJsonObject> FKN_MCP_CommandGroup_BlueprintGraph::OnExecute(const FSt
 
 		// Optional position
 		int32 posX = 0, posY = 0;
-		const TArray<TSharedPtr<FJsonValue>>* _posArrayPtr = InParamsPtr->TryGetArrayField(TEXT("node_position"));
-		if (_posArrayPtr && _posArrayPtr->Num() >= 2)
+		if (InParamsPtr->HasField(TEXT("node_position")) && InParamsPtr->GetArrayField(TEXT("node_position")).Num() >= 2)
 		{
-			posX = static_cast<int32>((*_posArrayPtr)[0]->AsNumber());
-			posY = static_cast<int32>((*_posArrayPtr)[1]->AsNumber());
+			const TArray<TSharedPtr<FJsonValue>>& posArray = InParamsPtr->GetArrayField(TEXT("node_position"));
+			posX = static_cast<int32>(posArray[0]->AsNumber());
+			posY = static_cast<int32>(posArray[1]->AsNumber());
 		}
 
 		// Check for duplicate event node
@@ -384,25 +381,23 @@ TSharedPtr<FJsonObject> FKN_MCP_CommandGroup_BlueprintGraph::OnExecute(const FSt
 	if (InCommandName == FString(TEXT("add_function_call_node")))
 	{
 		FString blueprintName;
-		const FString* _blueprintNamePtr = InParamsPtr.IsValid() ? InParamsPtr->TryGetStringField(TEXT("blueprint_name")) : nullptr;
-		if (!_blueprintNamePtr)
+		if (!InParamsPtr.IsValid() || !InParamsPtr->HasField(TEXT("blueprint_name")))
 		{
 			KN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(KN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: blueprint_name"));
 		}
-		blueprintName = *_blueprintNamePtr;
+		blueprintName = InParamsPtr->GetStringField(TEXT("blueprint_name"));
 
 		FString functionName;
-		const FString* _functionNamePtr = InParamsPtr->TryGetStringField(TEXT("function_name"));
-		if (!_functionNamePtr)
+		if (!InParamsPtr->HasField(TEXT("function_name")))
 		{
 			KN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(KN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: function_name"));
 		}
-		functionName = *_functionNamePtr;
+		functionName = InParamsPtr->GetStringField(TEXT("function_name"));
 
 		FString targetClass;
-		if (const FString* _targetClassPtr = InParamsPtr->TryGetStringField(TEXT("target_class")))
+		if (InParamsPtr->HasField(TEXT("target_class")))
 		{
-			targetClass = *_targetClassPtr;
+			targetClass = InParamsPtr->GetStringField(TEXT("target_class"));
 		}
 
 		UBlueprint* blueprint = FKN_MCP_BlueprintUtils::FindBlueprintByName(blueprintName);
@@ -428,11 +423,11 @@ TSharedPtr<FJsonObject> FKN_MCP_CommandGroup_BlueprintGraph::OnExecute(const FSt
 
 		// Optional position
 		int32 posX = 0, posY = 0;
-		const TArray<TSharedPtr<FJsonValue>>* _posArrayPtr = InParamsPtr->TryGetArrayField(TEXT("node_position"));
-		if (_posArrayPtr && _posArrayPtr->Num() >= 2)
+		if (InParamsPtr->HasField(TEXT("node_position")) && InParamsPtr->GetArrayField(TEXT("node_position")).Num() >= 2)
 		{
-			posX = static_cast<int32>((*_posArrayPtr)[0]->AsNumber());
-			posY = static_cast<int32>((*_posArrayPtr)[1]->AsNumber());
+			const TArray<TSharedPtr<FJsonValue>>& posArray = InParamsPtr->GetArrayField(TEXT("node_position"));
+			posX = static_cast<int32>(posArray[0]->AsNumber());
+			posY = static_cast<int32>(posArray[1]->AsNumber());
 		}
 
 		// Create function call node
@@ -468,20 +463,18 @@ TSharedPtr<FJsonObject> FKN_MCP_CommandGroup_BlueprintGraph::OnExecute(const FSt
 	if (InCommandName == FString(TEXT("add_variable_get_node")))
 	{
 		FString blueprintName;
-		const FString* _blueprintNamePtr = InParamsPtr.IsValid() ? InParamsPtr->TryGetStringField(TEXT("blueprint_name")) : nullptr;
-		if (!_blueprintNamePtr)
+		if (!InParamsPtr.IsValid() || !InParamsPtr->HasField(TEXT("blueprint_name")))
 		{
 			KN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(KN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: blueprint_name"));
 		}
-		blueprintName = *_blueprintNamePtr;
+		blueprintName = InParamsPtr->GetStringField(TEXT("blueprint_name"));
 
 		FString variableName;
-		const FString* _variableNamePtr = InParamsPtr->TryGetStringField(TEXT("variable_name"));
-		if (!_variableNamePtr)
+		if (!InParamsPtr->HasField(TEXT("variable_name")))
 		{
 			KN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(KN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: variable_name"));
 		}
-		variableName = *_variableNamePtr;
+		variableName = InParamsPtr->GetStringField(TEXT("variable_name"));
 
 		UBlueprint* blueprint = FKN_MCP_BlueprintUtils::FindBlueprintByName(blueprintName);
 		if (!blueprint)
@@ -507,11 +500,11 @@ TSharedPtr<FJsonObject> FKN_MCP_CommandGroup_BlueprintGraph::OnExecute(const FSt
 
 		// Optional position
 		int32 posX = 0, posY = 0;
-		const TArray<TSharedPtr<FJsonValue>>* _posArrayPtr = InParamsPtr->TryGetArrayField(TEXT("node_position"));
-		if (_posArrayPtr && _posArrayPtr->Num() >= 2)
+		if (InParamsPtr->HasField(TEXT("node_position")) && InParamsPtr->GetArrayField(TEXT("node_position")).Num() >= 2)
 		{
-			posX = static_cast<int32>((*_posArrayPtr)[0]->AsNumber());
-			posY = static_cast<int32>((*_posArrayPtr)[1]->AsNumber());
+			const TArray<TSharedPtr<FJsonValue>>& posArray = InParamsPtr->GetArrayField(TEXT("node_position"));
+			posX = static_cast<int32>(posArray[0]->AsNumber());
+			posY = static_cast<int32>(posArray[1]->AsNumber());
 		}
 
 		// Create variable get node
@@ -540,20 +533,18 @@ TSharedPtr<FJsonObject> FKN_MCP_CommandGroup_BlueprintGraph::OnExecute(const FSt
 	if (InCommandName == FString(TEXT("add_variable_set_node")))
 	{
 		FString blueprintName;
-		const FString* _blueprintNamePtr = InParamsPtr.IsValid() ? InParamsPtr->TryGetStringField(TEXT("blueprint_name")) : nullptr;
-		if (!_blueprintNamePtr)
+		if (!InParamsPtr.IsValid() || !InParamsPtr->HasField(TEXT("blueprint_name")))
 		{
 			KN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(KN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: blueprint_name"));
 		}
-		blueprintName = *_blueprintNamePtr;
+		blueprintName = InParamsPtr->GetStringField(TEXT("blueprint_name"));
 
 		FString variableName;
-		const FString* _variableNamePtr = InParamsPtr->TryGetStringField(TEXT("variable_name"));
-		if (!_variableNamePtr)
+		if (!InParamsPtr->HasField(TEXT("variable_name")))
 		{
 			KN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(KN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: variable_name"));
 		}
-		variableName = *_variableNamePtr;
+		variableName = InParamsPtr->GetStringField(TEXT("variable_name"));
 
 		UBlueprint* blueprint = FKN_MCP_BlueprintUtils::FindBlueprintByName(blueprintName);
 		if (!blueprint)
@@ -579,11 +570,11 @@ TSharedPtr<FJsonObject> FKN_MCP_CommandGroup_BlueprintGraph::OnExecute(const FSt
 
 		// Optional position
 		int32 posX = 0, posY = 0;
-		const TArray<TSharedPtr<FJsonValue>>* _posArrayPtr = InParamsPtr->TryGetArrayField(TEXT("node_position"));
-		if (_posArrayPtr && _posArrayPtr->Num() >= 2)
+		if (InParamsPtr->HasField(TEXT("node_position")) && InParamsPtr->GetArrayField(TEXT("node_position")).Num() >= 2)
 		{
-			posX = static_cast<int32>((*_posArrayPtr)[0]->AsNumber());
-			posY = static_cast<int32>((*_posArrayPtr)[1]->AsNumber());
+			const TArray<TSharedPtr<FJsonValue>>& posArray = InParamsPtr->GetArrayField(TEXT("node_position"));
+			posX = static_cast<int32>(posArray[0]->AsNumber());
+			posY = static_cast<int32>(posArray[1]->AsNumber());
 		}
 
 		// Create variable set node
@@ -612,44 +603,39 @@ TSharedPtr<FJsonObject> FKN_MCP_CommandGroup_BlueprintGraph::OnExecute(const FSt
 	if (InCommandName == FString(TEXT("connect_nodes")))
 	{
 		FString blueprintName;
-		const FString* _blueprintNamePtr = InParamsPtr.IsValid() ? InParamsPtr->TryGetStringField(TEXT("blueprint_name")) : nullptr;
-		if (!_blueprintNamePtr)
+		if (!InParamsPtr.IsValid() || !InParamsPtr->HasField(TEXT("blueprint_name")))
 		{
 			KN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(KN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: blueprint_name"));
 		}
-		blueprintName = *_blueprintNamePtr;
+		blueprintName = InParamsPtr->GetStringField(TEXT("blueprint_name"));
 
 		FString sourceNodeId;
-		const FString* _sourceNodeIdPtr = InParamsPtr->TryGetStringField(TEXT("source_node_id"));
-		if (!_sourceNodeIdPtr)
+		if (!InParamsPtr->HasField(TEXT("source_node_id")))
 		{
 			KN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(KN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: source_node_id"));
 		}
-		sourceNodeId = *_sourceNodeIdPtr;
+		sourceNodeId = InParamsPtr->GetStringField(TEXT("source_node_id"));
 
 		FString sourcePinName;
-		const FString* _sourcePinNamePtr = InParamsPtr->TryGetStringField(TEXT("source_pin_name"));
-		if (!_sourcePinNamePtr)
+		if (!InParamsPtr->HasField(TEXT("source_pin_name")))
 		{
 			KN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(KN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: source_pin_name"));
 		}
-		sourcePinName = *_sourcePinNamePtr;
+		sourcePinName = InParamsPtr->GetStringField(TEXT("source_pin_name"));
 
 		FString targetNodeId;
-		const FString* _targetNodeIdPtr = InParamsPtr->TryGetStringField(TEXT("target_node_id"));
-		if (!_targetNodeIdPtr)
+		if (!InParamsPtr->HasField(TEXT("target_node_id")))
 		{
 			KN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(KN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: target_node_id"));
 		}
-		targetNodeId = *_targetNodeIdPtr;
+		targetNodeId = InParamsPtr->GetStringField(TEXT("target_node_id"));
 
 		FString targetPinName;
-		const FString* _targetPinNamePtr = InParamsPtr->TryGetStringField(TEXT("target_pin_name"));
-		if (!_targetPinNamePtr)
+		if (!InParamsPtr->HasField(TEXT("target_pin_name")))
 		{
 			KN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(KN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: target_pin_name"));
 		}
-		targetPinName = *_targetPinNamePtr;
+		targetPinName = InParamsPtr->GetStringField(TEXT("target_pin_name"));
 
 		UBlueprint* blueprint = FKN_MCP_BlueprintUtils::FindBlueprintByName(blueprintName);
 		if (!blueprint)
@@ -718,28 +704,25 @@ TSharedPtr<FJsonObject> FKN_MCP_CommandGroup_BlueprintGraph::OnExecute(const FSt
 	if (InCommandName == FString(TEXT("disconnect_nodes")))
 	{
 		FString blueprintName;
-		const FString* _blueprintNamePtr = InParamsPtr.IsValid() ? InParamsPtr->TryGetStringField(TEXT("blueprint_name")) : nullptr;
-		if (!_blueprintNamePtr)
+		if (!InParamsPtr.IsValid() || !InParamsPtr->HasField(TEXT("blueprint_name")))
 		{
 			KN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(KN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: blueprint_name"));
 		}
-		blueprintName = *_blueprintNamePtr;
+		blueprintName = InParamsPtr->GetStringField(TEXT("blueprint_name"));
 
 		FString nodeId;
-		const FString* _nodeIdPtr = InParamsPtr->TryGetStringField(TEXT("node_id"));
-		if (!_nodeIdPtr)
+		if (!InParamsPtr->HasField(TEXT("node_id")))
 		{
 			KN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(KN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: node_id"));
 		}
-		nodeId = *_nodeIdPtr;
+		nodeId = InParamsPtr->GetStringField(TEXT("node_id"));
 
 		FString pinName;
-		const FString* _pinNamePtr = InParamsPtr->TryGetStringField(TEXT("pin_name"));
-		if (!_pinNamePtr)
+		if (!InParamsPtr->HasField(TEXT("pin_name")))
 		{
 			KN_RETURN_COMMAND_ERROR_TEXT_RESPONSE(KN_JSON_RPC_ERROR_INVALID_PARAMS, TEXT("Missing required parameter: pin_name"));
 		}
-		pinName = *_pinNamePtr;
+		pinName = InParamsPtr->GetStringField(TEXT("pin_name"));
 
 		UBlueprint* blueprint = FKN_MCP_BlueprintUtils::FindBlueprintByName(blueprintName);
 		if (!blueprint)
