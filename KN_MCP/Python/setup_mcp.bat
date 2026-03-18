@@ -22,7 +22,7 @@ if not exist .env (
   ) else (
     echo # Unreal MCP Server> .env
     echo UNREAL_HOST=127.0.0.1>> .env
-    echo UNREAL_PORT=55557>> .env
+    echo UNREAL_PORT=27777>> .env
   )
   echo Created .env - edit as needed.
 )

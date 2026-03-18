@@ -13,3 +13,11 @@ __pycache__/
 uv.lock
 logs/
 .coverage
+.venv/
+.env
+settings.ini
+CLAUDE.md
+*.html
+*.pdf
+.p4ignore
+mailmap.txt

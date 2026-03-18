@@ -8,4 +8,3 @@ log_auto_cleanup = true
 ue_host = 127.0.0.1
 ue_port = 27777
 auto_reconnect_enabled = true
-

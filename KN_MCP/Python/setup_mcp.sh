@@ -19,7 +19,7 @@ if [ ! -f .env ]; then
   [ -f .env.example ] && cp .env.example .env || {
     echo "# Unreal MCP Server"
     echo "UNREAL_HOST=127.0.0.1"
-    echo "UNREAL_PORT=55557"
+    echo "UNREAL_PORT=27777"
   } > .env
   echo "Created .env — edit as needed."
 fi
