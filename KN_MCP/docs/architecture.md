@@ -120,7 +120,7 @@ FKN_MCP_Module::Get()
 ### 커맨드 디스패치 흐름
 
 ```
-Python: ue_connection.execute("spawn_actor", params, category_name="Actor")
+Python: ue_connection.send_command("spawn_actor", params, category_name="Actor")
     │
     │ → UnrealConnection.send_command("Actor_spawn_actor", params)
     │
@@ -181,14 +181,13 @@ Python MCP Server (유일한 MCP Server)
         └── ...
 ```
 
-### WORLD Tool 연결
+### Extension Tool 연결
 
-WORLD Tool은 `ue_connection.execute()` 호출 → 자체 TCP 소켓으로 UE에 JSON-RPC 2.0 커맨드를 전송한다.
+Extension Tool은 `ue_connection.send_command()` 호출 → TCP 소켓으로 UE에 JSON-RPC 2.0 커맨드를 전송한다.
 
 ```python
 # KN_MCP_EXTENSION/Python/tools/ue_connection.py (자체 TCP 연결)
-def execute(command_name, params=None, category_name=""):
-    connect()  # 127.0.0.1:27777 자체 소켓
+def send_command(command_name, params=None, category_name=""):
     full_name = f"{category_name}_{command_name}" if category_name else command_name
     # JSON-RPC 2.0 요청 전송 → 응답 수신 → 결과 반환
     return result
@@ -197,7 +196,7 @@ def execute(command_name, params=None, category_name=""):
 _CATEGORY = "Actor"
 @mcp.tool
 def spawn_actor(type, name, ...):
-    result = ue_connection.execute("spawn_actor", params, category_name=_CATEGORY)
+    result = ue_connection.send_command("spawn_actor", params, category_name=_CATEGORY)
     return json.dumps(result, ...)
 ```
 
@@ -237,4 +236,4 @@ KN_MCP_EXTENSION/Python/
     └── ...                    # 9개 모듈, 38개 Tool
 ```
 
-WORLD Tool은 Python MCP 프로세스 내에서 실행되며, `ue_connection.py`의 자체 TCP 소켓으로 UE와 통신한다. (Python MCP Server의 `UnrealConnection`은 커맨드마다 소켓을 열고 닫으므로 충돌하지 않는다.)
+Extension Tool은 Python MCP 프로세스 내에서 실행되며, `ue_connection.py`를 통해 UE와 통신한다.

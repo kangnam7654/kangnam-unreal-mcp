@@ -12,8 +12,8 @@ AI Agent (Claude/Cursor)
 Python MCP Server (FastMCP)              ← KN_MCP/Python/
     │ 동적 Import (AddUserToolDirectories)
     ▼
-WORLD Python Tools                  ← KN_MCP_EXTENSION/Python/tools/
-    │ ue_connection (자체 TCP 소켓)
+Extension Python Tools              ← KN_MCP_EXTENSION/Python/tools/
+    │ ue_connection.send_command()
     │ TCP JSON-RPC 2.0 (port 27777~27787)
     ▼
 UE C++ Plugin (CommandGroup)        ← KN_MCP_EXTENSION/Source/
@@ -24,7 +24,7 @@ Unreal Engine Editor
 
 - **Python Tool**: `@mcp.tool` 데코레이터로 등록. AI 에이전트가 직접 호출하는 함수.
 - **C++ Command**: `FKN_MCP_CommandGroup` 서브클래스에 구현. UE API에 접근하는 함수.
-- Python Tool이 `ue_connection.execute()` → 자체 TCP 소켓 → JSON-RPC 2.0을 통해 C++ Command를 호출하여 UE를 조작한다.
+- Python Tool이 `ue_connection.send_command()` → TCP JSON-RPC 2.0을 통해 C++ Command를 호출하여 UE를 조작한다.
 - Python MCP Server는 서버 시작(lifespan) 시 UE 연결 + Tool 등록을 `yield` 전에 완료하여, MCP 클라이언트가 즉시 전체 Tool 목록을 받을 수 있다.
 - UE 재연결 시에는 `refresh_tools` Tool로 `tools/list_changed` 알림을 보내 클라이언트 목록을 갱신한다.
 

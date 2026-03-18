@@ -73,7 +73,7 @@ def some_command(param1: str, param2: Optional[str] = None) -> str:
     params: Dict[str, Any] = {"param1": param1}
     if param2 is not None:
         params["param2"] = param2
-    result = ue_connection.execute("some_command", params, category_name=_CATEGORY)
+    result = ue_connection.send_command("some_command", params, category_name=_CATEGORY)
     return json.dumps(result, indent=2, ensure_ascii=False)
 ```
 
@@ -116,7 +116,7 @@ def call_tool(tool_name, **kwargs) -> str:
 ### 4.3 Unit Tests (test_unit_tools.py)
 
 UE 연결 없이 Python Tool 로직만 검증한다.
-`ue_connection.execute()`를 mock하여 파라미터 전달과 응답 포맷을 테스트한다.
+`ue_connection.send_command()`를 mock하여 파라미터 전달과 응답 포맷을 테스트한다.
 
 테스트 카테고리:
 - 필수 파라미터만 전달 시 정확한 커맨드 호출 확인
@@ -182,7 +182,7 @@ uv run python -m pytest tests/test_unit_tools.py --cov=tools --cov-report=term-m
 |------|------|
 | Tool 모듈 분리 (9개 파일) | 용도별 분리로 파일당 2~7개 함수, 사람이 읽기 쉬움 |
 | `register_tools(mcp)` 패턴 | 각 모듈이 자체 등록 — `__init__.py`에서 호출만 하면 됨 |
-| `ue_connection.execute()` 공개 API | `_ue_execute` 접두어 제거 — 모든 모듈이 사용하는 공개 함수이므로 |
+| `ue_connection.send_command()` 공개 API | `_ue_execute` 접두어 제거 — 모든 모듈이 사용하는 공개 함수이므로 |
 | `if X is not None` 패턴 유지 | 헬퍼 추출 대신 반복 — 읽기 쉽고, 각 함수가 자기 완결적 |
 | `json.dumps()` 래핑 안 함 | 각 함수에서 리턴 형태가 명시적으로 보임 |
 | `call_tool()` conftest 통합 | Unit/Integration에서 중복 제거 — 하나의 소스 |
