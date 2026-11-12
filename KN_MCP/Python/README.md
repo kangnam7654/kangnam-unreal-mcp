@@ -45,6 +45,22 @@ Or use environment variables:
 | `UNREAL_RECV_TIMEOUT` | `30` | Receive timeout (seconds) |
 | `UNREAL_LARGE_OP_TIMEOUT` | `300` | Large operation timeout (seconds) |
 
+## Command Delivery
+
+`UnrealConnection.send_command()` retries only the TCP *connect* step (bounded)
+before a command is sent. Once sending has started, a command is never replayed
+automatically, because Unreal may have executed it (e.g. spawned an actor) even
+if the reply was lost. Transport-level failures are returned as error dicts with
+an `outcome` field:
+
+| `outcome` | Meaning |
+|-----------|---------|
+| `not_sent` | No command bytes were sent (e.g. connection unavailable or invalid request). Retry only after correcting the cause. |
+| `unknown` | Send/receive failed, timed out, or the reply was malformed. The command may or may not have run — inspect editor/scene state before retrying manually. |
+
+Successful results and JSON-RPC application errors (`{"status": "error", "error": ..., "code": ...}`)
+are returned unchanged, without an `outcome` field. The next explicit call reconnects normally.
+
 ## Package Structure
 
 ```
