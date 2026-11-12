@@ -5,6 +5,13 @@ so tools and helpers can use it without receiving it explicitly.
 
 Message format (JSON-RPC 2.0) is handled by kn_mcp.core.protocol; this module
 only deals with transport (send/receive bytes).
+
+Delivery semantics: connection attempts are retried (bounded) BEFORE a command
+is sent. Once sending has started, a command is never replayed automatically,
+because Unreal may already have executed it (spawned an actor, edited a
+Blueprint, ...) before its reply was lost. Such failures are returned as
+``{"status": "error", "outcome": "unknown", ...}``; failures where the command
+definitely was not sent carry ``"outcome": "not_sent"``.
 """
 import json
 import logging
@@ -26,6 +33,10 @@ _connection_lock = threading.Lock()
 # UE TCP server port range (matches C++ KN_MCP_ServerThread)
 UE_PORT_START = 27777
 UE_PORT_END = 27787
+
+# Values of the "outcome" field added to transport-level error responses.
+OUTCOME_UNKNOWN = "unknown"    # dispatch may have reached Unreal; result is unknown
+OUTCOME_NOT_SENT = "not_sent"  # command was definitely not sent to Unreal
 
 
 def set_current_connection(conn: "UnrealConnection | None") -> None:
@@ -275,43 +286,129 @@ class UnrealConnection:
                 raise ConnectionError(f"Connection closed with incomplete data ({len(buffer)} bytes)")
         raise ConnectionError("Connection closed without response")
 
-    def send_command(self, command: str, params: dict[str, Any] | None = None) -> dict[str, Any] | None:
-        last_error = None
-        for attempt in range(self.MAX_RETRIES + 1):
-            try:
-                return self._send_command_once(command, params or {}, attempt)
-            except (ConnectionError, TimeoutError, socket.error, OSError) as e:
-                last_error = str(e)
-                logger.warning(f"Command failed (attempt {attempt + 1}/{self.MAX_RETRIES + 1}): {e}")
-                self.disconnect()
-                if attempt < self.MAX_RETRIES:
-                    delay = min(self.BASE_RETRY_DELAY * (2**attempt), self.MAX_RETRY_DELAY)
-                    logger.info(f"Retrying command in {delay:.1f}s...")
-                    time.sleep(delay)
-            except Exception as e:
-                logger.error(f"Unexpected error sending command: {e}")
-                self.disconnect()
-                return {"status": "error", "error": str(e)}
-        return {"status": "error", "error": f"Command failed after {self.MAX_RETRIES + 1} attempts: {last_error}"}
+    def _idle_socket_unusable_unsafe(self) -> bool:
+        """
+        Pre-send health check of an idle socket (caller holds the lock).
 
-    def _send_command_once(self, command: str, params: dict[str, Any], attempt: int) -> dict[str, Any]:
-        # Connect outside the send lock so that connect()'s retry sleeps
-        # don't block other threads from accessing the connection.
-        if not self.connect():
-            raise ConnectionError(f"Failed to connect to Unreal Engine: {self._last_error}")
-        with self._lock:
+        Returns True if the peer already closed the connection, the socket is
+        in an error state, or unread bytes are pending (e.g. a late reply to an
+        earlier command). Such a socket must be discarded before sending so a
+        stale reply can never be mistaken for the reply to a new command.
+        """
+        sock = self.socket
+        if sock is None:
+            return True
+        try:
+            sock.setblocking(False)
             try:
-                payload = jsonrpc_protocol.build_request(command, params)
-                logger.info(f"Sending command (attempt {attempt + 1}): {command}")
-                if self.socket:
-                    self.socket.settimeout(10)
-                    self.socket.sendall(payload)
-                response_data = self._receive_response(command)
-                response = jsonrpc_protocol.parse_response(response_data)
-                logger.info(f"Command {command} completed successfully")
-                if response.get("status") == "error":
-                    logger.warning("Unreal returned error: %s", response.get("error", "Unknown error"))
-                return response
-            except (json.JSONDecodeError, ValueError) as e:
-                logger.warning("Invalid response from Unreal: %s", e)
-                return {"status": "error", "error": str(e)}
+                sock.recv(1, socket.MSG_PEEK)
+            finally:
+                sock.settimeout(self.connect_timeout)
+        except (BlockingIOError, InterruptedError):
+            return False  # nothing pending: healthy idle connection
+        except OSError:
+            return True
+        return True  # b"" (peer closed) or unexpected pending data
+
+    @staticmethod
+    def _not_sent_response(command: str, reason: str) -> dict[str, Any]:
+        return {
+            "status": "error",
+            "error": f"Command '{command}' was not sent to Unreal Engine: {reason}",
+            "outcome": OUTCOME_NOT_SENT,
+        }
+
+    @staticmethod
+    def _unknown_outcome_response(command: str, reason: str) -> dict[str, Any]:
+        return {
+            "status": "error",
+            "error": (
+                f"Sending command '{command}' was attempted but no valid response was received ({reason}). "
+                "Unreal may or may not have executed it; it was NOT retried automatically. "
+                "Inspect the editor/scene state before retrying manually."
+            ),
+            "outcome": OUTCOME_UNKNOWN,
+        }
+
+    def send_command(self, command: str, params: dict[str, Any] | None = None) -> dict[str, Any] | None:
+        """
+        Send one command and return its normalized response.
+
+        Connection establishment is retried (bounded, see connect()) before
+        anything is sent. After sending starts the command is dispatched at
+        most once: send/receive failures, timeouts, disconnects and malformed
+        replies yield ``{"status": "error", "error": ..., "outcome": "unknown"}``
+        and the socket is discarded. A later explicit call reconnects normally.
+        JSON-RPC application errors are returned as parsed by the protocol layer.
+        """
+        try:
+            payload = jsonrpc_protocol.build_request(command, params or {})
+        except (TypeError, ValueError) as e:
+            return self._not_sent_response(command, f"invalid request: {e}")
+
+        # Pre-send phase: replacing an idle connection is safe because nothing
+        # of this command has been written yet.
+        for _ in range(2):
+            # Connect outside the send lock so that connect()'s retry sleeps
+            # don't block other threads from accessing the connection.
+            if not self.connect():
+                return self._not_sent_response(
+                    command,
+                    f"failed to connect to {self.host}:{self.port}: {self._last_error}",
+                )
+            with self._lock:
+                if self.socket is not None and self.connected and not self._idle_socket_unusable_unsafe():
+                    return self._dispatch_once_locked(command, payload)
+                logger.info("Discarding stale Unreal connection before sending %s", command)
+                self._close_socket_unsafe()
+        return self._not_sent_response(command, "could not obtain a usable connection")
+
+    def _dispatch_once_locked(self, command: str, payload: bytes) -> dict[str, Any]:
+        """Send payload once and read its reply. Caller holds self._lock."""
+        sock = self.socket
+        assert sock is not None
+        try:
+            sock.settimeout(10)
+        except OSError as e:
+            self._close_socket_unsafe()
+            self._notify_state_change(False)
+            return self._not_sent_response(command, f"socket unusable: {e}")
+
+        logger.info("Sending command: %s", command)
+        try:
+            # From here on the command may have (partially) reached Unreal.
+            sock.sendall(payload)
+            response_data = self._receive_response(command)
+        except OSError as e:  # includes ConnectionError, TimeoutError, socket.timeout
+            logger.warning("Outcome of %s unknown after transport failure: %s", command, e)
+            self._close_socket_unsafe()
+            self._notify_state_change(False)
+            return self._unknown_outcome_response(command, f"{type(e).__name__}: {e}")
+        except Exception as e:
+            # The send may have been partial. Preserve the caller's error-dict
+            # contract even for an unexpected failure; never replay the command.
+            self._close_socket_unsafe()
+            self._notify_state_change(False)
+            return self._unknown_outcome_response(command, f"{type(e).__name__}: {e}")
+        except BaseException:
+            self._close_socket_unsafe()
+            self._notify_state_change(False)
+            raise
+
+        try:
+            # UE includes the request id in both regular and error responses.
+            # An otherwise-valid stale reply must not be mistaken for this edit.
+            if json.loads(response_data).get("id") != json.loads(payload)["id"]:
+                raise ValueError("response id does not match the dispatched command")
+            response = jsonrpc_protocol.parse_response(response_data)
+        except Exception as e:  # malformed / non JSON-RPC reply
+            logger.warning("Invalid response from Unreal for %s: %s", command, e)
+            self._close_socket_unsafe()
+            self._notify_state_change(False)
+            return self._unknown_outcome_response(command, f"malformed response: {e}")
+
+        if response.get("status") == "error":
+            logger.warning("Unreal returned error: %s", response.get("error", "Unknown error"))
+        else:
+            logger.info("Command %s completed successfully", command)
+        return response
